@@ -28,8 +28,6 @@ namespace gazebo
 			    this->model->SetWorldPose(pose);
 			}	
 			
-		
-			std::cout << "Pose X: " << pose.pos.x  << ", Pose Y: " << pose.pos.y << std::endl;
 		}
 		private: physics::ModelPtr model;
 		private: event::ConnectionPtr updateConnection;
