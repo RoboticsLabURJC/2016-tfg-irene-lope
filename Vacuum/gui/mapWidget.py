@@ -55,7 +55,7 @@ class Map(QWidget):
     def initUI(self):
         self.map = cv2.imread(self.mapPath, cv2.IMREAD_GRAYSCALE)
         print(self.map.shape)
-        self.map = cv2.resize(self.map, (400, 400))
+        self.map = cv2.resize(self.map, (350, 350))
         image = QtGui.QImage(self.map.data, self.map.shape[1], self.map.shape[0], self.map.shape[1], QtGui.QImage.Format_Indexed8);
         self.pixmap = QtGui.QPixmap.fromImage(image)
         self.height = self.pixmap.height()
@@ -65,15 +65,15 @@ class Map(QWidget):
         self.mapWidget.resize(self.width, self.height)
 
 
-    def mouseDoubleClickEvent(self, event):
-        x = event.pos().x()
-        y = event.pos().y()
-        print("Destiny: ", x, ", ", y)
-        rX, rY = self.parent.grid.gridToWorld(x,y) 
-        print("WORLD: ", rX, ", ", rY)
-        self.parent.grid.setDestiny(x, y)
-        self.parent.grid.resetPath()
-        self.parent.grid.resetGrid()
+   # def mouseDoubleClickEvent(self, event):
+       # x = event.pos().x()
+       # y = event.pos().y()
+       # print("Destiny: ", x, ", ", y)
+       # rX, rY = self.parent.grid.gridToWorld(x,y) 
+       # print("WORLD: ", rX, ", ", rY)
+       # self.parent.grid.setDestiny(x, y)
+       # self.parent.grid.resetPath()
+       # self.parent.grid.resetGrid()
 
 
     def setPainterSettings(self, painter, color, width):
