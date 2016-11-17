@@ -121,30 +121,29 @@
     <!-- A taxi -->
     <include>
       <uri>model://yellowTaxi</uri>
-      <pose>0 -30 0.2 0 0 3.15</pose>
+      <pose>0 -30 0 0 0 3.15</pose> 
     </include>
     
     
     <!-- A car -->
     <include>
-      <uri>model://carApriltag</uri>
-      <pose>30 0 0.2 0 0 -1.55</pose>
+      <uri>model://car</uri>
+      <pose>-30 0 0 0 0 1.55</pose>
     </include>
     
     
     <!-- Roads -->
     <road name="my_road_1">
       <width>6</width>
-      <point>0 -40 0.02</point>
-      <point>0 40 0.02</point>
+      <point>0 -50 0.02</point>
+      <point>0 50 0.02</point>
     </road>
     
     <road name="my_road_2">
       <width>6</width>
-      <point>-40 0 0.02</point>
-      <point>40 0 0.02</point>
+      <point>-50 0 0.02</point>
+      <point>50 0 0.02</point>
     </road>
-    
     
   </world>
 </sdf>
