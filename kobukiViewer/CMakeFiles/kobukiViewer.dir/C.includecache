@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/irene/JdeRobot/src/tools/kobukiViewer/pioneer/pioneer.c
+pioneer.h
+/home/irene/JdeRobot/src/tools/kobukiViewer/pioneer/pioneer.h
+math.h
+-
+
+/home/irene/JdeRobot/src/tools/kobukiViewer/pioneer/pioneer.h
+
+/home/irene/JdeRobot/src/tools/kobukiViewer/pioneer/pioneeropengl.c
+pioneeropengl.h
+/home/irene/JdeRobot/src/tools/kobukiViewer/pioneer/pioneeropengl.h
+
+/home/irene/JdeRobot/src/tools/kobukiViewer/pioneer/pioneeropengl.h
+GL/gl.h
+-
+
