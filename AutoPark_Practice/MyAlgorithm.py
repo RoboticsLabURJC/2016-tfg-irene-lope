@@ -9,17 +9,21 @@ from Parser import Parser
 
 time_cycle = 80
 
+
 class MyAlgorithm(threading.Thread):
 
-    def __init__(self, cameraL, cameraR, pose3d, laser, motors):
-        self.cameraL = cameraL
-        self.cameraR = cameraR
+    #def __init__(self, cameraL, cameraR, pose3d, laser, motors):
+    def __init__(self, pose3d, laser1, laser2, laser3, motors):
+        #self.cameraL = cameraL
+        #self.cameraR = cameraR
         self.pose3d = pose3d
-        self.laser = laser
+        self.laser1 = laser1
+        self.laser2 = laser2
+        self.laser3 = laser3
         self.motors = motors
 
-        self.imageRight=None
-        self.imageLeft=None
+        #self.imageRight=None
+        #self.imageLeft=None
 
         # Car direction
         self.carx = 0.0
@@ -53,28 +57,6 @@ class MyAlgorithm(threading.Thread):
 
         return None
 
-    def setRightImageFiltered(self, image):
-        self.lock.acquire()
-        self.imageRight=image
-        self.lock.release()
-
-
-    def setLeftImageFiltered(self, image):
-        self.lock.acquire()
-        self.imageLeft=image
-        self.lock.release()
-
-    def getRightImageFiltered(self):
-        self.lock.acquire()
-        tempImage=self.imageRight
-        self.lock.release()
-        return tempImage
-
-    def getLeftImageFiltered(self):
-        self.lock.acquire()
-        tempImage=self.imageLeft
-        self.lock.release()
-        return tempImage
 
     def getCarDirection(self):
         return (self.carx, self.cary)
@@ -124,4 +106,4 @@ class MyAlgorithm(threading.Thread):
         self.targety = self.currentTarget.getPose().y
 
         # TODO
-
+        

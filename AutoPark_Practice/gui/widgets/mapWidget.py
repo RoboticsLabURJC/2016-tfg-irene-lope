@@ -65,26 +65,26 @@ class MapWidget(QWidget):
     
         #Widget center
         painter.translate(QPoint(_width/2, _height/2))
-        
-        
+
         # Draw laser
         self.drawLaser1(painter)
         self.drawLaser2(painter)
         self.drawLaser3(painter)
-        
+
+
         # Draw car
         self.drawCar(painter)
-        
+
         # Draw target
         #self.drawTarget(painter, self.targetx, self.targety)
 
         # Draw arrows
         #self.drawArrow(painter, self.carx, self.cary, Qt.green, 2)
         #self.drawArrow(painter, self.obsx, self.obsy, Qt.red, 2)
-        #self.drawArrow(painter, self.avgx, self.avgy, Qt.black, 2)
+
 
     def drawCar(self, painter):
-        carsize = 30
+        carsize = 50
         tiresize = carsize/5
 
         pen = QPen(Qt.black, 1)
@@ -94,16 +94,17 @@ class MapWidget(QWidget):
         painter.drawLine(QPointF(-carsize/5,carsize/5),QPointF(carsize/5, carsize/5))
 
         # Chassis
-        painter.fillRect(-carsize/6,carsize/2,carsize/3,carsize/2,Qt.yellow)
-        painter.fillRect(-carsize/16,0,carsize/8,carsize,Qt.yellow)
-        painter.fillRect(-carsize/6,-carsize/24,carsize/3,carsize/12,Qt.yellow)
-        painter.fillRect(-carsize/8,carsize-carsize/96,carsize/4,carsize/12,Qt.yellow)
+        #painter.fillRect(-carsize/6,carsize/10,carsize/3,carsize/1,Qt.yellow)
+        painter.fillRect(-1.5*tiresize, -2.75*tiresize,3*tiresize,5.5*tiresize,Qt.yellow)
+        #painter.fillRect(-carsize/6,0,carsize/8,carsize,Qt.yellow)
+        #painter.fillRect(-carsize/6,-carsize/24,carsize/3,carsize/12,Qt.yellow)
+        #painter.fillRect(-carsize/6,carsize-carsize/96,carsize/4,carsize/12,Qt.yellow)
 
         # Tires
-        painter.fillRect(-carsize/4,carsize/8,tiresize/2,tiresize,Qt.black)
-        painter.fillRect(carsize/4,carsize/8,-tiresize/2,tiresize,Qt.black)
-        painter.fillRect(-carsize/4,carsize-carsize/8,tiresize/2,tiresize,Qt.black)
-        painter.fillRect(carsize/4,carsize-carsize/8,-tiresize/2,tiresize,Qt.black)
+        painter.fillRect(-carsize/2.75,-carsize/1.95,tiresize/2,tiresize,Qt.black)
+        painter.fillRect(carsize/2.75,-carsize/1.95,-tiresize/2,tiresize,Qt.black)
+        painter.fillRect(-carsize/2.75,carsize-carsize/1.55,tiresize/2,tiresize,Qt.black)
+        painter.fillRect(carsize/2.75,carsize-carsize/1.55,-tiresize/2,tiresize,Qt.black)
 
     def drawLaser1(self, painter):
         pen = QPen(Qt.blue, 2)
@@ -112,73 +113,75 @@ class MapWidget(QWidget):
             px = -d[0]*math.sin(d[1])*self.scale
             py = d[0]*math.cos(d[1])*self.scale
             painter.drawLine(QPointF(0,0),QPointF(py, px))
-            
-    def drawLaser2(self, painter):      
+
+
+    def drawLaser2(self, painter):
         pen = QPen(Qt.green, 2)
         painter.setPen(pen)
         for d in self.laser2:
             px = d[0]*math.sin(d[1])*self.scale
-            py = d[0]*math.cos(d[1])*self.scale
+            py = -d[0]*math.cos(d[1])*self.scale
             painter.drawLine(QPointF(0,0),QPointF(py, px))
             
-    def drawLaser3(self, painter):      
+
+    def drawLaser3(self, painter):
         pen = QPen(Qt.red, 2)
         painter.setPen(pen)
-        for d in self.laser3:
-            px = d[0]*math.sin(d[1])*self.scale
-            py = d[0]*math.cos(d[1])*self.scale
-            painter.drawLine(QPointF(0,0),QPointF(py, px))
+        for d in self.laser2:
+            px = d[0]*math.cos(d[1])*self.scale
+            py = -d[0]*math.sin(d[1])*self.scale
+            painter.drawLine(QPointF(0,0),QPointF(0+py, px))
             
-    def drawArrow(self, painter, posx, posy, color, width):
-        if posx == 0.0 and posy == 0.0:
-            return        
+    #def drawArrow(self, painter, posx, posy, color, width):
+    #    if posx == 0.0 and posy == 0.0:
+    #        return        
 
-        _width = self.width()
-        _height = self.height()
+    #    _width = self.width()
+    #    _height = self.height()
 
-        pen = QPen(color, width)
-        painter.setPen(pen)
+     #   pen = QPen(color, width)
+     #   painter.setPen(pen)
 
         # Draw main line
-        px = _width/2*posx/10.0
-        py = _height/2*posy/10.0
-        painter.drawLine(QPointF(0,0),QPointF(-px, py))
+     #   px = _width/2*posx/10.0
+     #   py = _height/2*posy/10.0
+     #   painter.drawLine(QPointF(0,0),QPointF(-px, py))
 
         # Draw sides
-        sidex = math.hypot(px, py)/5.0
-        sidey = math.hypot(px, py)/5.0
-        if px != 0.0:
-            ang = math.atan(py/px)
-        else:
-            ang = math.pi/2.0
-        if posx >= 0.0:
-            px1 = px + sidex * math.cos(math.pi+ang-0.5)
-            py1 = py + sidey * math.sin(math.pi+ang-0.5)
-            px2 = px + sidex * math.cos(math.pi+ang+0.5)
-            py2 = py + sidey * math.sin(math.pi+ang+0.5)
-        else:
-            px1 = px - sidex * math.cos(math.pi+ang-0.5)
-            py1 = py - sidey * math.sin(math.pi+ang-0.5)
-            px2 = px - sidex * math.cos(math.pi+ang+0.5)
-            py2 = py - sidey * math.sin(math.pi+ang+0.5)    
-        painter.drawLine(QPointF(-px, py),QPointF(-px1, py1))
-        painter.drawLine(QPointF(-px, py),QPointF(-px2, py2))
+       # sidex = math.hypot(px, py)/5.0
+       # sidey = math.hypot(px, py)/5.0
+       # if px != 0.0:
+       #     ang = math.atan(py/px)
+       # else:
+       #     ang = math.pi/2.0
+       # if posx >= 0.0:
+       #     px1 = px + sidex * math.cos(math.pi+ang-0.5)
+       #     py1 = py + sidey * math.sin(math.pi+ang-0.5)
+       #     px2 = px + sidex * math.cos(math.pi+ang+0.5)
+       #     py2 = py + sidey * math.sin(math.pi+ang+0.5)
+       # else:
+       #     px1 = px - sidex * math.cos(math.pi+ang-0.5)
+       #     py1 = py - sidey * math.sin(math.pi+ang-0.5)
+       #     px2 = px - sidex * math.cos(math.pi+ang+0.5)
+       #     py2 = py - sidey * math.sin(math.pi+ang+0.5)    
+       # painter.drawLine(QPointF(-px, py),QPointF(-px1, py1))
+       # painter.drawLine(QPointF(-px, py),QPointF(-px2, py2))
 
-    def drawTarget(self, painter, posx, posy):
-        pen = QPen(Qt.red, 4)
-        painter.setPen(pen)
+    #def drawTarget(self, painter, posx, posy):
+    #    pen = QPen(Qt.red, 4)
+    #    painter.setPen(pen)
 
-        sx = posx - 0.25
-        sy = posy - 0.25
-        ex = posx + 0.25
-        ey = posy + 0.25
-        painter.drawLine(QPointF(-sx*self.scale,sy*self.scale),QPointF(-ex*self.scale,ey*self.scale))
+        #sx = posx - 0.25
+        #sy = posy - 0.25
+        #ex = posx + 0.25
+        #ey = posy + 0.25
+        #painter.drawLine(QPointF(-sx*self.scale,sy*self.scale),QPointF(-ex*self.scale,ey*self.scale))
 
-        sx = posx + 0.25
-        sy = posy - 0.25
-        ex = posx - 0.25
-        ey = posy + 0.25
-        painter.drawLine(QPointF(-sx*self.scale,sy*self.scale),QPointF(-ex*self.scale,ey*self.scale))
+        #sx = posx + 0.25
+        #sy = posy - 0.25
+        #ex = posx - 0.25
+        #ey = posy + 0.25
+        #painter.drawLine(QPointF(-sx*self.scale,sy*self.scale),QPointF(-ex*self.scale,ey*self.scale))
 
     def setCarArrow(self, x, y):
         self.carx = x
@@ -211,9 +214,10 @@ class MapWidget(QWidget):
             dist = laser.distanceData[i]/1000.0
             angle = math.radians(i)
             self.laser1[i] = (dist, angle)
-            
+
+
+
     def setLaserValues2(self, laser):
-        # Init laser array
         if len(self.laser2) == 0:
             for i in range(laser.numLaser):
                 self.laser2.append((0,0))
@@ -222,9 +226,9 @@ class MapWidget(QWidget):
             dist = laser.distanceData[i]/1000.0
             angle = math.radians(i)
             self.laser2[i] = (dist, angle)
-            
+
+ 
     def setLaserValues3(self, laser):
-        # Init laser array
         if len(self.laser3) == 0:
             for i in range(laser.numLaser):
                 self.laser3.append((0,0))
@@ -233,4 +237,5 @@ class MapWidget(QWidget):
             dist = laser.distanceData[i]/1000.0
             angle = math.radians(i)
             self.laser3[i] = (dist, angle)
-       
+
+

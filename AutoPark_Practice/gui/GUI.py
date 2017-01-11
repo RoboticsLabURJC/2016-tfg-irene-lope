@@ -67,16 +67,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.map.update()
 
     #def getCameraL(self):
-        #return self.cameraL
+     #   return self.cameraL
 
     #def setCameraL(self,camera):
-        #self.cameraL=camera
+      #  self.cameraL=camera
 
     #def getCameraR(self):
-        #return self.cameraR
+    #    return self.cameraR
 
     #def setCameraR(self,camera):
-        #self.cameraR=camera
+    #    self.cameraR=camera
 
     def getPose3D(self):
         return self.pose3d
@@ -84,17 +84,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setPose3D(self,pose3d):
         self.pose3d=pose3d
 
-    #def getLaser(self):
-     #   return self.laser
+    def getLaser(self):
+        return self.laser
 
     def setLaser1(self,laser):
-        self.laser1 = laser
-        
+        self.laser1=laser
+
     def setLaser2(self,laser):
-        self.laser2 = laser
-        
+        self.laser2=laser
+
     def setLaser3(self,laser):
-        self.laser3 = laser
+        self.laser3=laser
 
     def getMotors(self):
         return self.motors
