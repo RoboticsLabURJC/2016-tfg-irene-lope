@@ -104,10 +104,10 @@ class MapWidget(QWidget):
         return RT
         
     def RTLaser3(self, angle):
-        RT = np.array([[-math.cos(angle), 0, 0], [-math.sin(angle), 0, 0], [0, 0, 1]])
+        RT = np.array([[-math.sin(angle), 0, 0], [-math.cos(angle), 0, 0], [0, 0, 1]])
         return RT
 
-    def drawLaser(self, numLaser, painter, color, xTraslate, yTraslate, laser):
+    def drawLaser(self, num, painter, color, xTraslate, yTraslate, laser):
         pen = QPen(color, 2)
         painter.setPen(pen)
         for d in laser:
@@ -115,34 +115,15 @@ class MapWidget(QWidget):
             #py = -d[0]*math.sin(d[1])*self.scale
             dist = d[0]
             angle = d[1]
-            if (numLaser == 1):
+            if (num == 1):
                 RT = self.RTLaser1(angle)
-            elif (numLaser == 2):
+            elif (num == 2):
                 RT = self.RTLaser2(angle)
             else:
                 RT = self.RTLaser3(angle)
             orig_poses = np.array([[dist], [dist], [1]]) * self.scale
             final_poses = RT * orig_poses 
             painter.drawLine(QPointF(xTraslate,yTraslate),QPointF(final_poses[0][0] + xTraslate, final_poses[1][0]+yTraslate))
-
-
-    def drawLaser2(self, painter, color):
-        pen = QPen(color, 2)
-        painter.setPen(pen)
-        for d in self.laser2:
-            px = -d[0]*math.cos(d[1])*self.scale
-            py = d[0]*math.sin(d[1])*self.scale
-            painter.drawLine(QPointF(0,50),QPointF(px, py+50))
-            
-
-    def drawLaser3(self, painter, color):
-        pen = QPen(color, 2)
-        painter.setPen(pen)
-        for d in self.laser3:
-            px = -d[0]*math.sin(d[1])*self.scale
-            py = -d[0]*math.cos(d[1])*self.scale
-            painter.drawLine(QPointF(-25,0),QPointF(px-25, py))
-            
 
     def setCarArrow(self, x, y):
         self.carx = x
@@ -165,38 +146,20 @@ class MapWidget(QWidget):
         self.targetx = dx*math.cos(-rt) - dy*math.sin(-rt)
         self.targety = dx*math.sin(-rt) + dy*math.cos(-rt)
 
-    def setLaserValues1(self, laser):
+    def setLaserValues(self, num, laser):
         # Init laser array
-        if len(self.laser1) == 0:
+        if num == 1:
+            myLaser = self.laser1
+        elif num == 2:
+            myLaser = self.laser2
+        else:
+            myLaser = self.laser3
+                
+        if len(myLaser) == 0:
             for i in range(laser.numLaser):
-                self.laser1.append((0,0))
+                myLaser.append((0,0))
 
         for i in range(laser.numLaser):
             dist = laser.distanceData[i]/1000.0
             angle = math.radians(i)
-            self.laser1[i] = (dist, angle)
-
-
-
-    def setLaserValues2(self, laser):
-        if len(self.laser2) == 0:
-            for i in range(laser.numLaser):
-                self.laser2.append((0,0))
-
-        for i in range(laser.numLaser):
-            dist = laser.distanceData[i]/1000.0
-            angle = math.radians(i)
-            self.laser2[i] = (dist, angle)
-
- 
-    def setLaserValues3(self, laser):
-        if len(self.laser3) == 0:
-            for i in range(laser.numLaser):
-                self.laser3.append((0,0))
-
-        for i in range(laser.numLaser):
-            dist = laser.distanceData[i]/1000.0
-            angle = math.radians(i)
-            self.laser3[i] = (dist, angle)
-
-
+            myLaser[i] = (dist, angle)
