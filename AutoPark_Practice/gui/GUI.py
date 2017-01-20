@@ -49,12 +49,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         (cx, cy) = self.algorithm.getCarDirection()
         (ox, oy) = self.algorithm.getObstaclesDirection()
         (ax, ay) = self.algorithm.getAverageDirection()
-        (tx, ty) = self.algorithm.getCurrentTarget()
-        self.map.setCarArrow(cx, cy)
-        self.map.setObstaclesArrow(ox, oy)
-        self.map.setAverageArrow(ax, ay)
-        if (self.pose3d):
-            self.map.setTarget(tx, ty, self.pose3d.getX()/1000, self.pose3d.getY()/1000, self.pose3d.getYaw())
         laserdata1 = self.laser1.getLaserData()
         laserdata2 = self.laser2.getLaserData()
         laserdata3 = self.laser3.getLaserData()
@@ -66,17 +60,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.map.setLaserValues(3,laserdata3)
         self.map.update()
 
-    #def getCameraL(self):
-     #   return self.cameraL
-
-    #def setCameraL(self,camera):
-      #  self.cameraL=camera
-
-    #def getCameraR(self):
-    #    return self.cameraR
-
-    #def setCameraR(self,camera):
-    #    self.cameraR=camera
 
     def getPose3D(self):
         return self.pose3d
