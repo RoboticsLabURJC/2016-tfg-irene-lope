@@ -15,7 +15,7 @@
 #  along with this program.  If not, see http://www.gnu.org/licenses/.
 #  Authors :
 #       Eduardo Perdices <eperdices@gsyc.es>
-#
+
 
 #import resources_rc
 from PyQt5.QtWidgets import QWidget, QGridLayout
@@ -95,71 +95,47 @@ class MapWidget(QWidget):
         painter.fillRect(carsize/2,carsize-2*carsize/5,-carsize/5,2*carsize/5,Qt.black)
 
 
-    def RTLaser1(self, angle):
-        RT = np.array([[math.cos(angle), 0, 0], [-math.sin(angle), 0, 0], [0, 0, 1]])
+    def RTLaser(self, num):
+        if num == 1:
+            RT = np.matrix([[math.cos(0), -math.sin(0), 0, 0], [math.sin(0), math.cos(0), 0, -2.79], [0, 0, 1, 0.772], [0,0,0,1]])
+        elif num == 2:
+            RT = np.matrix([[math.cos(180), -math.sin(180), 0, 0], [math.sin(180), math.cos(180), 0, 2.79], [0, 0, 1, 0.772], [0,0,0,1]])
+        else:
+            RT = np.matrix([[math.cos(90), -math.sin(90), 0, 1.5], [math.sin(90), math.cos(90), 0, 0], [0, 0, 1, 0.772], [0,0,0,1]])
         return RT
-        
-    def RTLaser2(self, angle):
-        RT = np.array([[-math.cos(angle), 0, 0], [math.sin(angle), 0, 0], [0, 0, 1]])
-        return RT
-        
-    def RTLaser3(self, angle):
-        RT = np.array([[-math.sin(angle), 0, 0], [-math.cos(angle), 0, 0], [0, 0, 1]])
-        return RT
+    
+    def coordLaser(self, dist, angle):
+        coord = [0,0] 
+        coord[0] = dist * math.cos(angle)
+        coord[1] = dist * math.sin(angle)
+        return coord     
 
     def drawLaser(self, num, painter, color, xTraslate, yTraslate, laser):
         pen = QPen(color, 2)
         painter.setPen(pen)
+        RT = self.RTLaser(num)
         for d in laser:
-            #px = d[0]*math.cos(d[1])*self.scale
-            #py = -d[0]*math.sin(d[1])*self.scale
             dist = d[0]
             angle = d[1]
-            if (num == 1):
-                RT = self.RTLaser1(angle)
-            elif (num == 2):
-                RT = self.RTLaser2(angle)
-            else:
-                RT = self.RTLaser3(angle)
-            orig_poses = np.array([[dist], [dist], [1]]) * self.scale
+            coord = self.coordLaser(dist,angle)
+            orig_poses = np.matrix([[coord[0]], [coord[1]], [1], [1]]) * self.scale
             final_poses = RT * orig_poses 
-            painter.drawLine(QPointF(xTraslate,yTraslate),QPointF(final_poses[0][0] + xTraslate, final_poses[1][0]+yTraslate))
-
-    def setCarArrow(self, x, y):
-        self.carx = x
-        self.cary = y
-
-    def setObstaclesArrow(self, x, y):
-        self.obsx = x
-        self.obsy = y
-
-    def setAverageArrow(self, x, y):
-        self.avgx = x
-        self.avgy = y
-
-    def setTarget(self, x, y, rx, ry, rt):
-        # Convert to relatives
-        dx = x - rx
-        dy = y - ry
-
-        # Rotate with current angle
-        self.targetx = dx*math.cos(-rt) - dy*math.sin(-rt)
-        self.targety = dx*math.sin(-rt) + dy*math.cos(-rt)
+            painter.drawLine(QPointF(coord[0],coord[1]),QPointF(final_poses.flat[0], final_poses.flat[1]))
 
     def setLaserValues(self, num, laser):
         # Init laser array
         if num == 1:
-            myLaser = self.laser1
+            laserX = self.laser1
         elif num == 2:
-            myLaser = self.laser2
+            laserX = self.laser2
         else:
-            myLaser = self.laser3
+            laserX = self.laser3
                 
-        if len(myLaser) == 0:
+        if len(laserX) == 0:
             for i in range(laser.numLaser):
-                myLaser.append((0,0))
+                laserX.append((0,0))
 
         for i in range(laser.numLaser):
             dist = laser.distanceData[i]/1000.0
             angle = math.radians(i)
-            myLaser[i] = (dist, angle)
+            laserX[i] = (dist, angle)
