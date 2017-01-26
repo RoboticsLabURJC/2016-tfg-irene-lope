@@ -14,7 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see http://www.gnu.org/licenses/.
 #  Authors :
-#       Eduardo Perdices <eperdices@gsyc.es>
+#       Irene Lope Rodríguez<irene.lope236@gmail.com>
+#       Vanessa Fernández Matínez<vanessa_1895@msn.com>
 
 
 #import resources_rc
@@ -32,15 +33,6 @@ class MapWidget(QWidget):
         super(MapWidget, self).__init__()
         self.winParent=winParent
         self.initUI()
-
-        self.carx = 0.0
-        self.cary = 0.0
-        self.obsx = 0.0
-        self.obsy = 0.0
-        self.avgx = 0.0
-        self.avgy = 0.0
-        self.targetx = 0.0
-        self.targety = 0.0
         self.scale = 20.0
         self.laser1 = []
         self.laser2 = []
@@ -74,9 +66,12 @@ class MapWidget(QWidget):
         self.drawLaser(1, painter, colorLaser1, 0, -50, self.laser1)
         self.drawLaser(2, painter, colorLaser2, 0, 50, self.laser2)
         self.drawLaser(3, painter, colorLaser3, -25, 0, self.laser3)
+        
 
         # Draw car
         self.drawCar(painter)
+        
+        painter.drawLine(QPointF(0,0),QPointF(0,60))
 
 
     def drawCar(self, painter):
@@ -93,16 +88,32 @@ class MapWidget(QWidget):
         painter.fillRect(carsize/2,-carsize,-carsize/5,2*carsize/5,Qt.black)
         painter.fillRect(-carsize/2,carsize-2*carsize/5,carsize/5,2*carsize/5,Qt.black)
         painter.fillRect(carsize/2,carsize-2*carsize/5,-carsize/5,2*carsize/5,Qt.black)
-
+              
+    def RTx(self, angle, tx, ty, tz):
+        RT = np.matrix([[1, 0, 0, tx], [0, math.cos(angle), -math.sin(angle), ty], [0, math.sin(angle), math.cos(angle), tz], [0,0,0,1]])
+        return RT
+        
+    def RTy(self, angle, tx, ty, tz):
+        RT = np.matrix([[math.cos(angle), 0, -math.sin(angle), tx], [0, 1, 0, ty], [math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
+        return RT
+    
+    def RTz(self, angle, tx, ty, tz):
+        RT = np.matrix([[math.cos(angle), -math.sin(angle), 0, tx], [math.sin(angle), math.cos(angle),0, ty], [0, 0, 1, tz], [0,0,0,1]])
+        return RT   
 
     def RTLaser(self, num):
+        pi = math.pi
         if num == 1:
-            RT = np.matrix([[math.cos(0), -math.sin(0), 0, 0], [math.sin(0), math.cos(0), 0, -2.79], [0, 0, 1, 0.772], [0,0,0,1]])
+            #Rotación en Z / Traslación en X
+            RT = np.matrix([[math.cos(0), -math.sin(0), 0, 2.79], [math.sin(0), math.cos(0), 0, 0], [0, 0, 1, 0], [0,0,0,1]])
         elif num == 2:
-            RT = np.matrix([[math.cos(180), -math.sin(180), 0, 0], [math.sin(180), math.cos(180), 0, 2.79], [0, 0, 1, 0.772], [0,0,0,1]])
+            #Rotación en Z / Traslación en X
+            RT = np.matrix([[math.cos(pi), -math.sin(pi), 0, -2.79], [math.sin(pi), math.cos(pi), 0, 0], [0, 0, 1, 0], [0,0,0,1]])
         else:
-            RT = np.matrix([[math.cos(90), -math.sin(90), 0, 1.5], [math.sin(90), math.cos(90), 0, 0], [0, 0, 1, 0.772], [0,0,0,1]])
-        return RT
+            #Rotación en Z / Traslación en Y
+            RT = np.matrix([[math.cos(pi/2), -math.sin(pi/2), 0, 0], [math.sin(pi/2), math.cos(pi/2), 0, 1.5], [0, 0, 1, 0], [0,0,0,1]])
+        return RT    
+    
     
     def coordLaser(self, dist, angle):
         coord = [0,0] 
