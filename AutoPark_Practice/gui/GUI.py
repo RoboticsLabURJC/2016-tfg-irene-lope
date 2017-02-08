@@ -37,8 +37,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.map1=MapWidget1(self)
         self.tlLayout.addWidget(self.teleop)
         self.teleop.setVisible(True)
-        self.map2Layout.addWidget(self.map)
-        self.mapLayout.addWidget(self.map1)
+        self.mapLayout.addWidget(self.map)
+        self.map1Layout.addWidget(self.map1)
         self.map.setVisible(True)
         self.map1.setVisible(True)
 

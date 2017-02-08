@@ -70,7 +70,7 @@
        <enum>QLayout::SetDefaultConstraint</enum>
       </property>
       <item>
-        <layout class="QVBoxLayout" name="map2Layout">
+        <layout class="QVBoxLayout" name="map1Layout">
           <property name="leftMargin">
            <number>1</number>
           </property>
