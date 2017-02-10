@@ -93,8 +93,8 @@ class MapWidget(QWidget):
         painter.drawLine(QPointF(RT4.flat[0],RT4.flat[1]),QPointF(RT6.flat[0],RT6.flat[1]))
 
     def drawCar(self, painter):
-        carsize = 50
-
+        carsize = 40
+        
         # Chassis
         painter.fillRect(-carsize/2, -carsize,carsize,2*carsize,Qt.yellow)
 
@@ -143,8 +143,6 @@ class MapWidget(QWidget):
         pen = QPen(color, 2)
         painter.setPen(pen)
         RT = self.RTLaser(num)
-        #RTx = self.RTx(pi, 0, 0, 0)
-        #RTz = self.RTz(pi/2, 0, 0, 0)
         RTOrigLaser = np.matrix([[0],[0],[0],[1]]) * self.scale
         RTFinalLaser1 = RT * RTOrigLaser
         RTFinalLaser = self.RTCar() * RTFinalLaser1
@@ -154,7 +152,6 @@ class MapWidget(QWidget):
             coord = self.coordLaser(dist,angle)
             orig_poses = np.matrix([[coord[0]], [coord[1]], [1], [1]]) * self.scale
             final_poses1 = RT * orig_poses
-            #final_poses = RTx * RTz * final_poses1
             final_poses = self.RTCar() * final_poses1
             painter.drawLine(QPointF(RTFinalLaser.flat[0],RTFinalLaser.flat[1]),QPointF(final_poses.flat[0], final_poses.flat[1]))
 
@@ -185,7 +182,7 @@ class MapWidget1(QWidget):
         super(MapWidget1, self).__init__()
         self.winParent=winParent
         self.initUI()
-        self.scale = 19.0
+        self.scale = 12.0
         
     def initUI(self):
         layout=QGridLayout() 
@@ -244,14 +241,26 @@ class MapWidget1(QWidget):
  
     def drawObstacles(self,painter):
         carsize = 30
+        
         # Obstacle 1
-        painter.fillRect(-5/2*carsize, -6*carsize, carsize, 2*carsize, Qt.black)
+        orig_poses1 = np.matrix([[-13.5], [3], [1], [1]]) * self.scale
+        final_poses1 = self.RTCar() * orig_poses1
+        painter.fillRect(-carsize/2  + final_poses1[0], -carsize  + final_poses1[1], carsize, 2*carsize, Qt.black)
+        
         # Obstacle 2
-        painter.fillRect(-5/2*carsize, -carsize, carsize, 2*carsize, Qt.black)
+        orig_poses2 = np.matrix([[-7], [3], [1], [1]]) * self.scale
+        final_poses2 = self.RTCar() * orig_poses2
+        painter.fillRect(-carsize/2  + final_poses2[0], -carsize  + final_poses2[1], carsize, 2*carsize, Qt.black)
+        
         # Obstacle 3
-        painter.fillRect(-5/2*carsize, 3/2*carsize, carsize, 2*carsize, Qt.black)
+        orig_poses3 = np.matrix([[0.5], [3], [1], [1]]) * self.scale
+        final_poses3 = self.RTCar() * orig_poses3
+        painter.fillRect(-carsize/2  + final_poses3[0], -carsize + final_poses3[1], carsize, 2*carsize, Qt.black)
+        
         # Obstacle 4
-        painter.fillRect(-5/2*carsize, 4*carsize, carsize, 2*carsize, Qt.black)     
+        orig_poses4 = np.matrix([[14], [3], [1], [1]]) * self.scale
+        final_poses4 = self.RTCar() * orig_poses4
+        painter.fillRect(-carsize/2  + final_poses4[0], -carsize + final_poses4[1], carsize, 2*carsize, Qt.black)     
               
     def RTx(self, angle, tx, ty, tz):
         RT = np.matrix([[1, 0, 0, tx], [0, math.cos(angle), -math.sin(angle), ty], [0, math.sin(angle), math.cos(angle), tz], [0,0,0,1]])
