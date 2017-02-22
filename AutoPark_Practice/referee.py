@@ -18,10 +18,12 @@ class MainWindow(QWidget):
         self.tiempo = tiempoWidget(self)
         self.calidad = calidadWidget(self)
         self.distancia = distanciaWidget(self, pose3d)
+        self.nota = notaWidget(self)
         layout.addWidget(self.quesito,1,0)
         layout.addWidget(self.tiempo,0,0)
         layout.addWidget(self.distancia,0,2)
         layout.addWidget(self.calidad,1,2)
+        layout.addWidget(self.nota,0,1)
     
         vSpacer = QSpacerItem(30, 50, QSizePolicy.Ignored, QSizePolicy.Ignored)
         layout.addItem(vSpacer,1,0)
@@ -97,7 +99,18 @@ class distanciaWidget(QWidget):
     def updateG(self):
         self.update()      
         
+class notaWidget(QWidget):
+    def __init__(self,winParent):    
+        super(notaWidget, self).__init__()
+        self.winParent=winParent
+
+        hLayout = QHBoxLayout()
         
+        nota = 0
+
+        notaLabel = QLabel('Nota final: ' + str(nota))
+        hLayout.addWidget(notaLabel, 0) 
+        self.setLayout(hLayout)      
 
 class tiempoWidget(QWidget):
 
