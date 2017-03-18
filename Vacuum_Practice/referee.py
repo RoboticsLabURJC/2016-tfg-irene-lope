@@ -1,12 +1,15 @@
 import sys, math
 from math import pi as pi
 import numpy as np
+import cv2
 from PyQt5.QtCore import QPoint, QRect, QSize, Qt, QPointF, QRectF, pyqtSignal, QTimer
 from PyQt5.QtGui import (QBrush, QConicalGradient, QLinearGradient, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygon, QRadialGradient, QColor, QTransform, QPolygonF, QKeySequence, QIcon)
-from PyQt5.QtWidgets import (QApplication, QProgressBar, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QSpinBox, QWidget, QPushButton, QSpacerItem, QSizePolicy, QLCDNumber )
+from PyQt5.QtWidgets import (QApplication, QProgressBar, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QSpinBox, QWidget, QPushButton, QSpacerItem, QSizePolicy, QLCDNumber)
+from PyQt5 import QtGui, QtCore
 from parallelIce.pose3dClient import Pose3DClient
 import easyiceconfig as EasyIce
 from gui.threadGUI import ThreadGUI
+
 
 class MainWindow(QWidget):
 
@@ -17,30 +20,104 @@ class MainWindow(QWidget):
         layout = QGridLayout()
         self.tiempo = tiempoWidget(self)
         self.porcentaje = porcentajeWidget(self, pose3d)
+        self.mapa = mapaWidget(self, pose3d)
         #self.nota = notaWidget(self,pose3d)
         layout.addWidget(self.tiempo,0,0)
         layout.addWidget(self.porcentaje,0,2)
+        layout.addWidget(self.mapa,1,2)
         #layout.addWidget(self.nota,0,1)
     
         vSpacer = QSpacerItem(30, 50, QSizePolicy.Ignored, QSizePolicy.Ignored)
         layout.addItem(vSpacer,1,0)
         
-        self.setFixedSize(740,240);
+        self.setFixedSize(740,640);
 
         self.setLayout(layout)
         self.updGUI.connect(self.update)
 
     def update(self):
         self.porcentaje.updateG()
+        self.mapa.updateG()
         #self.nota.updateG()
+
+
+class mapaWidget(QWidget):
+    def __init__(self,winParent, pose3d):    
+        super(mapaWidget, self).__init__()
+        self.winParent=winParent
+        self.mapa = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.mapa = cv2.resize(self.mapa, (500, 500))
+        image = QtGui.QImage(self.mapa.data, self.mapa.shape[1], self.mapa.shape[0], self.mapa.shape[1], QtGui.QImage.Format_Indexed8);
+        self.pixmap = QtGui.QPixmap.fromImage(image)
+        self.height = self.pixmap.height()
+        self.width = self.pixmap.width()
+        self.mapWidget = QLabel(self)
+        self.mapWidget.setPixmap(self.pixmap)
+        self.mapWidget.resize(self.width, self.height)
+
+        self.resize(300,300)
+        self.setMinimumSize(500,500)
+
+        self.pose3d = pose3d
+        self.trail = []
+
+
+    def RTy(self, angle, tx, ty, tz):
+        RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
+        return RT
+
+    def RTVacuum(self):
+        RTy = self.RTy(pi, 1, -1, 0)
+        return RTy
+
+
+    def drawCircle(self, painter, centerX, centerY):
+        yaw = self.pose3d.getYaw()
+        pen = QPen(Qt.blue, 2)
+        painter.setPen(pen)
+        brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
+        brush.setColor(QtGui.QColor(Qt.blue))
+        painter.setBrush(brush)
+        painter.drawEllipse(centerX, centerY, 50/4, 50/4)
+
+
+    def drawTrail(self, painter):
+        x = self.pose3d.getX()
+        y = self.pose3d.getY()
+        scale = 50
+
+        final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
+
+        # Vacuum's way
+        self.trail.append([final_poses.flat[0], final_poses.flat[1]])
+
+        for i in range(0, len(self.trail)):
+            self.drawCircle(painter, self.trail[i][0], self.trail[i][1])
+
+
+    def paintEvent(self, event):
+        copy = self.pixmap.copy()
+        painter = QtGui.QPainter(copy)
+        painter.translate(QPoint(self.width/2, self.height/2))
+        self.drawTrail(painter)
+        self.mapWidget.setPixmap(copy)
+        painter.end()
+
+    def updateG(self):
+        self.update()
+
 
 
 class porcentajeWidget(QWidget):
     def __init__(self,winParent, pose3d):    
         super(porcentajeWidget, self).__init__()
         self.winParent=winParent
+        self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.resize(self.map, (500, 500))
         self.pose3d = pose3d
         self.porcentajeCasa = 0
+        self.numPixels = self.calculatePixelsWhite()
+        self.numPixelsRecorridos = 0
 
         vLayout = QVBoxLayout()
 
@@ -65,22 +142,49 @@ class porcentajeWidget(QWidget):
         RT = np.matrix([[math.cos(angle), -math.sin(angle), 0, tx], [math.sin(angle), math.cos(angle),0, ty], [0, 0, 1, tz], [0,0,0,1]])
         return RT
 
-    def RTCar(self):
-        RTx = self.RTx(pi, 0, 0, 0)
-        RTz = self.RTz(pi/2, 0, 0, 0)
-        return RTx*RTz
+    def RTVacuum(self):
+        RTy = self.RTy(pi, 1, -1, 0)
+        return RTy
+
+
+    def calculatePixelsWhite(self):
+        # Calculating the 100% of the pixels that can be traversed
+        numPixels = 0
+        for i in range(0, self.map.shape[1]):
+            for j in range(0, self.map.shape[0]):
+                if self.map[i][j] == 255:
+                    numPixels = numPixels + 1
+        return numPixels
+
+    def calculatePercentaje(self):
+        percentaje = self.numPixelsRecorridos * 100 / self.numPixels
+        return percentaje
 
 
     def porcentajeRecorrido(self):
         x = self.pose3d.getX()
         y = self.pose3d.getY()
-        self.porcentajeCasa = 30
+        scale = 50
+
+        final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
+
+        i_init = int(-50/4+final_poses.flat[0] + self.map.shape[1]/2)
+        i_finish = int(50/4+final_poses.flat[0] + self.map.shape[1]/2)
+        j_init = int(-50/4+final_poses[1] + self.map.shape[0]/2)
+        j_finish = int(50/4+final_poses[1] + self.map.shape[0]/2)
+        for k in range(i_init, i_finish+1):
+            for l in range(j_init, j_finish+1):
+                if (self.map[k][l] == 255):
+                    self.numPixelsRecorridos = self.numPixelsRecorridos + 1
+                    self.map[k][l] = 128
+
+        self.porcentajeCasa = self.calculatePercentaje()
+
 
     def updateG(self):
         self.porcentajeRecorrido()
         self.Porcentaje.setText("Superficie recorrida: " + str(round(self.porcentajeCasa, 3)) + ' %')
-        self.update()      
-   
+        self.update()
    
         
 '''class notaWidget(QWidget):
@@ -140,7 +244,7 @@ class tiempoWidget(QWidget):
     def __init__(self,winParent):    
         super(tiempoWidget, self).__init__()
         self.winParent=winParent
-        self.seconds = 10
+        self.seconds = 50
         self.pose3d = pose3d
         self.show = False
 
@@ -190,6 +294,7 @@ class tiempoWidget(QWidget):
             if not self.show:
                 self.showNota()
         self.lcd.display(self.seconds)
+
     
     def testPorcentaje(self):
         porcentaje = porcentajeWidget(self,pose3d)
