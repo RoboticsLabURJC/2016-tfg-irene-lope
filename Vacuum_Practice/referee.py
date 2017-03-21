@@ -144,7 +144,21 @@ class porcentajeWidget(QWidget):
 
         vLayout.addWidget(self.Porcentaje, 0)
 
+        #self.setLayout(vLayout)
+
+        self.bar = QProgressBar()
+        self.bar.setValue(self.porcentajeCasa)
+        st = "QProgressBar::chunk {background-color: #ff0000;}\n QProgressBar {border: 1px solid grey;border-radius: 2px;text-align: center;background: #eeeeee;}"
+        self.bar.setStyleSheet(st)
+        self.bar.setTextVisible(False)
+        vLayout.addWidget(self.Porcentaje, 0)
+        vLayout.addWidget(self.bar, 0)
+
+        vSpacer = QSpacerItem(30, 80, QSizePolicy.Ignored, QSizePolicy.Ignored)
+        vLayout.addItem(vSpacer)
+
         self.setLayout(vLayout)
+
 
 
     def RTx(self, angle, tx, ty, tz):
@@ -201,6 +215,7 @@ class porcentajeWidget(QWidget):
     def updateG(self):
         self.porcentajeRecorrido()
         self.Porcentaje.setText("Superficie recorrida: " + str(round(self.porcentajeCasa, 3)) + ' %')
+        self.bar.setValue(self.porcentajeCasa)
         self.update()
    
         
