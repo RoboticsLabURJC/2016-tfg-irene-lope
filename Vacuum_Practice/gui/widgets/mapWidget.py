@@ -155,9 +155,9 @@ class LogoWidget(QWidget):
         
     
     def initUI(self):
-        self.logo = cv2.imread("resources/logo_jderobot2.png", cv2.IMREAD_GRAYSCALE)
+        self.logo = cv2.imread("resources/logo_jderobot1.png", cv2.IMREAD_UNCHANGED)
         self.logo = cv2.resize(self.logo, (100, 100))
-        image = QtGui.QImage(self.logo.data, self.logo.shape[1], self.logo.shape[0], self.logo.shape[1], QtGui.QImage.Format_Indexed8);
+        image = QtGui.QImage(self.logo.data, self.logo.shape[1], self.logo.shape[0], QtGui.QImage.Format_ARGB32);
         self.pixmap = QtGui.QPixmap.fromImage(image)
         self.height = self.pixmap.height()
         self.width = self.pixmap.width()
