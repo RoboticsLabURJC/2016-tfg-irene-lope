@@ -25,14 +25,14 @@ class MainWindow(QWidget):
         self.logo = logoWidget(self)
         layout.addWidget(self.tiempo,0,0)
         layout.addWidget(self.porcentaje,0,2)
-        layout.addWidget(self.mapa,1,2)
+        layout.addWidget(self.mapa,1,0)
         #layout.addWidget(self.nota,0,1)
-        layout.addWidget(self.logo,2,0)
+        layout.addWidget(self.logo,2,2)
     
         vSpacer = QSpacerItem(30, 50, QSizePolicy.Ignored, QSizePolicy.Ignored)
         layout.addItem(vSpacer,1,0)
         
-        self.setFixedSize(740,640);
+        self.setFixedSize(840,640);
 
         self.setLayout(layout)
         self.updGUI.connect(self.update)
@@ -46,16 +46,15 @@ class logoWidget(QWidget):
     def __init__(self, winParent):
         super(logoWidget, self).__init__()
         self.winParent=winParent
-        self.logo = cv2.imread("resources/logo_jderobot2.png", cv2.IMREAD_GRAYSCALE)
+        self.logo = cv2.imread("resources/logo_jderobot1.png", cv2.IMREAD_UNCHANGED)
         self.logo = cv2.resize(self.logo, (100, 100))
-        image = QtGui.QImage(self.logo.data, self.logo.shape[1], self.logo.shape[0], self.logo.shape[1], QtGui.QImage.Format_Indexed8);
+        image = QtGui.QImage(self.logo.data, self.logo.shape[1], self.logo.shape[0], QtGui.QImage.Format_ARGB32);
         self.pixmap = QtGui.QPixmap.fromImage(image)
         self.height = self.pixmap.height()
         self.width = self.pixmap.width()
         self.mapWidget = QLabel(self)
         self.mapWidget.setPixmap(self.pixmap)
         self.mapWidget.resize(self.width, self.height)
-        #self.resize(300,300)
         self.setMinimumSize(100,100)
   
 
