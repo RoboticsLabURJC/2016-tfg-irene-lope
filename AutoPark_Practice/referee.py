@@ -43,27 +43,20 @@ class MainWindow(QWidget):
         self.distancia.updateG()
         self.nota.updateG()
 
-
-
-
 class logoWidget(QWidget):
     def __init__(self, winParent):
         super(logoWidget, self).__init__()
         self.winParent=winParent
-        self.logo = cv2.imread("resources/logo_jderobot2.png", cv2.IMREAD_GRAYSCALE)
+        self.logo = cv2.imread("resources/logo_jderobot1.png",cv2.IMREAD_UNCHANGED)
         self.logo = cv2.resize(self.logo, (100, 100))
-        image = QtGui.QImage(self.logo.data, self.logo.shape[1], self.logo.shape[0], self.logo.shape[1], QtGui.QImage.Format_Indexed8);
+        image = QtGui.QImage(self.logo.data, self.logo.shape[1], self.logo.shape[0],  QtGui.QImage.Format_ARGB32);
         self.pixmap = QtGui.QPixmap.fromImage(image)
         self.height = self.pixmap.height()
         self.width = self.pixmap.width()
         self.mapWidget = QLabel(self)
         self.mapWidget.setPixmap(self.pixmap)
         self.mapWidget.resize(self.width, self.height)
-        #self.resize(300,300)
         self.setMinimumSize(100,100)
-  
-  
-  
         
 class calidadWidget(QWidget):
     def __init__(self,winParent):    
@@ -128,33 +121,37 @@ class distanciaWidget(QWidget):
         RTz = self.RTz(yaw, 0, 0, 0)
         return RTz
 
-    def distancePoint2Segment(self, ax, ay, bx, by, cx, cy):
+
+    def distancePoint2Segment(self, A, B, C):
         # Segment: A[ax,ay] ; B[bx,by]
         # Point: C[cx, cy]
         # Calculate U parameter
-        u = self.parameterU(ax, ay, bx, by, cx, cy)
+        u = self.parameterU(A, B, C)
         if u < 0:
-            distance = self.distancePoint2Point(ax, ay, cx, cy)
+            distance = self.distancePoint2Point(A, C)
         elif u > 1:
-            distance = self.distancePoint2Point(bx, by, cx, cy)
+            distance = self.distancePoint2Point(B, C)
         else:
-            distance = self.distancePoint2Rect(ax, ay, bx, by, cx, cy)
+            distance = self.distancePoint2Rect(A, B, C)
         return distance
         
-    def parameterU(self, ax, ay, bx, by, cx, cy):
+    def parameterU(self, A, B, C):
+        # Point A: [ax, ay]
+        # Point B: [bx, by]
+        # Point C: [cx, cy]
         # Parameter U of equations: Px = ax + u*(bx-ax); and Py = ay + u*(by-ay)
-        u = ((cx - ax)*(bx - ax) + (cy - ay)*(by - ay)) / (pow((bx - ax),2) + pow((by - ay),2))
+        u = ((C[0] - A[0])*(B[0] - A[0]) + (C[1] - A[1])*(B[1] - A[1])) / (pow((B[0] - A[0]),2) + pow((B[1] - A[1]),2))
         return u
         
-    def distancePoint2Point(self, x1, y1, x2, y2):
+    def distancePoint2Point(self, Point1, Point2):
         # Point: 1[x1,y1]
         # Point: 2[x2,y2]
-        return math.sqrt(pow((x2-x1),2) + pow((y2-y1),2))
+        return math.sqrt(pow((Point2[0]-Point1[0]),2) + pow((Point2[1]-Point1[1]),2))
 
-    def distancePoint2Rect(self, ax, ay, bx, by, cx, cy):
+    def distancePoint2Rect(self, A, B, C):
         # Rect: A[ax,ay] ; B[bx,by]
         # Point: C[cx,cy]
-        distance = abs((bx - ax)*(cy - ay) - (by - ay)*(cx - ax)) / (math.sqrt(pow((bx-ax),2) + pow((by-ay),2)))
+        distance = abs((B[0] - A[0])*(C[1] - A[1]) - (B[1] - A[1])*(C[0] - A[0])) / (math.sqrt(pow((B[0]-A[0]),2) + pow((B[1]-A[1]),2)))
         return distance
     
     def distanceCar2Car(self, pointCarLeft, pointCarRight, pointFrontLeft, pointFrontRight, pointRearLeft, pointRearRight):
@@ -164,24 +161,25 @@ class distanciaWidget(QWidget):
         # Point 2: pointFrontRight[x,y]
         # Poitn 3: pointRearLeft[x,y]
         # Point 4: pointRearRight[x,y]
-        
-        distance = self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointFrontLeft[0], pointFrontLeft[1])
 
-        if (self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointFrontRight[0], pointFrontRight[1]) < distance):
-            distance = self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointFrontRight[0], pointFrontRight[1])
-        if (self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointRearLeft[0], pointRearLeft[1]) < distance):
-            distance = self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointRearLeft[0], pointRearLeft[1])
-        if (self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointRearRight[0], pointRearRight[1]) < distance):
-            distance = self.distancePoint2Segment(pointCarLeft[0], pointCarLeft[1], pointCarRight[0], pointCarRight[1], pointRearRight[0], pointRearRight[1])
+        distance = self.distancePoint2Segment(pointCarLeft, pointCarRight, pointFrontLeft)
+
+        if (self.distancePoint2Segment(pointCarLeft, pointCarRight, pointFrontRight) < distance):
+            distance = self.distancePoint2Segment(pointCarLeft, pointCarRight, pointFrontRight)
+        if (self.distancePoint2Segment(pointCarLeft, pointCarRight, pointRearLeft) < distance):
+            distance = self.distancePoint2Segment(pointCarLeft, pointCarRight, pointRearLeft)
+        if (self.distancePoint2Segment(pointCarLeft, pointCarRight, pointRearRight) < distance):
+            distance = self.distancePoint2Segment(pointCarLeft, pointCarRight, pointRearRight)
 
         return distance
+
 
     def distances(self):
         carSize = [5.75, 2.5]
         
         #Poses sidewalk
-        positionSideWalk_start = [-25, 3.25]
-        positionSideWalk_final = [35, 3.25]
+        positionSideWalk_start = [-25, 4.25]
+        positionSideWalk_final = [35, 4.25]
         
         # Poses parked cars (origin poses)
         # Frontal car
@@ -216,13 +214,13 @@ class distanciaWidget(QWidget):
         distFrontFinal_1 = self.distanceCar2Car(pointCarFrontal_RearLeft, pointCarFrontal_RearRight, pointFrontLeft, pointFrontRight, pointRearLeft, pointRearRight)
         
         # Distance parked front car -> car
-        distFrontFinal_2 = self.distanceCar2Car(pointFrontLeft, pointFrontRight, pointCarFrontal_RearLeft, pointCarFrontal_RearRight, pointCarFrontal_FrontLeft , pointCarFrontal_FrontRight )
+        distFrontFinal_2 = self.distanceCar2Car(pointFrontLeft, pointFrontRight, pointCarFrontal_RearLeft, pointCarFrontal_RearRight, pointCarFrontal_FrontLeft , pointCarFrontal_FrontRight)
         
         # Distance car -> parked rear car
         distRearFinal_1 = self.distanceCar2Car(pointCarRear_FrontLeft, pointCarRear_FrontRight, pointFrontLeft, pointFrontRight, pointRearLeft, pointRearRight)
         
         # Distance parked rear car -> car
-        distRearFinal_2 = self.distanceCar2Car(pointRearLeft, pointRearRight, pointCarRear_FrontLeft , pointCarRear_FrontRight, pointCarRear_RearLeft , pointCarRear_RearRight )
+        distRearFinal_2 = self.distanceCar2Car(pointRearLeft, pointRearRight, pointCarRear_FrontLeft , pointCarRear_FrontRight, pointCarRear_RearLeft , pointCarRear_RearRight)
 
         # Minimal distance
         if distFrontFinal_1 > distFrontFinal_2:
@@ -236,7 +234,13 @@ class distanciaWidget(QWidget):
             self.distRearFinal = distRearFinal_2
         
         # Distance car -> sidewalk
-        self.distanceSidewalk = self.distanceCar2Car(positionSideWalk_start, positionSideWalk_final, pointFrontLeft, pointFrontRight, pointRearLeft, pointRearRight)
+        if (pointFrontLeft[1] >= positionSideWalk_start[1]) or (pointFrontRight[1] >= positionSideWalk_start[1]):
+            self.distanceSidewalk = 0
+        elif (pointRearLeft[1] >= positionSideWalk_start[1]) or (pointRearRight[1] >= positionSideWalk_start[1]):
+            self.distanceSidewalk = 0
+        else:
+            self.distanceSidewalk = self.distanceCar2Car(positionSideWalk_start, positionSideWalk_final, pointFrontLeft, pointFrontRight, pointRearLeft, pointRearRight)
+
 
     def updateG(self):
         self.distances()
