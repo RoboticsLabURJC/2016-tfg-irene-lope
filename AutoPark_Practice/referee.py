@@ -253,16 +253,20 @@ class notaWidget(QWidget):
         self.pose3d = pose3d
 
         hLayout = QHBoxLayout()
+         
+        nota = self.notaFinal()
+        notaLabel = QLabel('Nota final: ' + str(nota))
+        hLayout.addWidget(notaLabel, 0) 
         
+        self.setLayout(hLayout) 
+        
+    def notaFinal(self):
         notaAngle = self.testAngle() * 0.025
         notaTime = self.testTime() * 0.025
         notaDist = self.testDistance() * 0.025
         notaCol = self.testCollision() * 0.025
         nota = notaAngle + notaTime + notaDist + notaCol
-        
-        notaLabel = QLabel('Nota final: ' + str(nota))
-        hLayout.addWidget(notaLabel, 0) 
-        self.setLayout(hLayout) 
+        return nota
         
     def testAngle(self):
         yawRad = self.pose3d.getYaw()
@@ -291,7 +295,33 @@ class notaWidget(QWidget):
         return notaTime
     
     def testDistance(self):
-        notaDist = 0
+        distancia = distanciaWidget(self,pose3d)
+        MyDistFront = distancia.distFrontFinal
+        MyDistRear = distancia.distRearFinal
+        MyDistSidewalk = distancia.distanceSidewalk
+
+        if MyDistFront >= 2 and MyDistFront < 3.5:
+            notaDistFront = 100
+        elif MyDistFront < 2 and MyDistFront >= 1:
+            notaDistFront = 50
+        else:
+            notaDistFront = 0
+
+        if MyDistRear >= 2 and MyDistRear < 3.5:
+            notaDistRear = 100
+        elif MyDistRear < 2 and MyDistRear >= 1:
+            notaDistRear = 50
+        else:
+            notaDistRear = 0
+
+        if MyDistSidewalk <= 0.75:
+            notaDistSidewalk = 100
+        elif MyDistSidewalk > 0.75 and MyDistSidewalk < 1.5:
+            notaDistSidewalk = 50
+        else:
+            notaDistSidewalk = 0
+
+        notaDist = notaDistFront*1/3 + notaDistRear*1/3 + notaDistSidewalk*1/3
         return notaDist
     
     def testCollision(self):
