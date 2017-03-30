@@ -51,7 +51,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = /home/irene/JdeRobot
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/irene/JdeRobot
+CMAKE_BINARY_DIR = /home/irene/JdeRobot/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -70,7 +70,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	cd /home/irene/JdeRobot && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/irene/JdeRobot/CPackSourceConfig.cmake
+	cd /home/irene/JdeRobot/build && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/irene/JdeRobot/build/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -92,7 +92,7 @@ rebuild_cache/fast: rebuild_cache
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
-	cd /home/irene/JdeRobot && /usr/bin/cpack --config ./CPackConfig.cmake
+	cd /home/irene/JdeRobot/build && /usr/bin/cpack --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -124,7 +124,7 @@ install/local/fast: install/local
 
 # Special rule for the target list_install_components
 list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\" \"core\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\" \"core\" \"drivers\" \"tools\" \"webtools\""
 .PHONY : list_install_components
 
 # Special rule for the target list_install_components
@@ -146,14 +146,14 @@ install/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/irene/JdeRobot && $(CMAKE_COMMAND) -E cmake_progress_start /home/irene/JdeRobot/CMakeFiles /home/irene/JdeRobot/src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/progress.marks
-	cd /home/irene/JdeRobot && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/irene/JdeRobot/CMakeFiles 0
+	cd /home/irene/JdeRobot/build && $(CMAKE_COMMAND) -E cmake_progress_start /home/irene/JdeRobot/build/CMakeFiles /home/irene/JdeRobot/build/src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/progress.marks
+	cd /home/irene/JdeRobot/build && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/irene/JdeRobot/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/irene/JdeRobot && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/clean
+	cd /home/irene/JdeRobot/build && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/clean
 .PHONY : clean
 
 # The main clean target
@@ -163,22 +163,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/irene/JdeRobot && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/preinstall
+	cd /home/irene/JdeRobot/build && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/irene/JdeRobot && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/preinstall
+	cd /home/irene/JdeRobot/build && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/irene/JdeRobot && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/irene/JdeRobot/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/rule:
-	cd /home/irene/JdeRobot && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/rule
+	cd /home/irene/JdeRobot/build && $(MAKE) -f CMakeFiles/Makefile2 src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/rule
 .PHONY : src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/rule
 
 # Convenience name for target.
@@ -188,7 +188,7 @@ lasertaxi: src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/r
 
 # fast build rule for target.
 lasertaxi/fast:
-	cd /home/irene/JdeRobot && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build
+	cd /home/irene/JdeRobot/build && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build
 .PHONY : lasertaxi/fast
 
 laser.o: laser.cc.o
@@ -197,7 +197,7 @@ laser.o: laser.cc.o
 
 # target to build an object file
 laser.cc.o:
-	cd /home/irene/JdeRobot && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/laser.cc.o
+	cd /home/irene/JdeRobot/build && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/laser.cc.o
 .PHONY : laser.cc.o
 
 laser.i: laser.cc.i
@@ -206,7 +206,7 @@ laser.i: laser.cc.i
 
 # target to preprocess a source file
 laser.cc.i:
-	cd /home/irene/JdeRobot && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/laser.cc.i
+	cd /home/irene/JdeRobot/build && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/laser.cc.i
 .PHONY : laser.cc.i
 
 laser.s: laser.cc.s
@@ -215,7 +215,7 @@ laser.s: laser.cc.s
 
 # target to generate assembly for a file
 laser.cc.s:
-	cd /home/irene/JdeRobot && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/laser.cc.s
+	cd /home/irene/JdeRobot/build && $(MAKE) -f src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/build.make src/drivers/gazeboserver/plugins/taxiLaser/CMakeFiles/lasertaxi.dir/laser.cc.s
 .PHONY : laser.cc.s
 
 # Help Target
@@ -247,6 +247,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/irene/JdeRobot && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/irene/JdeRobot/build && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
