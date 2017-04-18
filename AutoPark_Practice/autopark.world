@@ -3,7 +3,7 @@
   <world name="default">
   
     <scene>
-      <grid>false</grid>
+      <grid>true</grid>
     </scene>
   
     <!-- A global light source -->
@@ -24,42 +24,43 @@
       <uri>model://acera</uri>
       <pose>5 -9 0 0 0 0</pose>
     </include>
+    
 
     <!-- A taxi with lasers-->
     <include>
       <uri>model://taxiLaser</uri>
-      <pose>-7 -2.5 0 0 0 0</pose> 
+      <pose>-7 2.5 0 0 0 0</pose> 
     </include>
     
     
     <!-- Cars -->
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>-20 3 0 0 0 1.57</pose>
+      <pose>-20 -3 0 0 0 1.57</pose>
     </include>
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>-13.5 3 0 0 0 1.57</pose>
+      <pose>-13.5 -3 0 0 0 1.57</pose>
     </include>
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>-7 3 0 0 0 1.57</pose>
+      <pose>-7 -3 0 0 0 1.57</pose>
     </include>
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>0.5 3 0 0 0 1.57</pose>
+      <pose>0.5 -3 0 0 0 1.57</pose>
     </include>
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>14 3 0 0 0 1.57</pose>
+      <pose>14 -3 0 0 0 1.57</pose>
     </include>
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>21.5 3 0 0 0 1.57</pose>
+      <pose>21.5 -3 0 0 0 1.57</pose>
     </include>
     <include>
       <uri>model://carNoMotor</uri>
-      <pose>29 3 0 0 0 1.57</pose>
+      <pose>29 -3 0 0 0 1.57</pose>
     </include>
     
     
