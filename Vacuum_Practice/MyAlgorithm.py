@@ -16,6 +16,8 @@ class MyAlgorithm(threading.Thread):
         self.motors = motors
         self.laser = laser
         self.grid = np.empty([300,300],float)
+        self.radiusInitial = 0.1
+        self.constant = 0.01
 
 
         self.stop_event = threading.Event()
@@ -71,6 +73,13 @@ class MyAlgorithm(threading.Thread):
 
     def execute(self):
 
-        print ('Execute')
+        #print ('Execute')
         # TODO
+        self.motors.sendW(1.3)
+        self.motors.sendV(self.radiusInitial*self.constant)
+        self.constant += 0.022
+        print(self.constant)
+        print(self.constant*self.radiusInitial)
+        # www.sr.echu.es/sbweb/fisica/celeste/espiral/espiral.html
+        # proyectodescartes.org/descartescms/blog/itemlist/tag/espirales
         
