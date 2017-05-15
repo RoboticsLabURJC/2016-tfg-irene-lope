@@ -73,13 +73,10 @@ class MyAlgorithm(threading.Thread):
 
     def execute(self):
 
-        #print ('Execute')
         # TODO
-        self.motors.sendW(1.3)
-        self.motors.sendV(self.radiusInitial*self.constant)
-        self.constant += 0.022
-        print(self.constant)
-        print(self.constant*self.radiusInitial)
+        self.motors.sendW(0.5)#Cuanto mas grande la espiral es menos grande
+        self.motors.sendV(self.radiusInitial*self.constant)#Mas rapido o mas lento
+        self.constant += 0.012
         # www.sr.echu.es/sbweb/fisica/celeste/espiral/espiral.html
         # proyectodescartes.org/descartescms/blog/itemlist/tag/espirales
         
