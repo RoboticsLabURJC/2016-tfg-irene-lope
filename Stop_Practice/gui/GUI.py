@@ -41,12 +41,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton.clicked.connect(self.playClicked)
         self.pushButton.setCheckable(True)
         self.updGUI.connect(self.updateGUI)
-        self.camera=CameraWidget(self)
+        self.cameraW=CameraWidget(self)
 
         self.stopButton.clicked.connect(self.stopClicked)
 
     def updateGUI(self):
-        self.camera.updateImage()
+        self.cameraW.updateImage()
 
     def getPose3D(self):
         return self.pose3d
