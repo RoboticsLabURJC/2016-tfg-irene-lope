@@ -36,11 +36,16 @@ class MyAlgorithm(threading.Thread):
         threading.Thread.__init__(self, args=self.stop_event)
 
 
-    def getCarDirection(self):
-        return (self.carx, self.cary)
+    def setImageFiltered(self, image):
+        self.lock.acquire()
+        #self.imageRight=image
+        self.lock.release()
 
-    def getObstaclesDirection(self):
-        return (self.obsx, self.obsy)
+    def getImageFiltered(self):
+        self.lock.acquire()
+        tempImage=self.image
+        self.lock.release()
+        return tempImage
 
     def parse_laser_data(self,laser_data):
         laser = []
