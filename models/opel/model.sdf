@@ -25,10 +25,10 @@
     <plugin name="opelMotors" filename="libopelMotors.so"/>
     
     <link name='camera'>
-        <pose>0.30000 -0.5000 1.05 0.000000 0.000000 0.000000</pose>
+        <pose>0.0000 -2.000 0.900 0.000000 0.000000 0.000000</pose>
         
         <sensor name='cam_opel' type='camera'>
-          <pose>0.000000 0.000000 0.000000  0.00000 0.00000 -1.57000</pose>
+          <pose>0.000000 0.000000 0.000000  0.00000 0.00000 -1.570000</pose>
           <update_rate>20.000000</update_rate>
           <camera name='__default__'>
             <horizontal_fov>1.570000</horizontal_fov>
@@ -82,25 +82,11 @@
         <gravity>1</gravity>
     </link>
     
-    <include>
-      <uri>model://kinect</uri>
-      <pose>0.30000 -1.7000 0.5 0.000000 0.000000 -1.57</pose>
-    </include>
-    
     <plugin name="pose3d" filename="libopelPose3D.so"/>
     
     <joint type="revolute" name="camera">
         <pose>0 0 0 0 0 0</pose>
         <child>camera</child>
-        <parent>link</parent>
-        <axis>
-          <xyz>0 0 0</xyz>
-      </axis>
-    </joint>
-    
-    <joint type="revolute" name="kinect">
-        <pose>0 0 0 0 0 0</pose>
-        <child>kinect::link</child>
         <parent>link</parent>
         <axis>
           <xyz>0 0 0</xyz>
