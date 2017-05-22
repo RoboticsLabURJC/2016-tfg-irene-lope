@@ -14,8 +14,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see http://www.gnu.org/licenses/.
 #  Authors :
-#       Irene Lope Rodríguez<irene.lope236@gmail.com>
-#       Vanessa Fernández Matínez<vanessa_1895@msn.com>
+#       Irene Lope Rodriguez<irene.lope236@gmail.com>
+#       Vanessa Fernandez Matinez<vanessa_1895@msn.com>
 
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel
