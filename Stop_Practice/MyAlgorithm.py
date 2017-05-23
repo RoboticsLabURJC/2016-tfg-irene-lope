@@ -38,7 +38,6 @@ class MyAlgorithm(threading.Thread):
 
     def setImageFiltered(self, image):
         self.lock.acquire()
-        #self.imageRight=image
         self.lock.release()
 
     def getImageFiltered(self):
@@ -97,5 +96,46 @@ class MyAlgorithm(threading.Thread):
 
         # TODO
         print ('execute')
+        
+        # GETTING THE IMAGES
+        input_image = self.camera.getImage()
+
+        # Converting the original image into grayscale
+        image_gray = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY) 
+
+        # Thresholding the grayscale image to get better results
+        retval, threshold = cv2.threshold(image_gray, 30, 50, cv2.THRESH_BINARY_INV)
+        
+        # Close, morphology element
+        kernel = np.ones((8,8), np.uint8) #eliminamos la palabra 'STOP'
+        image_filtered = cv2.morphologyEx(threshold, cv2.MORPH_CLOSE, kernel)
+        
+        # Detect edges using canny
+        canny_output = cv2.Canny(image_filtered, 100, 100 * 2)
+        cv2.imshow("image canny", canny_output)
+        
+        _, contours, h = cv2.findContours(canny_output,1,2)
+        
+        print contours
+        
+        for cnt in contours:
+            # Approximates a polygonal curve(s) with the specified precision.
+            approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+            # Recorremos los contornos y contamos las rectas para saber si es un octogono
+            if len(approx) == 8:
+               # Octagon
+               cv2.drawContours(input_image,[cnt],0,(0,255,0),-1)
+               cv2.drawContours(image_filtered,[cnt],0,(255,255,255),-1)
+               print("Found signal")
+        
+        cv2.imshow('image filtered', image_filtered)
+        
+        
+        
+        
+        
+        
+        
+        
         
         
