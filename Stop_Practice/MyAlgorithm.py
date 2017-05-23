@@ -115,9 +115,11 @@ class MyAlgorithm(threading.Thread):
         
         image2, contours, hierarchy = cv2.findContours(canny_output,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         
-        for cnt in contours:
+        for cnt in contours: #Recorro los contornos
             # Approximates a polygonal curve(s) with the specified precision.
-            approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+            epsilon = 0.1*cv2.arcLength(cnt,True) #Cuanto mas grande mas suavizo
+            approx = cv2.approxPolyDP(cnt,epsilon,True)
+            
             # Recorremos los contornos y contamos las rectas para saber si es un octogono
             if len(approx) == 8:
                # Encontramos el octogono
