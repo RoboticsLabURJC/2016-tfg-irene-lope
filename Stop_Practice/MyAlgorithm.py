@@ -92,7 +92,6 @@ class MyAlgorithm(threading.Thread):
         self.kill_event.set()
 
     def execute(self):
-        
 
         # TODO
         
@@ -113,19 +112,27 @@ class MyAlgorithm(threading.Thread):
         canny_output = cv2.Canny(image_filtered, 100, 100 * 2)
         cv2.imshow("image canny", canny_output)
         
-        image2, contours, hierarchy = cv2.findContours(canny_output,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        image2, contours, hierachy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
         for cnt in contours: #Recorro los contornos
             # Approximates a polygonal curve(s) with the specified precision.
-            epsilon = 0.1*cv2.arcLength(cnt,True) #Cuanto mas grande mas suavizo
-            approx = cv2.approxPolyDP(cnt,epsilon,True)
-            
+            #epsilon = 0.1*cv2.arcLength(cnt,True) #Cuanto mas grande mas suavizo
+            approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
+
             # Recorremos los contornos y contamos las rectas para saber si es un octogono
             if len(approx) == 8:
-               # Encontramos el octogono
-               cv2.drawContours(input_image,[cnt],0,(0,255,0),-1)#lo dibujamos en verde en input
-               cv2.drawContours(image_filtered,[cnt],0,(255,255,255),-1)#en blanco en filtered
-               print("Found signal")
+                # Encontramos el octogono
+                cv2.drawContours(input_image,[cnt],0,(0,255,0),-1)#lo dibujamos en verde en input
+                cv2.drawContours(image_filtered,[cnt],0,(255,255,255),-1)#en blanco en filtered
+                # Recuadro el stop
+                x, y, w, h = cv2.boundingRect(cnt) #x,y : coordenadas del inicio del rectangulo; w: anchura; h: altura
+                cv2.rectangle(input_image, (x,y), (x+w, y+h), (0,0,255), 2)#Mostramos el rectangulo en la imagen
+                if h >= 40 and w >= 40:
+                    print("Found signal")
+                    self.motors.sendV(0)
+               
+        if len(contours) == 0:      
+            self.motors.sendV(30)
         
         cv2.imshow('image filtered', image_filtered)
         
