@@ -95,7 +95,6 @@ class MyAlgorithm(threading.Thread):
         
 
         # TODO
-        print ('execute')
         
         # GETTING THE IMAGES
         input_image = self.camera.getImage()
@@ -114,18 +113,16 @@ class MyAlgorithm(threading.Thread):
         canny_output = cv2.Canny(image_filtered, 100, 100 * 2)
         cv2.imshow("image canny", canny_output)
         
-        _, contours, h = cv2.findContours(canny_output,1,2)
-        
-        print contours
+        image2, contours, hierarchy = cv2.findContours(canny_output,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         
         for cnt in contours:
             # Approximates a polygonal curve(s) with the specified precision.
             approx = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
             # Recorremos los contornos y contamos las rectas para saber si es un octogono
             if len(approx) == 8:
-               # Octagon
-               cv2.drawContours(input_image,[cnt],0,(0,255,0),-1)
-               cv2.drawContours(image_filtered,[cnt],0,(255,255,255),-1)
+               # Encontramos el octogono
+               cv2.drawContours(input_image,[cnt],0,(0,255,0),-1)#lo dibujamos en verde en input
+               cv2.drawContours(image_filtered,[cnt],0,(255,255,255),-1)#en blanco en filtered
                print("Found signal")
         
         cv2.imshow('image filtered', image_filtered)
