@@ -5,19 +5,22 @@ from datetime import datetime
 import jderobot
 import math
 import cv2
+from math import pi as pi
 
 time_cycle = 80
         
 
 class MyAlgorithm(threading.Thread):
 
-    def __init__(self, pose3d, motors, laser):
+    def __init__(self, pose3d, motors, laser, bumper):
         self.pose3d = pose3d
         self.motors = motors
         self.laser = laser
+        self.bumper = bumper
         self.grid = np.empty([300,300],float)
         self.radiusInitial = 0.1
         self.constant = 0.01
+        self.numCrash = 0
 
 
         self.stop_event = threading.Event()
@@ -74,9 +77,29 @@ class MyAlgorithm(threading.Thread):
     def execute(self):
 
         # TODO
-        self.motors.sendW(0.5)#Cuanto mas grande la espiral es menos grande
-        self.motors.sendV(self.radiusInitial*self.constant)#Mas rapido o mas lento
-        self.constant += 0.012
-        # www.sr.echu.es/sbweb/fisica/celeste/espiral/espiral.html
-        # proyectodescartes.org/descartescms/blog/itemlist/tag/espirales
+        
+        crash = self.bumper.getBumperData().state # 1 si choca, 0 si no hay choque
+        print (crash)
+        
+        if crash == 1:
+            self.numCrash == 1
+        print ('NUMCRASH:      ' , self.numCrash)
+        if self.numCrash == 0:
+            # Empezamos haciendo una espiral
+            self.motors.sendW(0.5)#Cuanto mas grande el valor, la espiral es menos grande
+            self.motors.sendV(self.radiusInitial*self.constant)#Mas rapido o mas lento
+            self.constant += 0.012
+        else:
+            # Si hay choque paramos 
+            self.motors.sendV(0)
+            
+            checkCrash = self.bumper.getBumperData().state 
+            while checkCrash == 1:
+                self.motors.sendW(pi/6)
+                
+            self.motors.sendW(0)
+            self.motors.sendV(10)
+        
+        
+        
         
