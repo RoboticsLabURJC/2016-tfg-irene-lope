@@ -101,7 +101,7 @@ class MyAlgorithm(threading.Thread):
         hsv_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2HSV)
 
         # Values of red
-        value_min_HSV = np.array([0, 71, 0])
+        value_min_HSV = np.array([131, 71, 0])
         value_max_HSV = np.array([179, 232, 63])
 
         # Segmentacion
@@ -119,23 +119,20 @@ class MyAlgorithm(threading.Thread):
         h, w = self.template.shape
         
         # Matching con la imagen template
-        # res : grayscale image, where each pixel denotes how much does the neighbourhood of that pixel match with template
+        # match : grayscale image, where each pixel denotes how much does the neighbourhood of that pixel match with template
         match = cv2.matchTemplate(image_filtered,self.template,cv2.TM_CCOEFF_NORMED) 
         cv2.imshow('Matching', match)
         threshold = 0.8 # 0 seria negro y 1 blanco 
         loc = np.where( match >= threshold) # 2 arrays (x e y) con las posiciones que superan el umbral
         for pt in zip(*loc[::-1]): # zip.(): Recorre ambos arrays a la vez y devuelve una tupla con ambos valores
-            print('PT:       ', pt)
             cv2.rectangle(input_image, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2) # Recuadra el stop en azul en imput
-            cv2.rectangle(image_filtered, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2) # Recuadra el stop en la imagen filtrada
+            cv2.rectangle(image_filtered, pt, (pt[0] + w, pt[1] + h), (255,0,0), 2) # Recuadra el stop en la imagen filtrada
             detection = True
             print("Found signal")
             self.motors.sendV(0)
 
         if detection == False:
             self.motors.sendV(50)
-
-        cv2.imshow('Imagen filtrada', image_filtered)
         
         
         
