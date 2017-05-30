@@ -4,8 +4,6 @@ import time
 from datetime import datetime
 import jderobot
 import math
-#from Target import Target
-#from Parser import Parser
 import cv2
 
 time_cycle = 80
@@ -20,6 +18,7 @@ class MyAlgorithm(threading.Thread):
 
         #self.imageRight=None
         self.image=None
+        self.template = cv2.imread('resources/template.png',0) # 0 para coger la imagen en escala de grises
 
         # Car direction
         self.carx = 0.0
@@ -98,6 +97,52 @@ class MyAlgorithm(threading.Thread):
         # GETTING THE IMAGES
         input_image = self.camera.getImage()
 
+        # RGB model change to HSV
+        hsv_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2HSV)
+
+        # Values of red
+        value_min_HSV = np.array([0, 71, 0])
+        value_max_HSV = np.array([179, 232, 63])
+
+        # Segmentacion
+        image_seg = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
+        cv2.imshow("Segmentacion", image_seg)
+
+        # Close, morphology element
+        kernel = np.ones((11,11), np.uint8)
+        image_filtered = cv2.morphologyEx(image_seg, cv2.MORPH_CLOSE, kernel)
+        cv2.imshow("Cierre ", image_filtered)
+        
+        detection = False
+        
+        # Tamano de la imagen template
+        h, w = self.template.shape
+        
+        # Matching con la imagen template
+        # res : grayscale image, where each pixel denotes how much does the neighbourhood of that pixel match with template
+        match = cv2.matchTemplate(image_filtered,self.template,cv2.TM_CCOEFF_NORMED) 
+        cv2.imshow('Matching', match)
+        threshold = 0.8 # 0 seria negro y 1 blanco 
+        loc = np.where( match >= threshold) # 2 arrays (x e y) con las posiciones que superan el umbral
+        for pt in zip(*loc[::-1]): # zip.(): Recorre ambos arrays a la vez y devuelve una tupla con ambos valores
+            print('PT:       ', pt)
+            cv2.rectangle(input_image, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2) # Recuadra el stop en azul en imput
+            cv2.rectangle(image_filtered, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2) # Recuadra el stop en la imagen filtrada
+            detection = True
+            print("Found signal")
+            self.motors.sendV(0)
+
+        if detection == False:
+            self.motors.sendV(50)
+
+        cv2.imshow('Imagen filtrada', image_filtered)
+        
+        
+        
+        '''
+        # GETTING THE IMAGES
+        input_image = self.camera.getImage()
+
         # Converting the original image into grayscale
         image_gray = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY) 
 
@@ -110,7 +155,7 @@ class MyAlgorithm(threading.Thread):
         
         # Detect edges using canny
         canny_output = cv2.Canny(image_filtered, 100, 100 * 2)
-        cv2.imshow("image canny", canny_output)
+        #cv2.imshow("image canny", canny_output)
         
         image2, contours, hierachy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -134,8 +179,8 @@ class MyAlgorithm(threading.Thread):
         if len(contours) == 0:      
             self.motors.sendV(30)
         
-        cv2.imshow('image filtered', image_filtered)
-        
+        #cv2.imshow('image filtered', image_filtered)
+        '''
         
         
         
