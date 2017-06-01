@@ -6,6 +6,7 @@ import jderobot
 import math
 import cv2
 from math import pi as pi
+import random
 
 time_cycle = 80
         
@@ -21,6 +22,8 @@ class MyAlgorithm(threading.Thread):
         self.radiusInitial = 0.1
         self.constant = 0.01
         self.numCrash = 0
+        self.turn = False
+        self.yaw = 0
 
 
         self.stop_event = threading.Event()
@@ -76,30 +79,52 @@ class MyAlgorithm(threading.Thread):
 
     def execute(self):
 
+        print ('Execute')
         # TODO
-        
-        crash = self.bumper.getBumperData().state # 1 si choca, 0 si no hay choque
-        print (crash)
-        
+
+        # Devuelve 1 si choca y 0 si no choca
+        for i in range(0,100):
+       	    crash = self.bumper.getBumperData().state
+            if crash == 1:
+                break
+
         if crash == 1:
-            self.numCrash == 1
-        print ('NUMCRASH:      ' , self.numCrash)
+            self.numCrash = 1
+
+        print(self.numCrash)
+        self.yaw = self.pose3d.getYaw()
+        print("yaw inicio", self.yaw)
+
         if self.numCrash == 0:
-            # Empezamos haciendo una espiral
-            self.motors.sendW(0.5)#Cuanto mas grande el valor, la espiral es menos grande
-            self.motors.sendV(self.radiusInitial*self.constant)#Mas rapido o mas lento
+            self.motors.sendW(0.5)
+            self.motors.sendV(self.radiusInitial*self.constant)
             self.constant += 0.012
         else:
-            # Si hay choque paramos 
-            self.motors.sendV(0)
-            
-            checkCrash = self.bumper.getBumperData().state 
-            while checkCrash == 1:
-                self.motors.sendW(pi/6)
-                
+            if crash == 1:
+                self.motors.sendW(0)
+                self.motors.sendV(0)
+                time.sleep(1)
+                self.motors.sendV(-0.2)
+                time.sleep(1)
+            numAngle = random.random() * pi
+            print("angle random", numAngle)
+            while self.turn == False and crash == 1:
+                angle = abs(self.yaw - self.pose3d.getYaw())
+                print("giro hecho ",angle)
+                if angle <= (numAngle-0.1) or angle >= (numAngle+0.1):
+                    print("ENTRAAAANDOOOOOOOO!!")
+                    self.motors.sendW(0.2)
+                    self.motors.sendV(0)
+                else:
+                    self.turn = True
             self.motors.sendW(0)
-            self.motors.sendV(10)
-        
-        
-        
+            time.sleep(3)
+            self.turn = False
+            self.motors.sendV(0.5)
+
+            
+
+        # www.sr.echu.es/sbweb/fisica/celeste/espiral/espiral.html
+        # proyectodescartes.org/descartescms/blog/itemlist/tag/espirales
+        # http://www2.famaf.unc.edu.ar/rev_edu/documents/vol_23/prop_11_La_espiral_de_Arquimedes.pdf
         
