@@ -2,7 +2,7 @@
 <sdf version='1.4'>
 	<world name='GrannyAnnie'>
     	<include>
-    	     <uri>model://roomba</uri>
+    	     <uri>model://turtlebotJde2cam</uri>
     	  	 <pose>-1 1.5 0 0 0 0</pose>
     	</include>
     	<include>
