@@ -9,12 +9,12 @@ from Parser import Parser
 import cv2
 
 time_cycle = 80
-
+        
 
 class MyAlgorithm(threading.Thread):
 
     #def __init__(self, cameraL, cameraR, pose3d, laser, motors):
-    def __init__(self, pose3d, laser1, laser2, laser3, motors):
+    def __init__(self, pose3d, laser1, laser2, laser3, motors, bumper):
         #self.cameraL = cameraL
         #self.cameraR = cameraR
         self.pose3d = pose3d
@@ -22,6 +22,8 @@ class MyAlgorithm(threading.Thread):
         self.laser2 = laser2
         self.laser3 = laser3
         self.motors = motors
+        self.bumper = bumper
+        
         self.grid = np.empty([300,300],float)
 
         #self.imageRight=None
@@ -59,7 +61,6 @@ class MyAlgorithm(threading.Thread):
 
         return None
 
-
     def getCarDirection(self):
         return (self.carx, self.cary)
 
@@ -71,9 +72,25 @@ class MyAlgorithm(threading.Thread):
 
     def getCurrentTarget(self):
         return (self.targetx, self.targety)
+        
+    def parse_laser_data(self,laser_data):
+        laser = []
+        for i in range(laser_data.numLaser):
+            dist = laser_data.distanceData[i]/1000.0
+            angle = math.radians(i)
+            laser += [(dist, angle)]
+        return laser
+    
+    def laser_vector(self,laser_array):
+        laser_vectorized = []
+        for d,a in laser_array:
+            x = d * math.cos(a) * -1
+            y = d * math.sin(a) * -1 
+            v = (x, y)
+            laser_vectorized += [v]
+        return laser_vectorized
 
     def run (self):
-
         while (not self.kill_event.is_set()):
            
             start_time = datetime.now()
@@ -101,13 +118,23 @@ class MyAlgorithm(threading.Thread):
     def kill (self):
         self.kill_event.set()
 
-
     def execute(self):
-        self.currentTarget=self.getNextTarget()
+        self.currentTarget = self.getNextTarget()
         self.targetx = self.currentTarget.getPose().x
         self.targety = self.currentTarget.getPose().y
 
         # TODO
-        self.grid[150][150] = 255
-        cv2.imshow("grid",self.grid)
+        laser_data1 = self.laser1.getLaserData()
+        laser1_array = self.parse_laser_data(laser_data1)
+        laser1_vect= self.laser_vector(laser1_array)
+        
+        for x,y in laser1_array:
+            for i in range(0,300):
+                for j in range(0,300):
+                    self.grid[0][0] = 255
+                    for r in x:
+                        for t in y:
+                            self.grid[int(r)][int(t)] = 255
+                    cv2.imshow("grid",self.grid)
+        
         
