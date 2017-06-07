@@ -12,13 +12,17 @@ time_cycle = 80
 
 class MyAlgorithm(threading.Thread):
 
-    def __init__(self, pose3d, camera, motors):
-        self.camera = camera
+    def __init__(self, pose3d, cameraL, cameraR, cameraC, motors):
+        self.cameraL = cameraL
+        self.cameraR = cameraR
+        self.cameraC = cameraC
         self.pose3d = pose3d
         self.motors = motors
 
-        #self.imageRight=None
-        self.image=None
+        self.imageC = None
+        self.imageL = None
+        self.imageR = None
+        
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
 
@@ -30,7 +34,6 @@ class MyAlgorithm(threading.Thread):
 
     def setImageFiltered(self, image):
         self.lock.acquire()
-        #self.imageRight=image
         self.lock.release()
 
     def getImageFiltered(self):
@@ -38,6 +41,7 @@ class MyAlgorithm(threading.Thread):
         tempImage=self.image
         self.lock.release()
         return tempImage
+
 
     def run (self):
         while (not self.kill_event.is_set()):
@@ -72,7 +76,7 @@ class MyAlgorithm(threading.Thread):
         # TODO
        
         # GETTING THE IMAGES
-        input_image = self.camera.getImage()
+        input_image = self.cameraC.getImage()
 
         # RGB model change to HSV
         hsv_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2HSV)
