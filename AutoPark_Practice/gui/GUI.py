@@ -86,6 +86,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setLaser3(self,laser):
         self.laser3=laser
+    
+    def setBumper(self,bumper):
+        self.bumper=bumper
 
     def getMotors(self):
         return self.motors
