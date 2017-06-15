@@ -82,7 +82,7 @@ class MapWidget(QWidget):
         return RT
 
     def RTVacuum(self):
-        RTy = self.RTy(pi, 1, -1, 0)
+        RTy = self.RTy(pi, 0.6, -1, 0)
         return RTy
 
 
@@ -99,8 +99,8 @@ class MapWidget(QWidget):
         painter.rotate(-180*yaw/pi)
 
         triangle = QtGui.QPolygon()
-        triangle.append(QtCore.QPoint(x+50/4, y-4))
-        triangle.append(QtCore.QPoint(x+50/4, y+50/4-4))
+        triangle.append(QtCore.QPoint(x+50/3, y-4))
+        triangle.append(QtCore.QPoint(x+50/3, y+50/3-4))
         triangle.append(QtCore.QPoint(x-9, y+2.25))
 
         pen = QPen(Qt.red, 2)
@@ -114,7 +114,7 @@ class MapWidget(QWidget):
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(Qt.blue))
         painter.setBrush(brush)
-        painter.drawEllipse(centerX, centerY, 50/4, 50/4)
+        painter.drawEllipse(centerX, centerY, 50/3, 50/3)
 
 
     def drawTrail(self, painter):
