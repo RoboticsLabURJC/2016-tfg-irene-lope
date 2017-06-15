@@ -14,9 +14,9 @@ class CameraWidget:
         self.labelImageLeft=winParent.imageLeft
         self.labelImageRight=winParent.imageRight
         
-        self.labelImageCenterFiltered = winParent.imageCenterFiltered
-        self.labelImageRightFiltered = winParent.imageRightFiltered
-        self.labelImageLeftFiltered = winParent.imageLeftFiltered
+        #self.labelImageCenterFiltered = winParent.imageCenterFiltered
+        #self.labelImageRightFiltered = winParent.imageRightFiltered
+        #self.labelImageLeftFiltered = winParent.imageLeftFiltered
 
 
     def updateImage(self):
@@ -46,7 +46,7 @@ class CameraWidget:
 
 
         #print the filtered images
-        
+        '''
         imgCenterFiltered = self.winParent.getAlgorithm().getCenterImageFiltered()
         if imgCenterFiltered is not None:
             resized = cv2.resize(imgCenterFiltered,(self.IMG_WIDTH,self.IMG_HEIGHT))
@@ -70,4 +70,4 @@ class CameraWidget:
             size=QtCore.QSize(imgRightFiltered.shape[1],imgRightFiltered.shape[0])
             #self.label.resize(size)
             self.labelImageRightFiltered.setPixmap(QtGui.QPixmap.fromImage(image))
-
+'''
