@@ -157,7 +157,7 @@ class MyAlgorithm(threading.Thread):
                         print('VELOCIDAD:     70')
                 else:       
                     self.motors.sendV(0)
-                    print('VELOCIDAqqqqD:     0')
+                    print('VELOCIDAD:     0')
                 
             else:
                 self.motors.sendV(70)
