@@ -2768,7 +2768,7 @@
       <pose>-2.7 0.4 0 0 -0 3.14</pose>
       <static>0</static>
     </model>-->
-    <model name='mesa_salon'>
+    <!--<model name='mesa_salon'>
       <static>true</static>
       <link name='mesa_link'>
         <pose>0 0 0 0 -0 0</pose>
@@ -3029,7 +3029,7 @@
       </link>
       <pose>-0.8 4.4 0 0 -0 0</pose>
       <static>0</static>
-    </model>
+    </model>-->
     <model name='sofa_x2_salon'>
       <static>true</static>
       <link name='sofa_link'>
