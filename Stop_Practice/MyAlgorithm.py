@@ -12,7 +12,7 @@ time_cycle = 80
 
 class MyAlgorithm(threading.Thread):
 
-    def __init__(self, pose3d, cameraL, cameraR, cameraC, motors):
+    def __init__(self, pose3d, cameraC, cameraL, cameraR, motors):
         self.cameraL = cameraL
         self.cameraR = cameraR
         self.cameraC = cameraC
@@ -22,6 +22,9 @@ class MyAlgorithm(threading.Thread):
         self.imageC = None
         self.imageL = None
         self.imageR = None
+        
+        self.detection = False
+        self.stop = False
         
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
@@ -97,7 +100,7 @@ class MyAlgorithm(threading.Thread):
         # Template's size
         h, w = self.template.shape
 
-        detection = False
+        #detection = False
             
         # Detection of object contour
         img2, contours, hierarchy = cv2.findContours(image_filtered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -128,15 +131,38 @@ class MyAlgorithm(threading.Thread):
             # zip: This function returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.
             for pt in zip(*loc[::-1]):
                 cv2.rectangle(input_image, (pt[0]+x,pt[1]+y), (pt[0] + bw+x, pt[1] + bh+y), (0,0,255), 2)
-                detection = True
+                self.detection = True
                 print("Found signal")
-                #self.motors.sendV(0)
+                
+            if self.detection == True:
                 print('bw:       ', bw)
-                print('bh:       ', bh)   
-                if bw >= 55 or bh >= 55:
+                print('bh:       ', bh)  
+                
+                if self.stop == False:
+                    if bw >= 10 and bw < 30:
+                        self.motors.sendV(50)
+                        print('VELOCIDAD:     50')
+                    elif bw >= 30 and bw < 45:
+                        self.motors.sendV(30)
+                        print('VELOCIDAD:     30')
+                    elif bw >= 45 and bw < 65:
+                        self.motors.sendV(15)
+                        print('VELOCIDAD:     15')
+                    elif bw >= 65:
+                        self.stop = True
+                        self.motors.sendV(0)
+                        print('VELOCIDAD:     0')
+                    else:
+                        self.motors.sendV(70)
+                        print('VELOCIDAD:     70')
+                else:       
                     self.motors.sendV(0)
-                    print('VELOCIDAD 0')
+                    print('VELOCIDAqqqqD:     0')
+                
+            else:
+                self.motors.sendV(70)
+                print('VELOCIDAD:     70')
+          
+        print('DETECTION:            ', self.detection)
+        print('STOP:            ', self.stop)
         
-        print('DETECTION:            ', detection)
-        if detection == False:
-            self.motors.sendV(40)
