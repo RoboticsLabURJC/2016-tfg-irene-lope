@@ -25,7 +25,7 @@
     <plugin name="opelMotors" filename="libopelMotors.so"/>
     
     <link name='camera_center'>
-        <pose>0.0000 -2.000 0.900 0.000000 0.000000 0.000000</pose>
+        <pose>-0.3000 -0.3000 1.400 0.000000 0.000000 0.000000</pose>
         
         <sensor name='cam_opel_center' type='camera'>
           <pose>0.000000 0.000000 0.000000  0.00000 0.00000 -1.570000</pose>
@@ -39,7 +39,7 @@
           </image>
             <clip>
               <near>0.100000</near>
-              <far>15.000000</far>
+              <far>35.000000</far>
           </clip>
         </camera>
           <plugin name='camera_dump' filename='libcamera_dumpopel.so'/>
@@ -83,7 +83,7 @@
     </link>
     
      <link name='camera_left'>
-        <pose>0.0000 -2.000 0.900 0.000000 0.000000 0.000000</pose>
+        <pose>0.7000 -2.200 0.500 0.000000 0.000000 1.000000</pose>
         
         <sensor name='cam_opel_left' type='camera'>
           <pose>0.000000 0.000000 0.000000  0.00000 0.00000 -1.570000</pose>
@@ -97,7 +97,7 @@
           </image>
             <clip>
               <near>0.100000</near>
-              <far>15.000000</far>
+              <far>35.000000</far>
           </clip>
         </camera>
           <plugin name='camera_dump' filename='libcamera_dumpopel.so'/>
@@ -141,7 +141,7 @@
     </link>
     
      <link name='camera_right'>
-        <pose>0.0000 -2.000 0.900 0.000000 0.000000 0.000000</pose>
+        <pose>-0.7000 -2.200 0.500 0.000000 0.000000 -1.000000</pose>
         
         <sensor name='cam_opel_right' type='camera'>
           <pose>0.000000 0.000000 0.000000  0.00000 0.00000 -1.570000</pose>
@@ -155,7 +155,7 @@
           </image>
             <clip>
               <near>0.100000</near>
-              <far>15.000000</far>
+              <far>35.000000</far>
           </clip>
         </camera>
           <plugin name='camera_dump' filename='libcamera_dumpopel.so'/>
