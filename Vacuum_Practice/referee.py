@@ -85,7 +85,7 @@ class mapaWidget(QWidget):
         return RT
 
     def RTVacuum(self):
-        RTy = self.RTy(pi, 1, -1, 0)
+        RTy = self.RTy(pi, 0.6, -1, 0)
         return RTy
 
 
@@ -96,7 +96,7 @@ class mapaWidget(QWidget):
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(Qt.blue))
         painter.setBrush(brush)
-        painter.drawEllipse(centerX, centerY, 50/4, 50/4)
+        painter.drawEllipse(centerX, centerY, 50/3, 50/3)
 
 
     def drawTrail(self, painter):
