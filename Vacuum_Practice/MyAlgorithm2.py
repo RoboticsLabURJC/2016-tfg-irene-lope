@@ -18,6 +18,11 @@ class MyAlgorithm2(threading.Thread):
         self.motors = motors
         self.laser = laser
         self.bumper = bumper
+        
+        self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.resize(self.map, (500, 500))
+        
+        self.numCrash = 0
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -69,9 +74,79 @@ class MyAlgorithm2(threading.Thread):
 
     def kill (self):
         self.kill_event.set()
+        
+    def turn90(self, angle1, angle2, yawNow):
+        turn = True
+        if self.numCrash % 2 != 0 and (yawNow <= (angle1-0.115) or yawNow >= (angle1+0.115)):
+            # Es giro impar
+            self.motors.sendV(0)
+            self.motors.sendW(0.2)
+        elif self.numCrash % 2 == 0 and (yawNow <= (angle2-0.115) or yawNow >= (angle2+0.115)):
+            # Es giro par
+            self.motors.sendV(0)
+            self.motors.sendW(-0.2)
+        else:
+            turn = False
+        return turn
+        
 
     def execute(self):
 
-        print ('Execute')
         # TODO
 
+        # Vacuum's pose
+        x = self.pose3d.getX()
+        y = self.pose3d.getY()
+        yaw = self.pose3d.getYaw()
+        
+        for i in range(0, 350):
+            # Devuelve 1 si choca y 0 si no choca
+            crash = self.bumper.getBumperData().state
+            if crash == 1:
+                self.motors.sendW(0)
+                self.motors.sendV(0)
+                break
+                
+        print(crash)
+        
+        turn = False
+        
+        # Si esta chocando
+        if crash == 1:
+            self.numCrash = self.numCrash + 1
+            
+            # Frena
+            self.motors.sendW(0)
+            self.motors.sendV(0)
+            time.sleep(1)
+            
+            # Retrocede
+            self.motors.sendV(-0.1)
+            time.sleep(1)
+            
+            while turn == False:
+                # Gira 90 grados
+                yawNow = self.pose3d.getYaw()                    
+                giro = self.turn90(pi/2, pi/2, yawNow)
+                
+                if giro == False:
+                    self.motors.sendW(0)
+                    time.sleep(2)
+                    # Avanza un poco
+                    self.motors.sendV(0.38)
+                    time.sleep(1)
+                    yaw = self.pose3d.getYaw()
+                    
+                    while turn == False:
+                        # Vuelve a girar para recorrer la siguiente linea
+                        yawNow = self.pose3d.getYaw()
+                        giro = self.turn90(pi, 0, yawNow)
+                        if giro == False:
+                            turn = True
+        else:
+            # Si no hay choque avanza en recto
+            self.motors.sendW(0.0)
+            time.sleep(1)
+            self.motors.sendV(0.5)
+        
+        
