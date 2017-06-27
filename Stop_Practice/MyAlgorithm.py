@@ -116,53 +116,78 @@ class MyAlgorithm(threading.Thread):
             img_rect = cv2.rectangle(image_filtered, (x, y), (x+bw,y+bh), (0,0,0) ,0)
             # Cut an image (the signal)
             img_bounding = img_rect[(y-4):(y+bh+4), (x-4):(x+bw+4)]
-            # Resize an image
-            img_res = cv2.resize(img_bounding, (w, h), interpolation=cv2.INTER_CUBIC)
-            #cv2.imshow('bounding',img_bounding)
-            #cv2.imshow('res',img_res)
-            #cv2.imshow('template',self.template)
             
-            # Matching with template image
-            # match: grayscale image, where each pixel denotes how much does the neighbourhood of that pixel math with template
-            match = cv2.matchTemplate(img_res,self.template,cv2.TM_CCOEFF_NORMED)
-            #cv2.imshow("matching", match)
-            threshold = 0.3
-            loc = np.where(match >= threshold)
-            # zip: This function returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.
-            for pt in zip(*loc[::-1]):
-                cv2.rectangle(input_image, (pt[0]+x,pt[1]+y), (pt[0] + bw+x, pt[1] + bh+y), (0,0,255), 2)
-                self.detection = True
-                print("Found signal")
+            if img_bounding != []:
+                # Resize an image
+                img_res = cv2.resize(img_bounding, (w, h), interpolation=cv2.INTER_CUBIC)
                 
-            if self.detection == True:
-                print('bw:       ', bw)
-                print('bh:       ', bh)  
+                # Matching with template image
+                # match: grayscale image, where each pixel denotes how much does the neighbourhood of that pixel math with template
+                match = cv2.matchTemplate(img_res,self.template,cv2.TM_CCOEFF_NORMED)
+                threshold = 0.3
+                loc = np.where(match >= threshold)
                 
-                if self.stop == False:
-                    if bw >= 10 and bw < 30:
-                        self.motors.sendV(50)
-                        print('VELOCIDAD:     50')
-                    elif bw >= 30 and bw < 45:
-                        self.motors.sendV(30)
-                        print('VELOCIDAD:     30')
-                    elif bw >= 45 and bw < 65:
-                        self.motors.sendV(15)
-                        print('VELOCIDAD:     15')
-                    elif bw >= 65:
-                        self.stop = True
+                # zip: This function returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.
+                for pt in zip(*loc[::-1]):
+                    cv2.rectangle(input_image, (pt[0]+x,pt[1]+y), (pt[0] + bw+x, pt[1] + bh+y), (0,0,255), 2)
+                    self.detection = True
+                    print("Found signal")
+                    
+                if self.detection == True:
+                    print('bw:       ', bw)
+                    print('bh:       ', bh)  
+                    
+                    if self.stop == False:
+                        if bw >= 10 and bw < 30:
+                            self.motors.sendV(50)
+                            print('VELOCIDAD:     50')
+                        elif bw >= 30 and bw < 45:
+                            self.motors.sendV(30)
+                            print('VELOCIDAD:     30')
+                        elif bw >= 45 and bw < 65:
+                            self.motors.sendV(15)
+                            print('VELOCIDAD:     15')
+                        elif bw >= 65:
+                            self.stop = True
+                            self.motors.sendV(0)
+                            print('VELOCIDAD:     0')
+                        else:
+                            self.motors.sendV(60)
+                            print('VELOCIDAD:     60')
+                    else:       
                         self.motors.sendV(0)
                         print('VELOCIDAD:     0')
-                    else:
-                        self.motors.sendV(70)
-                        print('VELOCIDAD:     70')
-                else:       
-                    self.motors.sendV(0)
-                    print('VELOCIDAD:     0')
-                
-            else:
-                self.motors.sendV(70)
-                print('VELOCIDAD:     70')
+                    
+                else:
+                    self.motors.sendV(60)
+                    print('VELOCIDAD:     60')
           
         print('DETECTION:            ', self.detection)
         print('STOP:            ', self.stop)
         
+        if self.detection == True :
+            # Center image
+            img_detection = self.cameraC.getImage()
+            # RGB model change to GRAY
+            img_gray = cv2.cvtColor(img_detection, cv2.COLOR_RGB2GRAY)
+            # Segmentation
+            img_filtered = cv2.inRange(img_gray, 177, 177)
+            cv2.imshow('img', img_filtered)
+            
+            # Colums and rows
+            # Shape gives us the number of rows and columns of an image
+            rows = img_gray.shape[0]
+            columns = img_gray.shape[1]
+            print columns, rows
+            
+            
+            # RGB model change to HSV
+            hsv_image = cv2.cvtColor(img_detection, cv2.COLOR_RGB2HSV)
+
+            # Values
+            value_min_HSV = np.array([0, 0, 165])
+            value_max_HSV = np.array([2, 2, 168])
+
+            # Segmentation
+            image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
+            cv2.imshow("filtered", image_filtered)
