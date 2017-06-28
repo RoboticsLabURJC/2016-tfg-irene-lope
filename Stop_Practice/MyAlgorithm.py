@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import jderobot
 import math
+from math import pi as pi
 import cv2
 
 from matplotlib import pyplot as plt
@@ -25,6 +26,8 @@ class MyAlgorithm(threading.Thread):
         
         self.detection = False
         self.stop = False
+        
+        self.yaw = 0
         
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
@@ -77,8 +80,10 @@ class MyAlgorithm(threading.Thread):
     def execute(self):
         
         # TODO
+        
+        # FILTRADO
        
-        # GETTING THE IMAGES
+        # Getting the imges
         input_image = self.cameraC.getImage()
 
         # RGB model change to HSV
@@ -90,19 +95,17 @@ class MyAlgorithm(threading.Thread):
 
         # Segmentation
         image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
-        #cv2.imshow("filtered", image_filtered)
 
         # Close, morphology element
         kernel = np.ones((11,11), np.uint8)
         image_filtered = cv2.morphologyEx(image_filtered, cv2.MORPH_CLOSE, kernel)
-        #cv2.imshow('cierre', image_filtered)
 
         # Template's size
         h, w = self.template.shape
 
-        #detection = False
             
-        # Detection of object contour
+        # DETECCION
+        
         img2, contours, hierarchy = cv2.findContours(image_filtered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if (len(contours) != 0):
             # Approximates a polygonal curve(s) with the specified precision.
@@ -132,11 +135,12 @@ class MyAlgorithm(threading.Thread):
                     cv2.rectangle(input_image, (pt[0]+x,pt[1]+y), (pt[0] + bw+x, pt[1] + bh+y), (0,0,255), 2)
                     self.detection = True
                     print("Found signal")
-                    
+                
+                # FRENADO 
+                
                 if self.detection == True:
                     print('bw:       ', bw)
                     print('bh:       ', bh)  
-                    
                     if self.stop == False:
                         if bw >= 10 and bw < 30:
                             self.motors.sendV(50)
@@ -165,7 +169,28 @@ class MyAlgorithm(threading.Thread):
         print('DETECTION:            ', self.detection)
         print('STOP:            ', self.stop)
         
-        if self.detection == True :
+        
+        # ARRANQUE
+        
+        if self.detection == True and self.stop == True:
+            
+            yaw = self.pose3d.getYaw() * 180/pi
+            v = 30
+            
+            # Gira 90 grados
+            while yaw < -90 :
+                self.motors.sendV(v)              
+                self.motors.sendW(3.5)
+                yaw = self.pose3d.getYaw() * 180/pi
+            self.motors.sendW(0)
+            
+            # Acelera recto
+            while v < 70:  
+                v += 5
+                self.motors.sendV(v)             
+            
+    
+            '''
             # Center image
             img_detection = self.cameraC.getImage()
             # RGB model change to GRAY
@@ -179,15 +204,6 @@ class MyAlgorithm(threading.Thread):
             rows = img_gray.shape[0]
             columns = img_gray.shape[1]
             print columns, rows
-            
-            
-            # RGB model change to HSV
-            hsv_image = cv2.cvtColor(img_detection, cv2.COLOR_RGB2HSV)
+            '''
 
-            # Values
-            value_min_HSV = np.array([0, 0, 165])
-            value_max_HSV = np.array([2, 2, 168])
-
-            # Segmentation
-            image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
-            cv2.imshow("filtered", image_filtered)
+            
