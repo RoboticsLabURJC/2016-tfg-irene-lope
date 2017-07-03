@@ -22,7 +22,14 @@ class MyAlgorithm2(threading.Thread):
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
         
-        self.numCrash = 0
+        self.grid = np.ones([500, 500], float)
+        
+        #self.numCrash = 0
+        self.yaw = 0
+        self.turn = False
+        self.turnFound = True
+        self.crash = False
+        self.horizontal = True
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -46,6 +53,40 @@ class MyAlgorithm2(threading.Thread):
             v = (x, y)
             laser_vectorized += [v]
         return laser_vectorized
+        
+        
+    def RTy(self, angle, tx, ty, tz):
+        RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
+        return RT
+
+    def RTVacuum(self):
+        RTy = self.RTy(pi, 5.6, 4, 0)
+        return RTy
+        
+    def changeValuesGrid(self):
+        x = self.pose3d.getX()
+        y = self.pose3d.getY()
+        scale = 50
+
+        final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
+        self.grid[int(final_poses.flat[0])][int(final_poses.flat[1])] = 0
+        print final_poses.flat[0], final_poses.flat[1]
+        numX = int(final_poses.flat[0] / scale)
+        numY = int(final_poses.flat[1] / scale)
+        
+        for i in range((numX * scale), (numX*scale + scale)):
+            for j in range((numY * scale), (numY*scale + scale)):
+                self.grid[j][i] = self.grid[j][i] + 10.0
+        
+        
+    def showGrid(self):
+		maxVal = np.amax(self.grid)
+		if maxVal != 0:
+			nCopy = np.dot(self.grid, (1/maxVal))
+		else:
+			 nCopy = self.grid
+		cv2.imshow("Grid ", nCopy)
+		
 
     def run (self):
         while (not self.kill_event.is_set()):
@@ -75,14 +116,24 @@ class MyAlgorithm2(threading.Thread):
     def kill (self):
         self.kill_event.set()
         
+        
+    def checkCrash(self):
+        for i in range(0, 350):
+            # Returns 1 if it collides, and 0 if it doesn't collide
+            crash = self.bumper.getBumperData().state
+            if crash == 1:
+                self.motors.sendW(0)
+                self.motors.sendV(0)
+                break
+        return crash
+        
+
     def turn90(self, angle1, angle2, yawNow):
         turn = True
-        if self.numCrash % 2 != 0 and (yawNow <= (angle1-0.115) or yawNow >= (angle1+0.115)):
-            # Es giro impar
+        if (-0.4 <= self.yaw <= 0.4 or (-pi/2-0.4) <= self.yaw <= (-pi/2+0.4)) and (yawNow <= (angle1-0.115) or yawNow >= (angle1+0.115)):
             self.motors.sendV(0)
             self.motors.sendW(0.2)
-        elif self.numCrash % 2 == 0 and (yawNow <= (angle2-0.115) or yawNow >= (angle2+0.115)):
-            # Es giro par
+        elif ((pi/2-0.4) <= self.yaw <= (pi/2+0.4) or (-pi+0.4) >= self.yaw or self.yaw >= (pi - 0.4)) and (yawNow <= (angle2-0.115) or yawNow >= (angle2+0.115)):
             self.motors.sendV(0)
             self.motors.sendW(-0.2)
         else:
@@ -92,7 +143,76 @@ class MyAlgorithm2(threading.Thread):
 
     def execute(self):
 
+        print ('Execute')
         # TODO
+        # Map is self.map
+        #cv2.imshow('map',self.map)
+        
+        # Show grid
+        self.changeValuesGrid()
+        self.showGrid()
+                
+        # Vacuum's poses
+        x = self.pose3d.getX()
+        y = self.pose3d.getY()
+        yaw = self.pose3d.getYaw()
+        
+        # Check crash
+        crash = self.checkCrash()
+        
+        print (crash)
+        
+        if crash == 1:
+            print "CRAAASH"
+            # Stop
+            self.motors.sendW(0)
+            self.motors.sendV(0)
+            time.sleep(1)
+            # Go backwards
+            self.motors.sendV(-0.1)
+            time.sleep(1)
+            
+            # Yaw 
+            self.yaw = self.pose3d.getYaw()
+            self.turn = False
+            self.crash = True
+            
+        if self.turn == False and self.crash == True:
+            print "PRIMER GIRO"
+            # Yaw
+            yawNow = self.pose3d.getYaw()
+            # Turn 90
+            giro = self.turn90(pi/2, pi/2, yawNow)
+                
+            if giro == False:
+                print "GIRO HECHO"
+                self.turn = True
+                # Go backwards
+                self.motors.sendW(0)
+                time.sleep(2)
+                self.motors.sendV(0.32)                                        
+                time.sleep(1)
+                self.turnFound = False
+                
+                
+        elif self.turnFound == False and self.crash == True:
+            print "SEGUNDO GIRO"
+            # Yaw
+            yawNow = self.pose3d.getYaw()
+            giro = self.turn90(pi, 0, yawNow)
+            
+            if giro == False:
+                self.turnFound = True
+        
+        else:
+            print "AVANZAR"
+            # Go forward
+            self.motors.sendW(0.0)
+            time.sleep(1)
+            self.motors.sendV(0.5)
+            self.crash = False
+            self.turn == True
+        '''
 
         # Vacuum's pose
         x = self.pose3d.getX()
@@ -103,18 +223,15 @@ class MyAlgorithm2(threading.Thread):
             # Devuelve 1 si choca y 0 si no choca
             crash = self.bumper.getBumperData().state
             if crash == 1:
-                self.motors.sendW(0)
-                self.motors.sendV(0)
                 break
                 
-        print(crash)
+        print('crash:     ', crash)
         
         turn = False
+        giro = True
         
         # Si esta chocando
         if crash == 1:
-            self.numCrash = self.numCrash + 1
-            
             # Frena
             self.motors.sendW(0)
             self.motors.sendV(0)
@@ -124,29 +241,74 @@ class MyAlgorithm2(threading.Thread):
             self.motors.sendV(-0.1)
             time.sleep(1)
             
-            while turn == False:
+            if self.orientacion
+            while giro == True:
                 # Gira 90 grados
-                yawNow = self.pose3d.getYaw()                    
-                giro = self.turn90(pi/2, pi/2, yawNow)
-                
-                if giro == False:
+                yawNow = self.pose3d.getYaw()
+                if self. horizontal == True:                    
+                    giro = self.turn90(pi/2, pi/2, yawNow)
+                else:
+                    giro = self.turn90(0, 0, yawNow)
+            time.sleep(2)
+            
+            # Avanza un poco
+            self.motors.sendV(0.32)
+            
+            #newCrash = self.bumper.getBumperData().state
+            for i in range(0, 100000):
+                # Devuelve 1 si choca y 0 si no choca
+                newCrash = self.bumper.getBumperData().state
+                #print("detectando...",newCrash)
+                if newCrash == 1:
                     self.motors.sendW(0)
-                    time.sleep(2)
-                    # Avanza un poco
-                    self.motors.sendV(0.38)
-                    time.sleep(1)
-                    yaw = self.pose3d.getYaw()
-                    
-                    while turn == False:
-                        # Vuelve a girar para recorrer la siguiente linea
-                        yawNow = self.pose3d.getYaw()
+                    self.motors.sendV(0)
+                    break
+                
+            print('new crash:     ', newCrash)
+            
+            if newCrash == 1 and self.horizontal == True:
+                # No puede avanzar mas hacia abajo
+                time.sleep(1)
+                self.horizontal = False
+                
+                # Frena
+                #self.motors.sendW(0)
+                #self.motors.sendV(0)
+                time.sleep(1)
+                
+                # Retrocede
+                self.motors.sendV(-0.1)
+                time.sleep(1)
+            elif newCrash == 1 and self.horizontal == False:
+                time.sleep(1)
+                # No puede avanzar mas a la derecha
+                self.horizontal = True
+                
+                # Frena
+                #self.motors.sendW(0)
+                #self.motors.sendV(0)
+                time.sleep(1)
+                
+                # Retrocede
+                self.motors.sendV(-0.1)
+                time.sleep(1)
+            else:
+                time.sleep(1)
+                yaw = self.pose3d.getYaw()
+                while turn == False:
+                    # Vuelve a girar para recorrer la siguiente linea
+                    yawNow = self.pose3d.getYaw()
+                    if self.horizontal == True:
                         giro = self.turn90(pi, 0, yawNow)
-                        if giro == False:
-                            turn = True
+                    else:
+                        giro = self.turn90(-pi/2, pi/2, yawNow)
+                        
+                    if giro == False:
+                        turn = True
         else:
             # Si no hay choque avanza en recto
             self.motors.sendW(0.0)
             time.sleep(1)
             self.motors.sendV(0.5)
         
-        
+        '''
