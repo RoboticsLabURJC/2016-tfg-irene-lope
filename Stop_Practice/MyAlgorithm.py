@@ -184,26 +184,64 @@ class MyAlgorithm(threading.Thread):
                 yaw = self.pose3d.getYaw() * 180/pi
             self.motors.sendW(0)
             
+            
+            # DETECCION DE CARRETERA
+            
+            # Center image
+            img_detection = self.cameraC.getImage()
+            
+            # RGB model change to HSV
+            hsv_image = cv2.cvtColor(img_detection, cv2.COLOR_RGB2HSV)
+            
+            # Values of HSV
+            value_min_HSV = np.array([0, 5, 0])
+            value_max_HSV = np.array([10, 20, 60])
+
+            # Segmentation
+            image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
+            cv2.imshow("filtered no kernel", image_filtered)
+            
+            # Close, morphology element
+            kernel = np.ones((18,18), np.uint8)
+            image_filtered = cv2.morphologyEx(image_filtered, cv2.MORPH_CLOSE, kernel)
+            
+            cv2.imshow("filtered", image_filtered)
+            
+            
+            # DESVIACION
+            
+            # Shape gives us the number of rows and columns of an image
+            rows = img_detection.shape[0]
+            columns = img_detection.shape[1]
+            print columns, rows
+            
+            # Initialize variables
+            position_pixel_left = 0
+            position_pixel_right = 0
+            
+            # We look for the pixels in white in line 300
+            for i in range(0, columns-1):
+                value = image_filtered[300, i] - image_filtered[300, i-1]
+                if(value != 0):
+                    if (value == 255):
+                        position_pixel_left = i
+                    else:
+                        position_pixel_right = i - 1
+                        
+            if position_pixel_left != 0 or position_pixel_right != 0:    
+                # Calculating the intermediate position of the road
+                position_middle_road = (position_pixel_left + position_pixel_right) / 2
+                # Calculating the intermediate position of the lane
+                position_middle_lane = (position_middle_road + position_pixel_right) / 2
+                
+                cv2.rectangle(input_image, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
+                
+                # Calculating the desviation
+                desviation = position_middle_lane - (columns/2)
+                print (" desviation    ", desviation)
+            
             # Acelera recto
             while v < 70:  
                 v += 5
-                self.motors.sendV(v)             
-            
-    
-            '''
-            # Center image
-            img_detection = self.cameraC.getImage()
-            # RGB model change to GRAY
-            img_gray = cv2.cvtColor(img_detection, cv2.COLOR_RGB2GRAY)
-            # Segmentation
-            img_filtered = cv2.inRange(img_gray, 177, 177)
-            cv2.imshow('img', img_filtered)
-            
-            # Colums and rows
-            # Shape gives us the number of rows and columns of an image
-            rows = img_gray.shape[0]
-            columns = img_gray.shape[1]
-            print columns, rows
-            '''
-
+                self.motors.sendV(v)   
             
