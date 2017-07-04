@@ -178,11 +178,17 @@ class MyAlgorithm(threading.Thread):
             v = 30
             
             # Gira 90 grados
-            while yaw < -90 :
-                self.motors.sendV(v)              
+            #while yaw < -90 :
+            #    self.motors.sendV(v)              
+            #    self.motors.sendW(3.5)
+            #    yaw = self.pose3d.getYaw() * 180/pi
+            #self.motors.sendW(0)
+            
+            # Turn 45 degrees
+            while yaw < -145 :
+                self.motors.sendV(v)
                 self.motors.sendW(3.5)
                 yaw = self.pose3d.getYaw() * 180/pi
-            self.motors.sendW(0)
             
             
             # DETECCION DE CARRETERA
@@ -199,7 +205,7 @@ class MyAlgorithm(threading.Thread):
 
             # Segmentation
             image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
-            cv2.imshow("filtered no kernel", image_filtered)
+            #cv2.imshow("filtered no kernel", image_filtered)
             
             # Close, morphology element
             kernel = np.ones((18,18), np.uint8)
@@ -219,9 +225,11 @@ class MyAlgorithm(threading.Thread):
             position_pixel_left = 0
             position_pixel_right = 0
             
-            # We look for the pixels in white in line 300
             for i in range(0, columns-1):
-                value = image_filtered[300, i] - image_filtered[300, i-1]
+                if i == 0:
+                    value = image_filtered[300, i+1] - image_filtered[300, i]
+                else:
+                    value = image_filtered[300, i] - image_filtered[300, i-1]
                 if(value != 0):
                     if (value == 255):
                         position_pixel_left = i
@@ -236,12 +244,23 @@ class MyAlgorithm(threading.Thread):
                 
                 cv2.rectangle(input_image, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
                 
+                
                 # Calculating the desviation
                 desviation = position_middle_lane - (columns/2)
                 print (" desviation    ", desviation)
             
+                # Speed
+                if abs(desviation) < 35:
+                    # Go straight
+                    self.motors.sendV(50)
+                    self.motors.sendW(0)
+                elif abs(desviation) >= 35:
+                    self.motors.sendW(-desviation*0.05)
+                    self.motors.sendV(15)
+            
+            
             # Acelera recto
-            while v < 70:  
-                v += 5
-                self.motors.sendV(v)   
+            #while v < 70:  
+            #    v += 5
+            #    self.motors.sendV(v)   
             
