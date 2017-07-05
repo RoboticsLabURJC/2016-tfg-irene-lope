@@ -30,6 +30,9 @@ class MyAlgorithm2(threading.Thread):
         self.turnFound = True
         self.crash = False
         self.horizontal = True
+        self.numIteracion = 0
+        self.time = 0
+        self.saturation = False
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -63,6 +66,21 @@ class MyAlgorithm2(threading.Thread):
         RTy = self.RTy(pi, 5.6, 4, 0)
         return RTy
         
+    def reduceValueSquare(self, numRow, numColumn):
+        scale = 50
+        for i in range((numColumn * scale), (numColumn*scale + scale)):
+            for j in range((numRow * scale), (numRow*scale + scale)):
+                if self.grid[i][j] != 0:
+                    self.grid[i][j] = self.grid[i][j] - 1
+        
+    def reduceValueTime(self):
+        # number of rows is 10 and number of columns is 10
+        numRowsColumns = 10
+        for i in range(0, numRowsColumns):
+            for j in range(0, numRowsColumns):
+                self.reduceValueSquare(i, j)
+            
+        
     def changeValuesGrid(self):
         x = self.pose3d.getX()
         y = self.pose3d.getY()
@@ -87,6 +105,23 @@ class MyAlgorithm2(threading.Thread):
 			 nCopy = self.grid
 		cv2.imshow("Grid ", nCopy)
 		
+		
+    def checkSaturation(self):
+        # Check saturation
+        saturation = False
+        numRowsColumns = 10
+        scale = 50
+        numSquaresVisited = 0
+        for i in range(0, numRowsColumns):
+            for j in range(0, numRowsColumns):
+                valuePos = self.grid[j*scale][i*scale]
+                if valuePos != 0:
+                    numSquaresVisited = numSquaresVisited + 1
+                    
+        if numSquaresVisited < 3:
+            saturation = True
+        return saturation
+		
 
     def run (self):
         while (not self.kill_event.is_set()):
@@ -97,6 +132,7 @@ class MyAlgorithm2(threading.Thread):
                 self.execute()
 
             finish_Time = datetime.now()
+
 
             dt = finish_Time - start_time
             ms = (dt.days * 24 * 60 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000.0
@@ -148,6 +184,23 @@ class MyAlgorithm2(threading.Thread):
         # Map is self.map
         #cv2.imshow('map',self.map)
         
+        # Time
+        self.numIteracion = self.numIteracion + 1
+        if self.numIteracion % 5 == 0:
+            self.time = self.time + 1
+
+        if self.time % 5 == 0:
+            # If 5 seconds have elapsed we reduce the value of the squares of the grid
+            self.reduceValueTime()
+            
+        if self.time != 0 and self.time % 60 == 0:
+            saturation = self.checkSaturation()
+            if saturation == True:
+                self.saturation = saturation
+            if self.time % 180 == 0:
+                self.saturation = saturation
+            print "saturation", saturation
+        
         # Show grid
         self.changeValuesGrid()
         self.showGrid()
@@ -162,56 +215,66 @@ class MyAlgorithm2(threading.Thread):
         
         print (crash)
         
-        if crash == 1:
-            print "CRAAASH"
-            # Stop
-            self.motors.sendW(0)
-            self.motors.sendV(0)
-            time.sleep(1)
-            # Go backwards
-            self.motors.sendV(-0.1)
-            time.sleep(1)
-            
-            # Yaw 
-            self.yaw = self.pose3d.getYaw()
-            self.turn = False
-            self.crash = True
-            
-        if self.turn == False and self.crash == True:
-            print "PRIMER GIRO"
-            # Yaw
-            yawNow = self.pose3d.getYaw()
-            # Turn 90
-            giro = self.turn90(pi/2, pi/2, yawNow)
-                
-            if giro == False:
-                print "GIRO HECHO"
-                self.turn = True
-                # Go backwards
+        if self.saturation == False:
+            if crash == 1:
+                print "CRAAASH"
+                # Stop
                 self.motors.sendW(0)
-                time.sleep(2)
-                self.motors.sendV(0.32)                                        
+                self.motors.sendV(0)
                 time.sleep(1)
-                self.turnFound = False
+                # Go backwards
+                self.motors.sendV(-0.1)
+                time.sleep(1)
                 
+                # Yaw 
+                self.yaw = self.pose3d.getYaw()
+                self.turn = False
+                self.crash = True
                 
-        elif self.turnFound == False and self.crash == True:
-            print "SEGUNDO GIRO"
-            # Yaw
-            yawNow = self.pose3d.getYaw()
-            giro = self.turn90(pi, 0, yawNow)
+            if self.turn == False and self.crash == True:
+                print "PRIMER GIRO"
+                # Yaw
+                yawNow = self.pose3d.getYaw()
+                # Turn 90
+                giro = self.turn90(pi/2, pi/2, yawNow)
+                    
+                if giro == False:
+                    print "GIRO HECHO"
+                    self.turn = True
+                    # Go backwards
+                    self.motors.sendW(0)
+                    time.sleep(2)
+                    self.motors.sendV(0.32)                                        
+                    time.sleep(1)
+                    self.turnFound = False
+                    
+                    
+            elif self.turnFound == False and self.crash == True:
+                print "SEGUNDO GIRO"
+                # Yaw
+                yawNow = self.pose3d.getYaw()
+                giro = self.turn90(pi, 0, yawNow)
+                
+                if giro == False:
+                    self.turnFound = True
             
-            if giro == False:
-                self.turnFound = True
-        
+            else:
+                print "AVANZAR"
+                # Go forward
+                self.motors.sendW(0.0)
+                time.sleep(1)
+                self.motors.sendV(0.5)
+                self.crash = False
+                self.turn == True
+                
         else:
-            print "AVANZAR"
-            # Go forward
-            self.motors.sendW(0.0)
-            time.sleep(1)
-            self.motors.sendV(0.5)
-            self.crash = False
-            self.turn == True
+            # There is saturation
+            print "RECORRER PERIMETRO"
+            
+            # Get the data of the laser sensor, which consists of 180 pairs of values
+            laser_data = self.laser.getLaserData()
+            #print laser_data.numLaser
+            #print laser_data.distanceData[0], laser_data.distanceData[laser_data.numLaser-1]
         '''
 
         # Vacuum's pose
