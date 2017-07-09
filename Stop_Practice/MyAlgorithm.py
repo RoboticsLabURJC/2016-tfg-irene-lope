@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import threading
 import time
@@ -24,10 +27,16 @@ class MyAlgorithm(threading.Thread):
         self.imageL = None
         self.imageR = None
         
+        self.backgroundL = None
+        
+        self.sleep = False
+        
         self.detection = False
         self.stop = False
         
         self.yaw = 0
+        
+        self.time = time.time()
         
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
@@ -170,6 +179,66 @@ class MyAlgorithm(threading.Thread):
         print('STOP:            ', self.stop)
         
         
+        # DETECCION DE COCHES
+        
+        if self.stop == True:
+        
+            # Paro un tiempo si o si antes de ver si vienen coches
+            if self.sleep == False:
+                self.sleep = True
+                time.sleep(2)
+                
+            # Si ha pasado cierto tiempo reinicio la imagen de fondo
+            timeNow = time.time()
+            if timeNow - self.time >= 6:
+                self.backgroundL = None
+                self.time = timeNow
+            
+            # Getting the imges
+            imageL = self.cameraL.getImage()
+            imageR = self.cameraR.getImage()
+            
+            # Convertimos a escala de grises
+            imageL_gray = cv2.cvtColor(imageL, cv2.COLOR_BGR2GRAY)
+            
+            # Aplicamos suavizado para eliminar ruido
+            imageL_gray = cv2.GaussianBlur(imageL_gray, (21, 21), 0)
+            
+            # Si todavía no hemos obtenido el fondo, lo obtenemos
+            # Será el primer frame que obtengamos
+            if self.backgroundL is None:
+                self.backgroundL = imageL_gray 
+                
+            # Calculo de la diferencia entre el fondo y el frame actual
+            image_diff = cv2.absdiff(self.backgroundL, imageL_gray)
+            #cv2.imshow("image_diff", image_diff)
+            
+            # Aplicamos un umbral
+            image_seg = cv2.threshold(image_diff, 50, 255, cv2.THRESH_BINARY)[1]
+            #cv2.imshow("image_seg", image_seg)
+            
+            # Dilatamos el umbral para tapar agujeros
+            image_dil = cv2.dilate(image_seg, None, iterations=2)
+            cv2.imshow("image_dil", image_dil)
+            
+            # Copiamos el umbral para detectar los contornos
+            contornosimg = image_dil.copy()
+            
+            # Buscamos contorno en la imagen
+            im, contornos, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Recorremos todos los contornos encontrados
+            for c in contornos:
+                # Eliminamos los contornos más pequeños
+                #if cv2.contourArea(c) < 600:
+                    #continue
+                # Obtenemos el bounds del contorno, el rectángulo mayor que engloba al contorno
+                (x, y, w, h) = cv2.boundingRect(c)
+                # Dibujamos el rectángulo del bounds
+                cv2.rectangle(imageL, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            
+            
+        '''
         # ARRANQUE
         
         if self.detection == True and self.stop == True:
@@ -214,7 +283,7 @@ class MyAlgorithm(threading.Thread):
             cv2.imshow("filtered", image_filtered)
             
             
-            # DESVIACION
+            # GIRO
             
             # Shape gives us the number of rows and columns of an image
             rows = img_detection.shape[0]
@@ -258,7 +327,7 @@ class MyAlgorithm(threading.Thread):
                     self.motors.sendW(-desviation*0.05)
                     self.motors.sendV(15)
             
-            
+            '''
             # Acelera recto
             #while v < 70:  
             #    v += 5
