@@ -26,15 +26,14 @@ class MyAlgorithm(threading.Thread):
         self.imageC = None
         self.imageL = None
         self.imageR = None
-        
-        self.backgroundL = None
+        self.framePrev = None
         
         self.sleep = False
-        
         self.detection = False
         self.stop = False
         
         self.yaw = 0
+        self.numFrames = 0
         
         self.time = time.time()
         
@@ -113,7 +112,7 @@ class MyAlgorithm(threading.Thread):
         h, w = self.template.shape
 
             
-        # DETECCION
+        # DETECCION DE STOP
         
         img2, contours, hierarchy = cv2.findContours(image_filtered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if (len(contours) != 0):
@@ -182,40 +181,44 @@ class MyAlgorithm(threading.Thread):
         # DETECCION DE COCHES
         
         if self.stop == True:
-        
+            
             # Paro un tiempo si o si antes de ver si vienen coches
             if self.sleep == False:
                 self.sleep = True
                 time.sleep(2)
                 
+            '''  
             # Si ha pasado cierto tiempo reinicio la imagen de fondo
             timeNow = time.time()
-            if timeNow - self.time >= 6:
+            if timeNow - self.time >= 0.45:
                 self.backgroundL = None
                 self.time = timeNow
+            '''
             
             # Getting the imges
             imageL = self.cameraL.getImage()
             imageR = self.cameraR.getImage()
-            
+
             # Convertimos a escala de grises
             imageL_gray = cv2.cvtColor(imageL, cv2.COLOR_BGR2GRAY)
             
             # Aplicamos suavizado para eliminar ruido
             imageL_gray = cv2.GaussianBlur(imageL_gray, (21, 21), 0)
             
-            # Si todavía no hemos obtenido el fondo, lo obtenemos
-            # Será el primer frame que obtengamos
-            if self.backgroundL is None:
-                self.backgroundL = imageL_gray 
-                
+            if self.framePrev is None:
+                self.framePrev = imageL_gray
+               
             # Calculo de la diferencia entre el fondo y el frame actual
-            image_diff = cv2.absdiff(self.backgroundL, imageL_gray)
-            #cv2.imshow("image_diff", image_diff)
+            image_diff = cv2.absdiff(self.framePrev,imageL_gray)
             
+            # Guardo cada 3 frames
+            self.numFrames += 1
+            if self.numFrames == 3:
+                self.framePrev = imageL_gray
+                self.numFrames = 0
+                
             # Aplicamos un umbral
             image_seg = cv2.threshold(image_diff, 50, 255, cv2.THRESH_BINARY)[1]
-            #cv2.imshow("image_seg", image_seg)
             
             # Dilatamos el umbral para tapar agujeros
             image_dil = cv2.dilate(image_seg, None, iterations=2)
@@ -225,111 +228,96 @@ class MyAlgorithm(threading.Thread):
             contornosimg = image_dil.copy()
             
             # Buscamos contorno en la imagen
-            im, contornos, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            im, contornos, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
             
-            # Recorremos todos los contornos encontrados
-            for c in contornos:
-                # Eliminamos los contornos más pequeños
-                #if cv2.contourArea(c) < 600:
-                    #continue
-                # Obtenemos el bounds del contorno, el rectángulo mayor que engloba al contorno
-                (x, y, w, h) = cv2.boundingRect(c)
-                # Dibujamos el rectángulo del bounds
-                cv2.rectangle(imageL, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            #print('CONTORNOOOOOOOOOOOOOS',contornos)
+            if len(contornos) != 0:
+                # Si hay movimiento
+                # Recorremos todos los contornos encontrados
+                for c in contornos:
+                    # Obtenemos el bounds del contorno, el rectángulo mayor que engloba al contorno
+                    (x, y, w, h) = cv2.boundingRect(c)
+                    # Dibujamos el rectángulo del bounds
+                    cv2.rectangle(imageL, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            else:
+                #Si no hay movimiento 
             
-            
-        '''
-        # ARRANQUE
-        
-        if self.detection == True and self.stop == True:
-            
-            yaw = self.pose3d.getYaw() * 180/pi
-            v = 30
-            
-            # Gira 90 grados
-            #while yaw < -90 :
-            #    self.motors.sendV(v)              
-            #    self.motors.sendW(3.5)
-            #    yaw = self.pose3d.getYaw() * 180/pi
-            #self.motors.sendW(0)
-            
-            # Turn 45 degrees
-            while yaw < -145 :
-                self.motors.sendV(v)
-                self.motors.sendW(3.5)
-                yaw = self.pose3d.getYaw() * 180/pi
-            
-            
-            # DETECCION DE CARRETERA
-            
-            # Center image
-            img_detection = self.cameraC.getImage()
-            
-            # RGB model change to HSV
-            hsv_image = cv2.cvtColor(img_detection, cv2.COLOR_RGB2HSV)
-            
-            # Values of HSV
-            value_min_HSV = np.array([0, 5, 0])
-            value_max_HSV = np.array([10, 20, 60])
+                # ARRANQUE
+                
+                if self.detection == True and self.stop == True:
+                    
+                    yaw = self.pose3d.getYaw() * 180/pi                    
+                    # Turn 45 degrees
+                    while yaw < -145 :
+                        self.motors.sendV(30)
+                        self.motors.sendW(3.5)
+                        yaw = self.pose3d.getYaw() * 180/pi
+                    
+                    
+                    # DETECCION DE CARRETERA
+                    
+                    # Center image
+                    img_detection = self.cameraC.getImage()
+                    
+                    # RGB model change to HSV
+                    hsv_image = cv2.cvtColor(img_detection, cv2.COLOR_RGB2HSV)
+                    
+                    # Values of HSV
+                    value_min_HSV = np.array([0, 5, 0])
+                    value_max_HSV = np.array([10, 20, 60])
 
-            # Segmentation
-            image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
-            #cv2.imshow("filtered no kernel", image_filtered)
-            
-            # Close, morphology element
-            kernel = np.ones((18,18), np.uint8)
-            image_filtered = cv2.morphologyEx(image_filtered, cv2.MORPH_CLOSE, kernel)
-            
-            cv2.imshow("filtered", image_filtered)
-            
-            
-            # GIRO
-            
-            # Shape gives us the number of rows and columns of an image
-            rows = img_detection.shape[0]
-            columns = img_detection.shape[1]
-            print columns, rows
-            
-            # Initialize variables
-            position_pixel_left = 0
-            position_pixel_right = 0
-            
-            for i in range(0, columns-1):
-                if i == 0:
-                    value = image_filtered[300, i+1] - image_filtered[300, i]
-                else:
-                    value = image_filtered[300, i] - image_filtered[300, i-1]
-                if(value != 0):
-                    if (value == 255):
-                        position_pixel_left = i
-                    else:
-                        position_pixel_right = i - 1
+                    # Segmentation
+                    image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
+                    #cv2.imshow("filtered no kernel", image_filtered)
+                    
+                    # Close, morphology element
+                    kernel = np.ones((18,18), np.uint8)
+                    image_filtered = cv2.morphologyEx(image_filtered, cv2.MORPH_CLOSE, kernel)
+                    
+                    cv2.imshow("filtered", image_filtered)
+                    
+                    
+                    # GIRO
+                    
+                    # Shape gives us the number of rows and columns of an image
+                    rows = img_detection.shape[0]
+                    columns = img_detection.shape[1]
+                    print columns, rows
+                    
+                    # Initialize variables
+                    position_pixel_left = 0
+                    position_pixel_right = 0
+                    
+                    for i in range(0, columns-1):
+                        if i == 0:
+                            value = image_filtered[300, i+1] - image_filtered[300, i]
+                        else:
+                            value = image_filtered[300, i] - image_filtered[300, i-1]
+                        if(value != 0):
+                            if (value == 255):
+                                position_pixel_left = i
+                            else:
+                                position_pixel_right = i - 1
+                                
+                    if position_pixel_left != 0 or position_pixel_right != 0:    
+                        # Calculating the intermediate position of the road
+                        position_middle_road = (position_pixel_left + position_pixel_right) / 2
+                        # Calculating the intermediate position of the lane
+                        position_middle_lane = (position_middle_road + position_pixel_right) / 2
                         
-            if position_pixel_left != 0 or position_pixel_right != 0:    
-                # Calculating the intermediate position of the road
-                position_middle_road = (position_pixel_left + position_pixel_right) / 2
-                # Calculating the intermediate position of the lane
-                position_middle_lane = (position_middle_road + position_pixel_right) / 2
-                
-                cv2.rectangle(input_image, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
-                
-                
-                # Calculating the desviation
-                desviation = position_middle_lane - (columns/2)
-                print (" desviation    ", desviation)
-            
-                # Speed
-                if abs(desviation) < 35:
-                    # Go straight
-                    self.motors.sendV(50)
-                    self.motors.sendW(0)
-                elif abs(desviation) >= 35:
-                    self.motors.sendW(-desviation*0.05)
-                    self.motors.sendV(15)
-            
-            '''
-            # Acelera recto
-            #while v < 70:  
-            #    v += 5
-            #    self.motors.sendV(v)   
+                        cv2.rectangle(input_image, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
+                        
+                        
+                        # Calculating the desviation
+                        desviation = position_middle_lane - (columns/2)
+                        print (" desviation    ", desviation)
+                    
+                        # Speed
+                        if abs(desviation) < 35:
+                            # Go straight
+                            self.motors.sendV(50)
+                            self.motors.sendW(0)
+                        elif abs(desviation) >= 35:
+                            self.motors.sendW(-desviation*0.05)
+                            self.motors.sendV(15)  
             
