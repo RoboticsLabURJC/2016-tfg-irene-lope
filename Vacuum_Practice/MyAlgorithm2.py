@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import threading
 import time
@@ -24,15 +27,20 @@ class MyAlgorithm2(threading.Thread):
         
         self.grid = np.ones([500, 500], float)
         
+        #self.numCrash = 0
         self.yaw = 0
+        self.orientation = 'left'
         self.turn = False
         self.turnFound = True
         self.crash = False
-        self.crashPerimeter = False
+        self.crashObstacle = False
         self.horizontal = True
         self.numIteracion = 0
         self.time = 0
         self.saturation = False
+        self.obstacleRight = False
+        
+        self.startTime = 0
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -56,6 +64,7 @@ class MyAlgorithm2(threading.Thread):
             v = (x, y)
             laser_vectorized += [v]
         return laser_vectorized
+        
         
     def run (self):
         while (not self.kill_event.is_set()):
@@ -96,7 +105,7 @@ class MyAlgorithm2(threading.Thread):
         return RTy
         
     def reduceValueSquare(self, numRow, numColumn):
-        # Reduce el valor de un cuadrado en concreto
+        # Reduce the value of a particular square
         scale = 50
         for i in range((numColumn * scale), (numColumn*scale + scale)):
             for j in range((numRow * scale), (numRow*scale + scale)):
@@ -104,41 +113,41 @@ class MyAlgorithm2(threading.Thread):
                     self.grid[i][j] = self.grid[i][j] - 1
         
     def reduceValueTime(self):
-        # number of rows is 10 and number of columns is 10
+        # Number of rows is 10 and number of columns is 10
         numRowsColumns = 10
-        # Recorre la imagen entera
+        # Scrolls the entire image
         for i in range(0, numRowsColumns):
             for j in range(0, numRowsColumns):
                 self.reduceValueSquare(i, j)
             
         
     def changeValuesGrid(self):
-        # Cambia el valor de la rejilla segun por donde pase la aspiradora
+        # Change the value of the grid depending on where the vacuum goes
         x = self.pose3d.getX()
         y = self.pose3d.getY()
         scale = 50
 
         final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
 
-        # grid 500 x 500 y queremos un grid de 10 x 10
-        # Nos quedamos con la parte entera para saber en que cuadrado esta
+        # Grid 500 x 500 and we want a grid of 10 x 10
+        # We keep the whole section of the division to know in which square this is
         numX = int(final_poses.flat[0] / scale)
         numY = int(final_poses.flat[1] / scale)
         
-        # Vuelvo a 500 x 500 para cambiar todos los valores del grid segun el cuadrado en el que este
         for i in range((numX * scale), (numX*scale + scale)):
             for j in range((numY * scale), (numY*scale + scale)):
                 self.grid[j][i] = self.grid[j][i] + 10.0
         
         
     def showGrid(self):
-        # Para que se muestre bien el grid
-		maxVal = np.amax(self.grid) # Maximo valor de los pixeles
+        # To show the grid well
+        # Maximum value of the pixels
+		maxVal = np.amax(self.grid)
 		if maxVal != 0:
-		    # Guarda una copia de la imagen pero dividida entre el valor maximo para que no se muestre saturado
+		    # Saves a copy of the image but divided by the maximum value so that it is not saturated
 			nCopy = np.dot(self.grid, (1/maxVal))
 		else:
-			nCopy = self.grid
+			 nCopy = self.grid
 		cv2.imshow("Grid ", nCopy)
 		
 		
@@ -149,7 +158,7 @@ class MyAlgorithm2(threading.Thread):
         numSquaresVisited = 0
         for i in range(0, numRowsColumns):
             for j in range(0, numRowsColumns):
-                # Compruebo el primer pixel del cuadrado porque todos tienen el mismo valor
+                # I check the first pixel of the square because they all have the same value
                 valuePos = self.grid[j*scale][i*scale]
                 if valuePos != 0:
                     numSquaresVisited = numSquaresVisited + 1
@@ -157,7 +166,7 @@ class MyAlgorithm2(threading.Thread):
         if numSquaresVisited < 3:
             saturation = True
         return saturation
-
+        
         
     def checkCrash(self):
         for i in range(0, 350):
@@ -169,45 +178,60 @@ class MyAlgorithm2(threading.Thread):
                 break
         return crash
         
-
+        
+    def returnOrientation(self, yaw):
+        if -pi/2 <= yaw <= pi/2:
+            orientation = 'left'
+        elif pi/2 <= yaw <= pi or -pi <= yaw <= -pi/2:
+            orientation = 'right'
+        return orientation
+        
     def turn90(self, angle1, angle2, yawNow):
         turn = True
-        # Mira a la izq gira a la izq
-        if (-0.4 <= self.yaw <= 0.4 or (-pi/2-0.4) <= self.yaw <= (-pi/2+0.4)) and (yawNow <= (angle1-0.115) or yawNow >= (angle1+0.115)):
+        rangeDegrees = 0.125
+        
+        if angle1 == pi or angle2 == 0:
+            rangeDegrees = 0.145
+        #if angle2 == 0:
+        #    rangeDegrees = 0.145
+            
+        if angle2 == pi and yawNow < 0:
+            angle2 = -angle2
+            
+        if (self.orientation == 'left') and (yawNow <= (angle1-rangeDegrees) or yawNow >= (angle1+rangeDegrees)):
+            # Look left and turn left
             self.motors.sendV(0)
             self.motors.sendW(0.2)
-        # Mira a la dcha gira a la dcha
-        elif ((pi/2-0.4) <= self.yaw <= (pi/2+0.4) or (-pi+0.4) >= self.yaw or self.yaw >= (pi - 0.4)) and (yawNow <= (angle2-0.115) or yawNow >= (angle2+0.115)):
+        elif (self.orientation == 'right') and (yawNow <= (angle2-rangeDegrees) or yawNow >= (angle2+rangeDegrees)):
+            # Look right and turn right
             self.motors.sendV(0)
             self.motors.sendW(-0.2)
         else:
             turn = False
         return turn
-        
 
     def execute(self):
 
+        print ('Execute')
         # TODO
-        
+
         # Time
         self.numIteracion = self.numIteracion + 1
         if self.numIteracion % 5 == 0:
             self.time = self.time + 1
-            
-        if self.saturation == False:
 
+        if self.saturation == False:
             if self.time % 5 == 0:
                 # If 5 seconds have elapsed we reduce the value of the squares of the grid
                 self.reduceValueTime()
-            
-            # Comprobar si hay atasco   
+                
             if self.time != 0 and self.time % 60 == 0:
                 self.saturation = self.checkSaturation()
                 if self.saturation == True:
-                    # Frena 
+                    # Stop
+                    self.motors.sendW(0)
                     self.motors.sendV(0)
-                    self.motors.sendW(0)   
-                print('Saturation: ', self.saturation)
+                print ("saturation", self.saturation)
             
             # Show grid
             self.changeValuesGrid()
@@ -243,17 +267,18 @@ class MyAlgorithm2(threading.Thread):
                 print ("PRIMER GIRO")
                 # Yaw
                 yawNow = self.pose3d.getYaw()
+                # Orientation
+                self.orientation = self.returnOrientation(self.yaw)
                 # Turn 90
                 giro = self.turn90(pi/2, pi/2, yawNow)
                     
                 if giro == False:
                     print ("GIRO HECHO")
                     self.turn = True
-                    # Go backwards
+                    # Go forwards
                     self.motors.sendW(0)
                     time.sleep(2)
-                    # Avanza un poco
-                    self.motors.sendV(0.32)                                        
+                    self.motors.sendV(0.22)                                        
                     time.sleep(1)
                     self.turnFound = False
                     
@@ -282,39 +307,71 @@ class MyAlgorithm2(threading.Thread):
             
             # Get the data of the laser sensor, which consists of 180 pairs of values
             laser_data = self.laser.getLaserData()
-            # print laser_data.numLaser
-            # print laser_data.distanceData[0], laser_data.distanceData[laser_data.numLaser -1]
-            laserRight = laser_data.distanceData[0]/10 # Pasamos a cm
+            #print laser_data.numLaser
+            #print laser_data.distanceData[0], laser_data.distanceData[laser_data.numLaser-1]
             
+            # Distancia en milimetros, pasamosa cm
+            laserRight = laser_data.distanceData[0]/10
+            laserCenter = laser_data.distanceData[90]/10
             
-            if crash == 0 and self.crashPerimeter == False:
-                # Avanzo hasta que encuentro un obstaculo
-                self.motors.sendV(0.5)
-            elif crash == 1:
-                self.crashPerimeter = True
-                print ("NUEVOOOO CRAAASH")
-                # Stop
-                self.motors.sendW(0)
-                self.motors.sendV(0)
-                time.sleep(1)
-                # Go backwards
-                self.motors.sendV(-0.1)
-                time.sleep(1)
-                         
-            if self.crashPerimeter == True:
-                distToObstacle = 30
-                # Giro hasta que el obstaculo quede a la derecha
-                if laserRight => distToObstacle:
-                    self.motors.sendV(0)
-                    self.motors.sendW(0.2)
-                else: 
-                    # Ya esta el obstaculo a la derecha
-                    self.motors.sendW(0)
+            # Inicializa el tiempo de inicio
+            if self.startTime == 0:
+                self.startTime = time.time()
+            timeNow = time.time()
+            
+            # Solo se recorre la pared por un tiempo
+            if self.startTime - timeNow < 60:
+                if crash == 0 and self.crashObstacle == False:             
+                    # Avanzo hasta que encuentro un obstaculo
                     self.motors.sendV(0.5)
+                elif crash == 1:
+                    # Encuentra el obstaculo
+                    self.crashObstacle = True
+                    print("NUEVO CRASH")
+                    # Stop
+                    self.motors.sendW(0)
+                    self.motors.sendV(0)
+                    time.sleep(1)
+                    # Go backwards
+                    self.motors.sendV(-0.1)
+                    time.sleep(1)
                     
-                    # Esta en una esquina
-                    # Ya no hay obstaculo a la derecha
-            
+                    
+                if self.crashObstacle == True:
+                    distToObstacleRight = 30
+                    distToObstacleFront = 15
+                    # Giro hasta que el obstaculo quede a la derecha
+                    if laserRight > distToObstacleRight and self.obstacleRight == False:
+                        self.motors.sendV(0)
+                        self.motors.sendW(0.2)
+                        self.obstacleRight = True
+                    
+                    if self.obstacleRight == True:
+                        # El obstaculo está a la derecha
+                        self.motors.sendW(0)
+                        self.motors.sendV(0.5)
+                        
+                        
+                        #if laserCenter < distToObstacleFront:
+                            # Está en una esquina
+                            
+                            # Gira 90 grados a la izq
+                            
+                      
+                        #elif laserRight > distToObstacleRight:
+                            # Ya no hay obstaculo a la derecha
+                            
+                            # Avanza el tamaño de la aspiradora
+                            
+                            # Gira 90 grados a la derecha
+                            
+                            
+                            
+            else:
+                # Reinicia todas las variables globales
+                self.startTime = 0
+                self.crashObstacle = False
+                self.obstacleRight = False
             
             
             
