@@ -341,7 +341,7 @@ class MyAlgorithm2(threading.Thread):
                     self.motors.sendV(-0.1)
                     time.sleep(1)
                     
-                    
+                '''   
                 if self.crashObstacle == True:
                     distToObstacleRight = 30
                     distToObstacleFront = 15
@@ -389,7 +389,7 @@ class MyAlgorithm2(threading.Thread):
                             self.motors.sendV(0.5)
                             self.yaw = yaw
                       
-                        
+                ''' 
                             
                             
                             
