@@ -27,22 +27,23 @@ class MyAlgorithm2(threading.Thread):
         
         self.grid = np.ones([500, 500], float)
         
-        #self.numCrash = 0
-        self.yaw = 0
         self.orientation = 'left'
-        self.turn = False
+        
+        self.time = time.time()
+        
         self.turnFound = True
-        self.crash = False
-        self.crashObstacle = False
         self.horizontal = True
-        self.numIteracion = 0
-        self.time = 0
+        self.crash = False
+        self.turn = False
+        self.crashObstacle = False
         self.saturation = False
         self.obstacleRight = False
         self.turnLeft = False
         self.turnRight = False
         
         self.startTime = 0
+        self.yaw = 0
+        self.numIteracion = 0
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -197,8 +198,6 @@ class MyAlgorithm2(threading.Thread):
         
         if angle1 == pi or angle2 == 0:
             rangeDegrees = 0.145
-        #if angle2 == 0:
-        #    rangeDegrees = 0.145
             
         if angle2 == pi and yawNow < 0:
             angle2 = -angle2
@@ -220,10 +219,11 @@ class MyAlgorithm2(threading.Thread):
         # TODO
 
         # Time
+        '''
         self.numIteracion = self.numIteracion + 1
         if self.numIteracion % 5 == 0:
             self.time = self.time + 1
-
+        
         if self.saturation == False:
             if self.time % 5 == 0:
                 # If 5 seconds have elapsed we reduce the value of the squares of the grid
@@ -240,7 +240,26 @@ class MyAlgorithm2(threading.Thread):
             # Show grid
             self.changeValuesGrid()
             self.showGrid()
-                
+          '''
+        timeNow = time.time()
+        if self.saturation == False:
+            if self.time - timeNow >= 5:
+                # If 5 seconds have elapsed we reduce the value of the squares of the grid
+                self.reduceValueTime()
+            
+            if self.time - timeNow >= 60:
+                self.saturation = self.checkSaturation()
+                if self.saturation == True:
+                    # Stop
+                    self.motors.sendW(0)
+                    self.motors.sendV(0)
+                print ("saturation", self.saturation)
+                self.time = time.time()
+            
+            # Show grid
+            self.changeValuesGrid()
+            self.showGrid()
+               
         # Vacuum's poses
         x = self.pose3d.getX()
         y = self.pose3d.getY()
@@ -390,9 +409,7 @@ class MyAlgorithm2(threading.Thread):
                             self.yaw = yaw
                       
                 ''' 
-                            
-                            
-                            
+               
             else:
                 # Reinicia todas las variables globales
                 self.startTime = 0
@@ -400,5 +417,3 @@ class MyAlgorithm2(threading.Thread):
                 self.obstacleRight = False
                 self.turnLeft = False
                 self.turnRight = False
-            
-            
