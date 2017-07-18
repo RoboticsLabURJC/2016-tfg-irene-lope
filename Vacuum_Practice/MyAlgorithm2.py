@@ -38,12 +38,15 @@ class MyAlgorithm2(threading.Thread):
         self.obstacleRight = False
         self.noObstRight = False
         self.corner = False
+        self.sizeVacuum = False
         
         self.startTime = 0
         self.time = 0
         self.timeSat = 0
         self.yaw = 0
         self.numIteracion = 0
+        self.DIST_TO_OBST_RIGHT = 30
+        self.DIST_TO_OBST_FRONT = 15
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -413,7 +416,7 @@ class MyAlgorithm2(threading.Thread):
                         print('LASER CENTER: ', laserCenter, 'distFront: ', distToObstacleFront )
                         print('LASER RIGHT: ', laserRight, 'distRight: ', distToObstacleRight )
                         
-                        if laserCenter < distToObstacleFront or self.corner == True:
+                        if laserCenter < self.DIST_TO_OBST_FRONT or self.corner == True:
                             # Está en una esquina
                             print (' ESTOY EN UNA ESQUINA ')
                             self.corner = True
@@ -424,42 +427,47 @@ class MyAlgorithm2(threading.Thread):
                             # Gira 90 grados a la izq
                             self.orientation = 'left'
                             giro = self.turn90(self.yaw + pi/2, pi/2, yaw)
-                            print('Girando a la izquierda')
+                            print('Girando a la izquierda...')
                             if giro == False:
                                 self.motors.sendW(0)
                                 self.corner = False
-                                print('Giro a la izq hecho')
+                                print('GIRO A LA IZQUIERDA HECHO')
 
-                        elif laserRight > distToObstacleRight or self.noObstRight == True:
+                        elif laserRight > self.DIST_TO_OBST_RIGHT or self.noObstRight == True:
                             # Ya no hay obstaculo a la derecha
                             print (' NO HAY OBSTACULO A LA DERECHA ')
                             self.noObstRight = True
                             
-                            # Avanza el tamaño de la aspiradora
-                            self.motors.sendV(0.3)
+                            if self.sizeVacuum == False:
+                                # Avanza el tamaño de la aspiradora
+                                self.motors.sendV(0.3)
+                                self.sizeVacuum = True
+                                print ('Avanzando tamaño vacuum...')
+                                time.sleep(1)
 
                             # Gira 90 grados a la derecha
                             self.orientation = 'right'
                             giro = self.turn90(self.yaw + pi/2, pi/2, yaw)
-                            print('Girando a la derecha')
+                            print('Girando a la derecha...', giro)
                             if giro == False:
                                 self.motors.sendW(0)
-                                self.noObstRight = True
-                                print('Giro a la derecha hecho')
-
+                                self.noObstRight = False
+                                self.sizeVacuum = False
+                                print('GIRO A LA DERECHA HECHO')
+                                
                         else:
                             # Avanza
-                            print (' AVANZOOOOOOOOO ')
+                            print (' Avanzando... ')
                             self.motors.sendW(0)
-                            self.motors.sendV(0.5)
+                            self.motors.sendV(0.1)
                             self.yaw = yaw
-                        '''              
-
-               
+                                        '''              
+                               
             else:
                 # Reinicia todas las variables globales
                 self.startTime = 0
                 self.crashObstacle = False
                 self.obstacleRight = False
-                self.turnLeft = False
-                self.turnRight = False
+                self.noObstRight = False
+                self.corner = False
+                self.sizeVacuum = False
