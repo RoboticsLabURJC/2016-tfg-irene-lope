@@ -40,11 +40,12 @@ class MyAlgorithm2(threading.Thread):
         self.corner = False
         self.sizeVacuum = False
         
-        self.startTime = 0
+        self.startTimeSat = 0
         self.time = 0
         self.timeSat = 0
         self.yaw = 0
         self.numIteracion = 0
+        
         self.DIST_TO_OBST_RIGHT = 30
         self.DIST_TO_OBST_FRONT = 15
 
@@ -372,12 +373,12 @@ class MyAlgorithm2(threading.Thread):
             print "angleC", angleC
             
             # Inicializa el tiempo de inicio
-            if self.startTime == 0:
-                self.startTime = time.time()
+            if self.startTimeSat == 0:
+                self.startTimeSat = time.time()
             timeNow = time.time()
             
             # Solo se recorre la pared por un tiempo
-            if self.startTime - timeNow < 60:
+            if self.startTimeSat - timeNow < 60:
                 if crash == 0 and self.crashObstacle == False:             
                     # Avanzo hasta que encuentro un obstaculo
                     print('AVANZO HASTA EL PRIMER OBSTACULO')
@@ -398,8 +399,6 @@ class MyAlgorithm2(threading.Thread):
 
                  
                 if self.crashObstacle == True:
-                    distToObstacleRight = 30
-                    distToObstacleFront = 15
                     print laserRight
                     # Turn until the obstacle is to the right
                     #if laserRight > distToObstacleRight and self.obstacleRight == False:
@@ -413,8 +412,8 @@ class MyAlgorithm2(threading.Thread):
                     '''
                     if self.obstacleRight == True:
                         # El obstaculo está a la derecha
-                        print('LASER CENTER: ', laserCenter, 'distFront: ', distToObstacleFront )
-                        print('LASER RIGHT: ', laserRight, 'distRight: ', distToObstacleRight )
+                        print('LASER CENTER: ', laserCenter, 'distFront: ', self.DIST_TO_OBST_FRONT )
+                        print('LASER RIGHT: ', laserRight, 'distRight: ', self.DIST_TO_OBST_RIGHT )
                         
                         if laserCenter < self.DIST_TO_OBST_FRONT or self.corner == True:
                             # Está en una esquina
@@ -440,15 +439,17 @@ class MyAlgorithm2(threading.Thread):
                             
                             if self.sizeVacuum == False:
                                 # Avanza el tamaño de la aspiradora
-                                self.motors.sendV(0.3)
+                                self.motors.sendV(0.35)
                                 self.sizeVacuum = True
                                 print ('Avanzando tamaño vacuum...')
                                 time.sleep(1)
-
+                                
+                                self.motors.sendV(0)
+                            
                             # Gira 90 grados a la derecha
                             self.orientation = 'right'
-                            giro = self.turn90(self.yaw + pi/2, pi/2, yaw)
-                            print('Girando a la derecha...', giro)
+                            giro = self.turn90(self.yaw - pi/2, -pi/2, yaw)
+                            print('Girando a la derecha...')
                             if giro == False:
                                 self.motors.sendW(0)
                                 self.noObstRight = False
@@ -465,7 +466,7 @@ class MyAlgorithm2(threading.Thread):
                                
             else:
                 # Reinicia todas las variables globales
-                self.startTime = 0
+                self.startTimeSat = 0
                 self.crashObstacle = False
                 self.obstacleRight = False
                 self.noObstRight = False
