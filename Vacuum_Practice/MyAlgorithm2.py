@@ -230,31 +230,7 @@ class MyAlgorithm2(threading.Thread):
 
     def execute(self):
         # TODO
-        '''
-        # Time
         
-        self.numIteracion = self.numIteracion + 1
-        if self.numIteracion % 5 == 0:
-            self.time = self.time + 1
-        
-        if self.saturation == False:
-            if self.time % 5 == 0:
-                # If 5 seconds have elapsed we reduce the value of the squares of the grid
-                self.reduceValueTime()
-                
-            if self.time != 0 and self.time % 60 == 0:
-                self.saturation = self.checkSaturation()
-                if self.saturation == True:
-                    # Stop
-                    self.motors.sendW(0)
-                    self.motors.sendV(0)
-                print ("saturation", self.saturation)
-            
-            # Show grid
-            self.changeValuesGrid()
-            self.showGrid()
-          
-        '''
         # Check the saturation
         if self.time == 0:
             self.time = time.time()
