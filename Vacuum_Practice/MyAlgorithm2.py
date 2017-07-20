@@ -28,7 +28,7 @@ class MyAlgorithm2(threading.Thread):
         self.grid = np.ones([500, 500], float)
         
         self.orientation = 'left'
-
+        
         self.secondTurn = True
         self.horizontal = True
         self.crash = False
@@ -40,14 +40,14 @@ class MyAlgorithm2(threading.Thread):
         self.corner = False
         self.sizeVacuum = False
         
-        self.startTimeSat = 0
+        self.startTime = 0
         self.time = 0
         self.timeSat = 0
         self.yaw = 0
         self.numIteracion = 0
-        
         self.DIST_TO_OBST_RIGHT = 30
-        self.DIST_TO_OBST_FRONT = 10
+        self.DIST_MIN_TO_OBST_RIGHT = 15
+        self.DIST_TO_OBST_FRONT = 15
 
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -62,7 +62,6 @@ class MyAlgorithm2(threading.Thread):
             angle = math.radians(i)
             laser += [(dist, angle)]
         return laser
-    
     
     def laser_vector(self,laser_array):
         laser_vectorized = []
@@ -91,10 +90,8 @@ class MyAlgorithm2(threading.Thread):
             if (ms < time_cycle):
                 time.sleep((time_cycle - ms) / 1000.0)
 
-
     def stop (self):
         self.stop_event.set()
-
 
     def play (self):
         if self.is_alive():
@@ -102,20 +99,23 @@ class MyAlgorithm2(threading.Thread):
         else:
             self.start()
 
-
     def kill (self):
         self.kill_event.set()
         
+    
+    def initTime(self):
+        if self.time == 0:
+            self.time = time.time()
+        if self.timeSat == 0:
+            self.timeSat = time.time()
         
     def RTy(self, angle, tx, ty, tz):
         RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
         return RT
 
-
     def RTVacuum(self):
         RTy = self.RTy(pi, 5.6, 4, 0)
         return RTy
-  
         
     def reduceValueSquare(self, numRow, numColumn):
         # Reduce the value of a particular square
@@ -124,7 +124,6 @@ class MyAlgorithm2(threading.Thread):
             for j in range((numRow * scale), (numRow*scale + scale)):
                 if self.grid[i][j] != 0:
                     self.grid[i][j] = self.grid[i][j] - 1
-       
         
     def reduceValueTime(self):
         # Number of rows is 10 and number of columns is 10
@@ -192,6 +191,10 @@ class MyAlgorithm2(threading.Thread):
                 break
         return crash
         
+    def stopVacuum(self):
+        self.motors.sendW(0)
+        self.motors.sendV(0)
+        
         
     def returnOrientation(self, yaw):
         if -pi/2 <= yaw <= pi/2:
@@ -199,12 +202,10 @@ class MyAlgorithm2(threading.Thread):
         elif pi/2 <= yaw <= pi or -pi <= yaw <= -pi/2:
             orientation = 'right'
         return orientation
-     
         
     def turn90(self, angle1, angle2, yawNow):
-        # angle1: orientacion a la que tienes que llegar si la orientacion es izq
-        # angle2: orientacion a la que tienes que llegar si la orientacion es decha
-        # yawNow: orientacion actual
+        # angle1: orientacion a la que tiene que llegar si la orientacion es izq
+        # angle2: orientacion a la que tiene que llegar si la orientacion es derecha
         turn = True
         rangeDegrees = 0.125
         
@@ -225,12 +226,10 @@ class MyAlgorithm2(threading.Thread):
         else:
             turn = False
         return turn
-    
         
     def calculateSideTriangle(self, a, b, angle):
         c = math.sqrt(pow(a,2) + pow(b,2) - 2*a*b*math.cos(angle))
         return c
-    
         
     def calculateAngleTriangle(self, a, b, c):
         numer = pow(a,2) + pow(b,2) - pow(c,2)
@@ -238,16 +237,14 @@ class MyAlgorithm2(threading.Thread):
         angleC = math.acos(numer/deno)
         return angleC
 
-
     def execute(self):
+
+        print ('Execute')
         # TODO
-        
-        # Check the saturation
-        if self.time == 0:
-            self.time = time.time()
-        if self.timeSat == 0:
-            self.timeSat = time.time()
-               
+
+        # Time
+        self.initTime()
+            
         timeNow = time.time()
         if self.saturation == False:
             #print('TIME', abs(self.time - timeNow))
@@ -263,14 +260,13 @@ class MyAlgorithm2(threading.Thread):
                 self.saturation = self.checkSaturation()
                 if self.saturation == True:
                     # Stop
-                    self.motors.sendW(0)
-                    self.motors.sendV(0)
+                    self.stopVacuum()
                 self.timeSat = 0
             
         # Show grid
         self.changeValuesGrid()
         self.showGrid()
-              
+                
         # Vacuum's poses
         x = self.pose3d.getX()
         y = self.pose3d.getY()
@@ -280,13 +276,13 @@ class MyAlgorithm2(threading.Thread):
         crash = self.checkCrash()
         
         print (crash)
+        self.saturation = True
         
         if self.saturation == False:
             if crash == 1:
                 print ("CRAAASH")
                 # Stop
-                self.motors.sendW(0)
-                self.motors.sendV(0)
+                self.stopVacuum()
                 time.sleep(1)
                 # Go backwards
                 self.motors.sendV(-0.1)
@@ -298,7 +294,7 @@ class MyAlgorithm2(threading.Thread):
                 self.crash = True
                 
             if self.firstTurn == False and self.crash == True:
-                print ("HACIENDO PRIMER GIRO...")
+                print ("PRIMER GIRO")
                 # Yaw
                 yawNow = self.pose3d.getYaw()
                 # Orientation
@@ -307,29 +303,23 @@ class MyAlgorithm2(threading.Thread):
                 giro = self.turn90(pi/2, pi/2, yawNow)
                     
                 if giro == False:
-                    print ("PRIMER GIRO HECHO")
+                    print ("GIRO HECHO")
                     self.firstTurn = True
-                    
-                    # Go forward
+                    # Go forwards
                     self.motors.sendW(0)
                     time.sleep(2)
-                    
-                    if crash == 0:
-                        self.motors.sendV(0.22)
-                        print ('AVANZANDO TAMAÑO DE ASPIRADORA...')                                   
-                        time.sleep(1)
-                       
+                    self.motors.sendV(0.22)                                        
+                    time.sleep(1)
                     self.secondTurn = False
                     
                     
             elif self.secondTurn == False and self.crash == True:
-                print ("HACIENDO SEGUNDO GIRO...")
+                print ("SEGUNDO GIRO")
                 # Yaw
                 yawNow = self.pose3d.getYaw()
                 giro = self.turn90(pi, 0, yawNow)
                 
                 if giro == False:
-                    print ("SEGUNDO GIRO HECHO")
                     self.secondTurn = True
             
             else:
@@ -338,18 +328,17 @@ class MyAlgorithm2(threading.Thread):
                 self.motors.sendW(0.0)
                 time.sleep(1)
                 self.motors.sendV(0.5)
-
+                self.crash = False
+                self.firstTurn = True
                 
         else:
             # There is saturation
-            print ("RECORRER PERIMETRO...")
+            print ("RECORRER PERIMETRO")
             
             # Get the data of the laser sensor, which consists of 180 pairs of values
             laser_data = self.laser.getLaserData()
-            #print laser_data.numLaser
-            #print laser_data.distanceData[0], laser_data.distanceData[laser_data.numLaser-1]
             
-            # Distancia en milimetros, pasamosa cm
+            # Distance in millimeters, we change to cm
             laserRight = laser_data.distanceData[0]/10
             laserCenter = laser_data.distanceData[90]/10
             laser45 = laser_data.distanceData[45]/10
@@ -357,63 +346,57 @@ class MyAlgorithm2(threading.Thread):
             # Calculate the angle of triangle
             a = self.calculateSideTriangle(laserRight, laser45, 45)
             angleC = self.calculateAngleTriangle(a, laserRight, laser45)
-            print "angleC", angleC
             
-            # Inicializa el tiempo de inicio
-            if self.startTimeSat == 0:
-                self.startTimeSat = time.time()
+            # Initialize start time
+            if self.startTime == 0:
+                self.startTime = time.time()
             timeNow = time.time()
             
-            # Solo se recorre la pared por un tiempo
-            if self.startTimeSat - timeNow < 60:
+            # Only walks the wall for a while
+            if self.startTime - timeNow < 60:
                 if crash == 0 and self.crashObstacle == False:             
-                    # Avanzo hasta que encuentro un obstaculo
-                    print('AVANZO HASTA EL PRIMER OBSTACULO')
-                    self.motors.sendV(0.3)
-                elif crash == 1:
-                    # Encuentra el obstaculo
-                    print('OBSTACULO ENCONTRADO')
+                    # I go forward until I find an obstacle
+                    self.motors.sendV(0.5)
+                    print("SOLO AVANZO POR NO CRASH")
+                elif crash == 1 and self.crashObstacle == False:
                     self.crashObstacle = True
-                    
+                    print("NUEVO CRASH")
                     # Stop
-                    self.motors.sendW(0)
-                    self.motors.sendV(0)
+                    self.stopVacuum()   
                     time.sleep(1)
                     # Go backwards
                     self.motors.sendV(-0.1)
                     time.sleep(1)
-                    self.motors.sendV(0)
-
-                 
+                    print("HACIA ATRAS ")
+                    
+                    
                 if self.crashObstacle == True:
                     print laserRight
                     # Turn until the obstacle is to the right
-                    #if laserRight > distToObstacleRight and self.obstacleRight == False:
                     if (angleC >= pi/2 + 0.1 or angleC <= pi/2 - 0.1) and self.obstacleRight == False:
                         self.motors.sendV(0)
                         self.motors.sendW(0.2)
                         print("GIRO HASTA QUE ESTE LA PARED A LA DERECHA")
                     else:
                         self.obstacleRight = True
+                        self.motors.sendW(0)
                         
-                    
                     if self.obstacleRight == True:
-                        # El obstaculo está a la derecha
-                        print('LASER CENTER: ', laserCenter, 'distFront: ', self.DIST_TO_OBST_FRONT )
-                        print('LASER RIGHT: ', laserRight, 'distRight: ', self.DIST_TO_OBST_RIGHT )
+                        # The obstacle is on the right
                         
-                        if laserCenter <= self.DIST_TO_OBST_FRONT or self.corner == True:
+                        if laserCenter < self.DIST_TO_OBST_FRONT or self.corner == True:
                             # Está en una esquina
-                            print (' ESTOY EN UN RINCÓN ')
+                            print (' ESTOY EN UNA ESQUINA ')
                             self.corner = True
                             
-                            # Parar
+                            # Stop
                             self.motors.sendV(0)
-
+                            
                             # Gira 90 grados a la izq
                             if self.yaw <= (pi + 0.2) and self.yaw >= (pi - 0.2):
                                 self.yaw = -pi
-                                
+
+                            # Gira 90 grados a la izq
                             self.orientation = 'left'
                             giro = self.turn90(self.yaw + pi/2, pi/2, yaw)
                             print('Girando a la izquierda...')
@@ -421,48 +404,14 @@ class MyAlgorithm2(threading.Thread):
                                 self.motors.sendW(0)
                                 self.corner = False
                                 print('GIRO A LA IZQUIERDA HECHO')
-                            '''
-                            elif ((laserRight >= self.DIST_TO_OBST_RIGHT) and (laser45 >= self.DIST_45)) or self.noObstRight == True:
-                                # Ya no hay obstaculo a la derecha
-                                print (' NO HAY OBSTACULO A LA DERECHA ')
-                                self.noObstRight = True
 
-                                if self.x == 0:
-                                    self.x = abs(self.pose3d.getX())
-                                if self.y == 0:
-                                    self.y = abs(self.pose3d.getY())
-                        
-                                x = abs(self.pose3d.getX())
-                                y = abs(self.pose3d.getY())
-                                
-                                print('   x - x: ',  abs(self.x - x))
-                                print('   y - y: ',  abs(self.y - y))
-                                print('self.x: ', self.x, ' x: ', x)
-                                print('self.y: ', self.y, ' y: ', y)
-                                         
-                                if laser45 > self.DIST_45:
-                                    if (abs(self.x - x) <= 0.4 and abs(self.y - y) <= 0.1) or (abs(self.y - y) <= 0.4 and abs(self.x - x) <= 0.1):
-                                        self.motors.sendV(0.1)
-                                        print ('Avanzando tamaño de aspiradora...')
-                                    else:
-                                        self.motors.sendV(0)
-                                        
-                                        # Gira 90 grados a la derecha
-                                        self.orientation = 'right'
-                                        giro = self.turn90(self.yaw - pi/2, self.yaw - pi/2, yaw)
-                                        print('Girando a la derecha...')
-                                        if giro == False:
-                                            self.motors.sendW(0)
-                                            self.noObstRight = False
-                                            self.sizeVacuum = False
-                                            print('GIRO A LA DERECHA HECHO')
-                                            self.x = 0
-                                            self.y = 0
-                                            '''
-                  
                         else:
                             # Avanza
-                            if laserRight >= self.DIST_TO_OBST_RIGHT:
+                            if laserRight <= self.DIST_MIN_TO_OBST_RIGHT:
+                                print('Girooo')
+                                self.motors.sendV(0)
+                                self.motors.sendW(0.1)
+                            elif laserRight >= self.DIST_TO_OBST_RIGHT:
                                 # Giro
                                 print('Girando...')
                                 self.motors.sendV(0) 
@@ -472,13 +421,14 @@ class MyAlgorithm2(threading.Thread):
                                 self.motors.sendW(0)
                                 self.motors.sendV(0.1)
                             self.yaw = yaw
-                                                     
-                               
+                        
             else:
-                # Reinicia todas las variables globales
-                self.startTimeSat = 0
+                # Restart all global variables
+                self.startTime = 0
                 self.crashObstacle = False
                 self.obstacleRight = False
                 self.noObstRight = False
                 self.corner = False
                 self.sizeVacuum = False
+
+
