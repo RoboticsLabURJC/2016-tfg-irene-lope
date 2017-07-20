@@ -115,6 +115,25 @@ class MyAlgorithm(threading.Thread):
         return v
     
     
+    def saveFrame(self, image):
+        self.numFrames += 1
+        if self.numFrames == self.FRAMES:
+            self.framePrev = image
+            self.numFrames = 0
+    
+    
+    def findCar(self, cont, image):
+        if len(cont) != 0:
+            # Si hay movimiento
+            # Recorremos todos los contornos encontrados
+            for c in cont:
+                # Obtenemos el bounds del contorno, el rectángulo mayor que engloba al contorno
+                (x, y, w, h) = cv2.boundingRect(c)
+                # Dibujamos el rectángulo del bounds
+                cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                self.detectionCar = True
+                
+    
     def execute(self):
         
         # TODO
@@ -225,7 +244,7 @@ class MyAlgorithm(threading.Thread):
             
             # Getting the imges
             imageL = self.cameraL.getImage()
-            imageR = self.cameraR.getImage()
+            #imageR = self.cameraR.getImage()
 
             # Convertimos a escala de grises
             imageL_gray = cv2.cvtColor(imageL, cv2.COLOR_BGR2GRAY)
@@ -238,37 +257,40 @@ class MyAlgorithm(threading.Thread):
                
             # Calculo de la diferencia entre el fondo y el frame actual
             image_diff = cv2.absdiff(self.framePrev, imageL_gray)
-            #cv2.imshow("image_diff", image_diff)
             
             # Guardo cada 5 frames
+            self.saveFrame(imageL_gray)
+            '''
             self.numFrames += 1
             if self.numFrames == self.FRAMES:
                 self.framePrev = imageL_gray
                 self.numFrames = 0
-                
+            '''     
             # Aplicamos un umbral
             image_seg = cv2.threshold(image_diff, 25, 255, cv2.THRESH_BINARY)[1]
             
             # Dilatamos el umbral para tapar agujeros
             image_dil = cv2.dilate(image_seg, None, iterations=2)
-            #cv2.imshow("image_dil", image_dil)
+            cv2.imshow("image_dil", image_dil)
             
             # Copiamos el umbral para detectar los contornos
             contornosimg = image_dil.copy()
             
             # Buscamos contorno en la imagen
-            im, contornos, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+            im, cont, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+            self.findCar(cont, imageL)
             
-            if len(contornos) != 0:
+            '''
+            if len(cont) != 0:
                 # Si hay movimiento
                 # Recorremos todos los contornos encontrados
-                for c in contornos:
+                for c in cont:
                     # Obtenemos el bounds del contorno, el rectángulo mayor que engloba al contorno
                     (x, y, w, h) = cv2.boundingRect(c)
                     # Dibujamos el rectángulo del bounds
                     cv2.rectangle(imageL, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     self.detectionCar = True
-              
+            ''' 
 
         if self.detectionCar == False:          
             # ARRANQUE
@@ -321,7 +343,7 @@ class MyAlgorithm(threading.Thread):
             for i in range(0, columns-1):   
                 # Busco el cambio de blanco a negro                 
                 if i == 0:
-                    # Si estoy en el primero resto con el siguiente
+                    # Si estoy en el primer pixel resto con el siguiente
                     value = image_filtered[300, i+1] - image_filtered[300, i] 
                 else:
                     # Si no resto con el anterior
