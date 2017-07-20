@@ -308,10 +308,10 @@ class MyAlgorithm(threading.Thread):
             # DETECCION DE CARRETERA
             
             # Center image
-            img_detection = self.cameraC.getImage()
+            imageC = self.cameraC.getImage()
             
             # RGB model change to HSV
-            hsv_image = cv2.cvtColor(img_detection, cv2.COLOR_RGB2HSV)
+            hsv_image = cv2.cvtColor(imageC, cv2.COLOR_RGB2HSV)
             
             # Values of HSV
             value_min_HSV = np.array([0, 5, 0])
@@ -319,7 +319,6 @@ class MyAlgorithm(threading.Thread):
 
             # Segmentation
             image_filtered = cv2.inRange(hsv_image, value_min_HSV, value_max_HSV)
-            #cv2.imshow("filtered no kernel", image_filtered)
             
             # Close, morphology element
             kernel = np.ones((18,18), np.uint8)
@@ -331,8 +330,8 @@ class MyAlgorithm(threading.Thread):
             # GIRO
             
             # Shape gives us the number of rows and columns of an image
-            rows = img_detection.shape[0]
-            columns = img_detection.shape[1]
+            rows = imageC.shape[0]
+            columns = imageC.shape[1]
             print columns, rows
             
             # Initialize variables
