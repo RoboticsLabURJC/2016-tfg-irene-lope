@@ -109,11 +109,16 @@ class MyAlgorithm2(threading.Thread):
         self.kill_event.set()
         
     
-    def initTime(self):
+    def initSatTime(self):
         if self.time == 0:
             self.time = time.time()
         if self.timeSat == 0:
             self.timeSat = time.time()
+    
+    
+    def initPerimTime(self):
+        if self.startTime == 0:
+            self.startTime = time.time()   
         
         
     def RTy(self, angle, tx, ty, tz):
@@ -302,7 +307,12 @@ class MyAlgorithm2(threading.Thread):
             self.motors.sendW(0)
             self.motors.sendV(0.1)
             
-            
+    
+    def goForward(self,v):
+        self.motors.sendW(0)
+        self.motors.sendV(v)
+        
+               
     def restartVariables(self):
         self.startTime = 0
         self.crashObstacle = False
@@ -311,15 +321,8 @@ class MyAlgorithm2(threading.Thread):
         self.corner = False
         self.sizeVacuum = False
     
-
-    def execute(self):
-
-        print ('Execute')
-        # TODO
-
-        # Time
-        self.initTime()
-            
+    
+    def checkSaturation(self):
         timeNow = time.time()
         if self.saturation == False:          
             if abs(self.time - timeNow) >= 5:
@@ -333,8 +336,33 @@ class MyAlgorithm2(threading.Thread):
                     # Stop
                     self.stopVacuum()
                 self.timeSat = 0
-            
-        # Show grid
+                
+
+    def execute(self):
+
+        # TODO
+
+        # Time
+        self.initSatTime()
+        
+        # Check saturation
+        self.checkSaturation()
+        '''  
+        timeNow = time.time()
+        if self.saturation == False:          
+            if abs(self.time - timeNow) >= 5:
+                # If 5 seconds have elapsed we reduce the value of the squares of the grid
+                self.reduceValueTime()
+                self.time = 0
+                
+            if abs(self.timeSat - timeNow) >= 20:
+                self.saturation = self.checkSaturation()
+                if self.saturation == True:
+                    # Stop
+                    self.stopVacuum()
+                self.timeSat = 0
+        '''   
+        # Change and show grid
         self.changeValuesGrid()
         self.showGrid()
                 
@@ -346,12 +374,12 @@ class MyAlgorithm2(threading.Thread):
         # Check crash
         crash = self.checkCrash()
         
-        print (crash)
+        #print (crash)
         self.saturation = True
         
         if self.saturation == False:
             if crash == 1:
-                print ("CRAAASH")
+                print ("First crash")
                 # Stop and go backwards
                 self.stopAndBackwards()
                 
@@ -372,11 +400,15 @@ class MyAlgorithm2(threading.Thread):
                 if giro == False:
                     print ("GIRO HECHO")
                     self.firstTurn = True
+                    
                     # Go forwards
+                    self.goForward(0.22)
+                    '''
                     self.motors.sendW(0)
                     time.sleep(2)
                     self.motors.sendV(0.22)                                        
                     time.sleep(1)
+                    '''
                     self.secondTurn = False
                     
                     
@@ -392,9 +424,12 @@ class MyAlgorithm2(threading.Thread):
             else:
                 print ("AVANZAR")
                 # Go forward
+                self.goForward(0.5)
+                '''
                 self.motors.sendW(0.0)
                 time.sleep(1)
                 self.motors.sendV(0.5)
+                '''
                 self.crash = False
                 self.firstTurn = True
                 
@@ -415,21 +450,25 @@ class MyAlgorithm2(threading.Thread):
             angleC = self.calculateAngleTriangle(a, laserRight, laser45)
             
             # Initialize start time
+            self.initPerimTime()
+            '''
             if self.startTime == 0:
                 self.startTime = time.time()
+            '''
             timeNow = time.time()
             
             # Only walks the wall for a while
             if self.startTime - timeNow < 60:
                 if crash == 0 and self.crashObstacle == False:             
                     # I go forward until I find an obstacle
-                    self.motors.sendV(0.5)
+                    self.goForward(0.5)
+                    #self.motors.sendV(0.5)
                     print("GO FORWARD")
                 elif crash == 1 and self.crashObstacle == False:
                     self.crashObstacle = True
                     print("NEW CRASH")
                     # Stop and go backwards
-                    self.stopAndBackwards()'               
+                    self.stopAndBackwards()               
                     
                 if self.crashObstacle == True:
                     # Turn until the obstacle is to the right
