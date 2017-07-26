@@ -310,6 +310,7 @@ class MyAlgorithm2(threading.Thread):
     
     def goForward(self,v):
         self.motors.sendW(0)
+        time.sleep(1)
         self.motors.sendV(v)
         
                
@@ -322,7 +323,7 @@ class MyAlgorithm2(threading.Thread):
         self.sizeVacuum = False
     
     
-    def checkSaturation(self):
+    def checkSaturationVacuum(self):
         timeNow = time.time()
         if self.saturation == False:          
             if abs(self.time - timeNow) >= 5:
@@ -346,22 +347,8 @@ class MyAlgorithm2(threading.Thread):
         self.initSatTime()
         
         # Check saturation
-        self.checkSaturation()
-        '''  
-        timeNow = time.time()
-        if self.saturation == False:          
-            if abs(self.time - timeNow) >= 5:
-                # If 5 seconds have elapsed we reduce the value of the squares of the grid
-                self.reduceValueTime()
-                self.time = 0
-                
-            if abs(self.timeSat - timeNow) >= 20:
-                self.saturation = self.checkSaturation()
-                if self.saturation == True:
-                    # Stop
-                    self.stopVacuum()
-                self.timeSat = 0
-        '''   
+        self.checkSaturationVacuum()
+        
         # Change and show grid
         self.changeValuesGrid()
         self.showGrid()
@@ -403,12 +390,7 @@ class MyAlgorithm2(threading.Thread):
                     
                     # Go forwards
                     self.goForward(0.22)
-                    '''
-                    self.motors.sendW(0)
-                    time.sleep(2)
-                    self.motors.sendV(0.22)                                        
                     time.sleep(1)
-                    '''
                     self.secondTurn = False
                     
                     
@@ -425,11 +407,6 @@ class MyAlgorithm2(threading.Thread):
                 print ("AVANZAR")
                 # Go forward
                 self.goForward(0.5)
-                '''
-                self.motors.sendW(0.0)
-                time.sleep(1)
-                self.motors.sendV(0.5)
-                '''
                 self.crash = False
                 self.firstTurn = True
                 
@@ -451,10 +428,6 @@ class MyAlgorithm2(threading.Thread):
             
             # Initialize start time
             self.initPerimTime()
-            '''
-            if self.startTime == 0:
-                self.startTime = time.time()
-            '''
             timeNow = time.time()
             
             # Only walks the wall for a while
