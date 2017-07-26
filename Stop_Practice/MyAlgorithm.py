@@ -158,7 +158,6 @@ class MyAlgorithm(threading.Thread):
     def findRoad(self, image):
 
         # Shape gives us the number of rows and columns of an image
-        rows = image.shape[0]
         columns = image.shape[1]
         
         # Initialize variables
@@ -339,13 +338,11 @@ class MyAlgorithm(threading.Thread):
                 # Find the position of the road
                 position_border_left, position_border_right = self.findRoad(image_filtered)
                 
-                rows = imageC.shape[0]
                 columns = imageC.shape[1]
                 
                 # TURN LEFT
                 # Si ha encontrado carretera  
-                
-                        
+         
                 if position_border_left != 0 or position_border_right != 0:    
                     # Calculating the intermediate position of the road
                     position_middle_road = (position_border_left + position_border_right) / 2
@@ -353,24 +350,13 @@ class MyAlgorithm(threading.Thread):
                     position_middle_lane = (position_middle_road + position_border_right) / 2
                     
                     cv2.rectangle(imageC, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
-                    
-                    
+
                     # Calculating the desviation
                     desviation = position_middle_lane - (columns/2)
-                    print (" desviation    ", desviation)
                 
                     # Speed
-                    # checkDesviation
                     self.controlDesviation(desviation)
-                    '''
-                    if abs(desviation) < 15:
-                        # Go straight
-                        self.motors.sendV(50)
-                        self.motors.sendW(0)
-                    else:
-                        self.motors.sendW(3.5)
-                        self.motors.sendV(30)
-                    '''
+
         # Reset variables           
         self.restartVariables() 
       
