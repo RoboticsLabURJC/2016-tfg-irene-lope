@@ -40,6 +40,7 @@ class MyAlgorithm(threading.Thread):
         self.time = 0
         
         self.FRAMES = 10
+        self.MAX_DESV = 15
         
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
@@ -153,7 +154,38 @@ class MyAlgorithm(threading.Thread):
                 cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 self.detectionCar = True
                 
-    
+                
+    def findRoad(self, image):
+
+        # Shape gives us the number of rows and columns of an image
+        rows = image.shape[0]
+        columns = image.shape[1]
+        
+        # Initialize variables
+        position_border_left = 0
+        position_border_right = 0
+        
+        # Recorre las columnas de la imagen y la fila 300
+        for i in range(0, columns-1):   
+            # Busco el cambio de blanco a negro                 
+            if i == 0:
+                # Si estoy en el primer pixel resto con el siguiente
+                value = image[300, i+1] - image[300, i] 
+            else:
+                # Si no resto con el anterior
+                value = image[300, i] - image[300, i-1]
+                
+            if(value != 0): # Si ha habido cambio de color
+                if (value == 255):
+                    # Ha pasado de negro a blanco, esta en el borde izq
+                    position_border_left = i
+                else:
+                    # -255, ha pasado de negro a blanco, esta en el borde dcho
+                    position_border_right = i - 1
+                    
+        return position_border_left, position_border_right    
+        
+        
     def restartVariables(self):
         if self.stop == True:
             timeNow = time.time()
@@ -165,6 +197,17 @@ class MyAlgorithm(threading.Thread):
                 self.detectionCar = False
                 
                 
+    def controlDesviation(self, desv):
+        if abs(desv) < self.MAX_DESV:
+            # Go straight
+            self.motors.sendV(50)
+            self.motors.sendW(0)
+        else:
+            # Turn
+            self.motors.sendW(3.5)
+            self.motors.sendV(30)
+            
+                       
     def execute(self):
         
         # TODO
@@ -292,49 +335,24 @@ class MyAlgorithm(threading.Thread):
                 # RGB model change to HSV
                 image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
                 cv2.imshow("filtered", image_filtered)
+                               
+                # Find the position of the road
+                position_border_left, position_border_right = self.findRoad(image_filtered)
                 
-                # TURN LEFT
-                
-                # Shape gives us the number of rows and columns of an image
                 rows = imageC.shape[0]
                 columns = imageC.shape[1]
                 
-                # Initialize variables
-                position_pixel_left = 0
-                position_pixel_right = 0
-                
-                # Recorre las columnas de la imagen y la fila 300
-                
-                # findRoad
-                
-                for i in range(0, columns-1):   
-                    # Busco el cambio de blanco a negro                 
-                    if i == 0:
-                        # Si estoy en el primer pixel resto con el siguiente
-                        value = image_filtered[300, i+1] - image_filtered[300, i] 
-                    else:
-                        # Si no resto con el anterior
-                        value = image_filtered[300, i] - image_filtered[300, i-1]
-                        
-                    if(value != 0): # Si ha habido cambio de color
-                        if (value == 255):
-                            # Ha pasado de negro a blanco, esta en el borde izq
-                            position_pixel_left = i
-                        else:
-                            # -255, ha pasado de negro a blanco, esta en el borde dcho
-                            position_pixel_right = i - 1
-                
+                # TURN LEFT
                 # Si ha encontrado carretera  
                 
-                # turnLeft
-                         
-                if position_pixel_left != 0 or position_pixel_right != 0:    
+                        
+                if position_border_left != 0 or position_border_right != 0:    
                     # Calculating the intermediate position of the road
-                    position_middle_road = (position_pixel_left + position_pixel_right) / 2
+                    position_middle_road = (position_border_left + position_border_right) / 2
                     # Calculating the intermediate position of the lane
-                    position_middle_lane = (position_middle_road + position_pixel_right) / 2
+                    position_middle_lane = (position_middle_road + position_border_right) / 2
                     
-                    cv2.rectangle(input_image, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
+                    cv2.rectangle(imageC, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
                     
                     
                     # Calculating the desviation
@@ -343,6 +361,8 @@ class MyAlgorithm(threading.Thread):
                 
                     # Speed
                     # checkDesviation
+                    self.controlDesviation(desviation)
+                    '''
                     if abs(desviation) < 15:
                         # Go straight
                         self.motors.sendV(50)
@@ -350,7 +370,7 @@ class MyAlgorithm(threading.Thread):
                     else:
                         self.motors.sendW(3.5)
                         self.motors.sendV(30)
-        
+                    '''
         # Reset variables           
         self.restartVariables() 
       
