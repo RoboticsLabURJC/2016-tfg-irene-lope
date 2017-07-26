@@ -31,16 +31,20 @@ class MyAlgorithm(threading.Thread):
         self.sleep = False
         self.detection = False
         self.stop = False
-        self.detectionCar = True
         self.turn = False
         self.turn45 = False
         
         self.yaw = 0
         self.numFrames = 0
         self.time = 0
+        self.detectionCar = 100 
         
         self.FRAMES = 10
         self.MAX_DESV = 15
+        self.MAX_DETECTION = 100
+        self.THRESHOLD_DET = 70
+        self.MIN_DET = 1
+        self.ADD_DET = 20
         
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
@@ -132,6 +136,7 @@ class MyAlgorithm(threading.Thread):
                 v = 0        
         else:
             v = 60
+            print('Going foward..')
         print('VELOCIDAD: ', v)
         return v
     
@@ -152,9 +157,15 @@ class MyAlgorithm(threading.Thread):
                 (x, y, w, h) = cv2.boundingRect(c)
                 # Dibujamos el rectángulo del bounds
                 cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                self.detectionCar = True
+                if self.detectionCar < self.MAX_DETECTION:
+                    self.detectionCar += self.ADD_DET
                 
-                
+    
+    def checkDetectionCar(self):
+        if self.detectionCar >= self.MIN_DET:
+            self.detectionCar -= self.MIN_DET
+        
+               
     def findRoad(self, image):
 
         # Shape gives us the number of rows and columns of an image
@@ -184,18 +195,7 @@ class MyAlgorithm(threading.Thread):
                     
         return border_left, border_right    
         
-        
-    def restartVariables(self):
-        if self.stop == True:
-            timeNow = time.time()
-            if self.time == 0:
-                self.time = time.time()
-                
-            if timeNow - self.time >= 5:
-                self.time = 0
-                self.detectionCar = False
-                
-                
+              
     def controlDesviation(self, desv):
         if abs(desv) < self.MAX_DESV:
             # Go straight
@@ -334,8 +334,10 @@ class MyAlgorithm(threading.Thread):
             im, cont, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
             self.findCar(cont, imageL)
 
-
-        if self.detectionCar == False:          
+            self.checkDetectionCar()
+            print('DETECTION CAR: ', self.detectionCar)
+        
+        if self.detectionCar <= self.THRESHOLD_DET:          
             # ARRANQUE 
   
             # Turn 45 degrees
@@ -366,7 +368,4 @@ class MyAlgorithm(threading.Thread):
                     desviation = middle_lane - (columns/2)
                     # Speed
                     self.controlDesviation(desviation)
-                
-        # Reset variables           
-        self.restartVariables() 
-      
+        
