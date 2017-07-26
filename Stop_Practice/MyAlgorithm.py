@@ -213,16 +213,26 @@ class MyAlgorithm(threading.Thread):
         
         
     def findMidLane(self, border_left, border_right, columns):
-    
+        middle_lane = 0
         if border_left != 0 or border_right != 0:    
             # Calculating the intermediate position of the road
             middle_road = self.mean(border_left, border_right)
             # Calculating the intermediate position of the lane
             middle_lane = self.mean(middle_road, border_right)
             
-            return middle_lane
+        return middle_lane
                     
-                                         
+    
+    def turn45degrees(self, yaw):
+        if self.turn45 == False:
+            if yaw < 180 and yaw > 145:
+                print('Girando 45º...')
+                self.motors.sendV(30)
+                self.motors.sendW(3.5)
+            else:
+                self.turn45 = True
+                
+                                                  
     def execute(self):
         
         # TODO
@@ -326,21 +336,13 @@ class MyAlgorithm(threading.Thread):
 
 
         if self.detectionCar == False:          
-            # ARRANQUE
-            
+            # ARRANQUE 
+  
+            # Turn 45 degrees
             self.turn = True
-            
             yaw = abs(self.pose3d.getYaw() * 180/pi)                 
-            # Turn 45 degrees            
-            if self.turn45 == False:
-                if yaw < 180 and yaw > 145:
-                    print('Girando 45º...')
-                    self.motors.sendV(30)
-                    self.motors.sendW(3.5)
-                else:
-                    self.turn45 = True
-            
-            
+            self.turn45degrees(yaw)
+
             if self.turn45:        
                 # ROAD DETECTION
                 
@@ -349,7 +351,7 @@ class MyAlgorithm(threading.Thread):
                  
                 # RGB model change to HSV
                 image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
-                cv2.imshow("filtered", image_filtered)
+                #cv2.imshow("filtered", image_filtered)
                                
                 # Find the position of the road
                 border_left, border_right = self.findRoad(image_filtered)
@@ -358,7 +360,7 @@ class MyAlgorithm(threading.Thread):
                 
                 # TURN LEFT
                 middle_lane = self.findMidLane(border_left, border_right, columns)
-                if middle_lane != 0
+                if middle_lane != 0:
                     cv2.rectangle(imageC, (300, middle_lane), (300 + 1, middle_lane + 1), (0,255,0), 2)
                     # Calculating the desviation
                     desviation = middle_lane - (columns/2)
