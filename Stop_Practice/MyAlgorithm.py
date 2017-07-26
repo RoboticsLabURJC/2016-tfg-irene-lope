@@ -161,8 +161,8 @@ class MyAlgorithm(threading.Thread):
         columns = image.shape[1]
         
         # Initialize variables
-        position_border_left = 0
-        position_border_right = 0
+        border_left = 0
+        border_right = 0
         
         # Recorre las columnas de la imagen y la fila 300
         for i in range(0, columns-1):   
@@ -177,12 +177,12 @@ class MyAlgorithm(threading.Thread):
             if(value != 0): # Si ha habido cambio de color
                 if (value == 255):
                     # Ha pasado de negro a blanco, esta en el borde izq
-                    position_border_left = i
+                    border_left = i
                 else:
                     # -255, ha pasado de negro a blanco, esta en el borde dcho
-                    position_border_right = i - 1
+                    border_right = i - 1
                     
-        return position_border_left, position_border_right    
+        return border_left, border_right    
         
         
     def restartVariables(self):
@@ -205,8 +205,24 @@ class MyAlgorithm(threading.Thread):
             # Turn
             self.motors.sendW(3.5)
             self.motors.sendV(30)
+         
             
-                       
+    def mean(self, a, b):
+        m = (a + b)/2
+        return m
+        
+        
+    def findMidLane(self, border_left, border_right, columns):
+    
+        if border_left != 0 or border_right != 0:    
+            # Calculating the intermediate position of the road
+            middle_road = self.mean(border_left, border_right)
+            # Calculating the intermediate position of the lane
+            middle_lane = self.mean(middle_road, border_right)
+            
+            return middle_lane
+                    
+                                         
     def execute(self):
         
         # TODO
@@ -336,27 +352,19 @@ class MyAlgorithm(threading.Thread):
                 cv2.imshow("filtered", image_filtered)
                                
                 # Find the position of the road
-                position_border_left, position_border_right = self.findRoad(image_filtered)
+                border_left, border_right = self.findRoad(image_filtered)
                 
                 columns = imageC.shape[1]
                 
                 # TURN LEFT
-                # Si ha encontrado carretera  
-         
-                if position_border_left != 0 or position_border_right != 0:    
-                    # Calculating the intermediate position of the road
-                    position_middle_road = (position_border_left + position_border_right) / 2
-                    # Calculating the intermediate position of the lane
-                    position_middle_lane = (position_middle_road + position_border_right) / 2
-                    
-                    cv2.rectangle(imageC, (300,position_middle_lane), (300 + 1, position_middle_lane + 1), (0,255,0), 2)
-
+                middle_lane = self.findMidLane(border_left, border_right, columns)
+                if middle_lane != 0
+                    cv2.rectangle(imageC, (300, middle_lane), (300 + 1, middle_lane + 1), (0,255,0), 2)
                     # Calculating the desviation
-                    desviation = position_middle_lane - (columns/2)
-                
+                    desviation = middle_lane - (columns/2)
                     # Speed
                     self.controlDesviation(desviation)
-
+                
         # Reset variables           
         self.restartVariables() 
       
