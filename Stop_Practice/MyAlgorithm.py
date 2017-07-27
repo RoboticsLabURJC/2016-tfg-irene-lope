@@ -26,7 +26,8 @@ class MyAlgorithm(threading.Thread):
         self.imageC = None
         self.imageL = None
         self.imageR = None
-        self.framePrev = None
+        self.framePrevL = None
+        self.framePrevR = None
         
         self.sleep = False
         self.detection = False
@@ -35,7 +36,8 @@ class MyAlgorithm(threading.Thread):
         self.turn45 = False
         
         self.yaw = 0
-        self.numFrames = 0
+        self.numFramesL = 0
+        self.numFramesR = 0
         self.time = 0
         self.detectionCar = 100 
         
@@ -43,7 +45,7 @@ class MyAlgorithm(threading.Thread):
         self.MAX_DESV = 15
         self.MAX_DETECTION = 100
         self.THRESHOLD_DET = 70
-        self.MIN_DET = 1
+        self.MIN_DET = 2
         self.ADD_DET = 20
         
         # 0 to grayscale
@@ -141,11 +143,12 @@ class MyAlgorithm(threading.Thread):
         return v
     
     
-    def saveFrame(self, image):
-        self.numFrames += 1
-        if self.numFrames == self.FRAMES:
-            self.framePrev = image
-            self.numFrames = 0
+    def saveFrame(self, image, frame, numFrames):
+        numFrames += 1
+        if numFrames == self.FRAMES:
+            frame = image
+            numFrames = 0
+        return frame, numFrames
     
     
     def findCar(self, cont, image):
@@ -203,7 +206,10 @@ class MyAlgorithm(threading.Thread):
             self.motors.sendW(0)
         else:
             # Turn
-            self.motors.sendW(3.5)
+            if desv < 0:
+                self.motors.sendW(3.5)
+            else:
+                self.motors.sendW(-3.5)
             self.motors.sendV(30)
          
             
@@ -295,44 +301,51 @@ class MyAlgorithm(threading.Thread):
         # DETECCION DE COCHES
         
         if self.stop == True and self.turn == False:
-            
-            # Paro un tiempo si o si antes de ver si vienen coches
-            if self.sleep == False:
-                self.sleep = True
-                time.sleep(2)
-            
+
             # Getting the imges
             imageL = self.cameraL.getImage()
-            #imageR = self.cameraR.getImage()
+            imageR = self.cameraR.getImage()
 
             # Convertimos a escala de grises
             imageL_gray = cv2.cvtColor(imageL, cv2.COLOR_BGR2GRAY)
+            imageR_gray = cv2.cvtColor(imageR, cv2.COLOR_BGR2GRAY)
             
             # Aplicamos suavizado para eliminar ruido
             imageL_gray = cv2.GaussianBlur(imageL_gray, (21, 21), 0)
+            imageR_gray = cv2.GaussianBlur(imageR_gray, (21, 21), 0)
             
-            if self.framePrev is None:
-                self.framePrev = imageL_gray
+            if self.framePrevL is None:
+                self.framePrevL = imageL_gray
+            if self.framePrevR is None:
+                self.framePrevR = imageR_gray
                
             # Calculo de la diferencia entre el fondo y el frame actual
-            image_diff = cv2.absdiff(self.framePrev, imageL_gray)
+            imageL_diff = cv2.absdiff(self.framePrevL, imageL_gray)
+            imageR_diff = cv2.absdiff(self.framePrevR, imageR_gray)
             
             # Guardo cada 5 frames
-            self.saveFrame(imageL_gray)
+            self.framePrevL, self.numFramesL = self.saveFrame(imageL_gray, self.framePrevL, self.numFramesL)
+            self.framePrevR, self.numFramesR = self.saveFrame(imageR_gray, self.framePrevR, self.numFramesR)
    
             # Aplicamos un umbral
-            image_seg = cv2.threshold(image_diff, 25, 255, cv2.THRESH_BINARY)[1]
+            imageL_seg = cv2.threshold(imageL_diff, 25, 255, cv2.THRESH_BINARY)[1]
+            imageR_seg = cv2.threshold(imageR_diff, 25, 255, cv2.THRESH_BINARY)[1]
             
             # Dilatamos el umbral para tapar agujeros
-            image_dil = cv2.dilate(image_seg, None, iterations=2)
+            imageL_dil = cv2.dilate(imageL_seg, None, iterations=2)
+            imageR_dil = cv2.dilate(imageR_seg, None, iterations=2)
             #cv2.imshow("image_dil", image_dil)
             
             # Copiamos el umbral para detectar los contornos
-            contornosimg = image_dil.copy()
+            contornosimgL = imageL_dil.copy()
+            contornosimgR = imageR_dil.copy()
             
             # Buscamos contorno en la imagen
-            im, cont, hierarchy = cv2.findContours(contornosimg,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
-            self.findCar(cont, imageL)
+            im, contL, hierarchy = cv2.findContours(contornosimgL,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+            self.findCar(contL, imageL)
+            
+            im, contR, hierarchy = cv2.findContours(contornosimgR,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+            self.findCar(contR, imageR)
 
             self.checkDetectionCar()
             print('DETECTION CAR: ', self.detectionCar)
@@ -367,5 +380,4 @@ class MyAlgorithm(threading.Thread):
                     # Calculating the desviation
                     desviation = middle_lane - (columns/2)
                     # Speed
-                    self.controlDesviation(desviation)
-        
+                    self.controlDesviation(desviation)        
