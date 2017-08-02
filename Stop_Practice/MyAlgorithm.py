@@ -39,14 +39,16 @@ class MyAlgorithm(threading.Thread):
         self.numFramesL = 0
         self.numFramesR = 0
         self.time = 0
-        self.detectionCar = 100 
         
+        self.detectionCar = 100 
         self.FRAMES = 10
         self.MAX_DESV = 15
         self.MAX_DETECTION = 100
         self.THRESHOLD_DET = 70
         self.MIN_DET = 2
         self.ADD_DET = 20
+        
+        self.turnTo = '' 
         
         # 0 to grayscale
         self.template = cv2.imread('resources/template.png',0)
@@ -238,7 +240,16 @@ class MyAlgorithm(threading.Thread):
             else:
                 self.turn45 = True
                 
-                                                  
+                
+    def chooseDirection(self):
+        # Random int number between [0,2) --> 0 o 1
+        turnTo = np.random.randint(2)
+        if turnTo == 1:
+            return 'left'
+        else:
+            return 'right'
+            
+                                                         
     def execute(self):
         
         # TODO
@@ -357,6 +368,7 @@ class MyAlgorithm(threading.Thread):
             self.turn = True
             yaw = abs(self.pose3d.getYaw() * 180/pi)                 
             self.turn45degrees(yaw)
+            print('YAW:', yaw)
 
             if self.turn45:        
                 # ROAD DETECTION
