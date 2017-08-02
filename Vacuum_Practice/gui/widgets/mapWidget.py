@@ -15,7 +15,7 @@
 #  along with this program.  If not, see http://www.gnu.org/licenses/.
 #  Authors :
 #       Irene Lope Rodriguez<irene.lope236@gmail.com>
-#       Vanessa Fernandez Matinez<vanessa_1895@msn.com>
+#       Vanessa Fernandez Martinez<vanessa_1895@msn.com>
 
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel
@@ -95,13 +95,20 @@ class MapWidget(QWidget):
         yaw = pose.getYaw()
 
         final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
-        painter.translate(QPoint(final_poses[0], final_poses[1]))
-        painter.rotate(-180*yaw/pi)
-
+        
         triangle = QtGui.QPolygon()
-        triangle.append(QtCore.QPoint(x+50/3, y-4))
-        triangle.append(QtCore.QPoint(x+50/3, y+50/3-4))
-        triangle.append(QtCore.QPoint(x-9, y+2.25))
+        triangle.append(QtCore.QPoint(final_poses.flat[0]-50/9, final_poses.flat[1]+50/7))
+        triangle.append(QtCore.QPoint(final_poses.flat[0]+50/3, final_poses.flat[1]-10+50/7))
+        triangle.append(QtCore.QPoint(final_poses.flat[0]+50/3, final_poses.flat[1]+10+50/7))
+        matrix = QtGui.QTransform()
+        matrix.rotate(-180*yaw/pi)
+        triangle = matrix.map(triangle)
+        # The center of triangle is (final_poses.flat[0]+50/9, final_poses.flat[1]+50/7) 
+        center = matrix.map(QtCore.QPoint(final_poses.flat[0]+50/9, final_poses.flat[1]+50/7))
+        xDif = final_poses.flat[0]+50/9 - center.x()
+        yDif = final_poses.flat[1] +50/7- center.y()
+        
+        triangle.translate(xDif, yDif)
 
         pen = QPen(Qt.red, 2)
         painter.setPen(pen)
