@@ -16,7 +16,7 @@
     <include>
       <static>true</static>
       <uri>model://gazebo/models/stop_sign</uri>
-      <pose>3 -3 0 0 0 0</pose>
+      <pose>3.5 -3.5 0 0 0 0</pose>
     </include>
     
     <include>
@@ -119,7 +119,7 @@
     </include>
     
     
-    <!-- Cars-->
+    <!-- Cars
     <include>
       <uri>model://car</uri>
       <pose>-30 -1.5 0 0 0 1.57</pose>
@@ -128,7 +128,7 @@
     <include>
       <uri>model://car</uri>
       <pose>40 1.5 0 0 0 -1.57</pose>
-    </include>
+    </include>-->
     
     
     <!-- Roads -->
