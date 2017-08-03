@@ -47,6 +47,7 @@ class MyAlgorithm(threading.Thread):
         self.THRESHOLD_DET = 70
         self.MIN_DET = 2
         self.ADD_DET = 20
+        self.ROW_R = 320
         
         self.turnTo = '' 
         
@@ -171,7 +172,7 @@ class MyAlgorithm(threading.Thread):
             self.detectionCar -= self.MIN_DET
         
                
-    def findRoad(self, image):
+    def findRoadL(self, image):
 
         # Shape gives us the number of rows and columns of an image
         columns = image.shape[1]
@@ -198,20 +199,53 @@ class MyAlgorithm(threading.Thread):
                     # -255, ha pasado de negro a blanco, esta en el borde dcho
                     border_right = i - 1
                     
-        return border_left, border_right    
+        return border_left, border_right 
+           
         
+    def findRoadR(self, image):
+
+        # Shape gives us the number of rows and columns of an image
+        columns = image.shape[1]
+        
+        # Initialize variables
+        border_left = 0
+        border_right = 0
+               
+        # Recorre las columnas de la imagen y la fila 300
+        for i in range(0, columns-1):
+            # Busco el cambio de blanco a negro
+            if i != (columns-1):
+                value = image[self.ROW_R, columns - i-1] - image[self.ROW_R, columns -i-2]
+            else:
+                value = image[self.ROW_R, columns - i] - image[self.ROW_R, columns -i+1]
+            
+            if(value != 0): # Si ha habido cambio de color
+                if (value == 255):
+                    # Ha pasado de negro a blanco, esta en el borde dcho
+                    border_right = i
+                else:
+                    # -255, ha pasado de negro a blanco, esta en el borde izq
+                    border_left = i - 1
               
-    def controlDesviation(self, desv):
+        return border_left, border_right 
+        
+                 
+    def controlDesviation(self, desv, direction):
         if abs(desv) < self.MAX_DESV:
             # Go straight
-            self.motors.sendV(50)
+            self.motors.sendV(20)
             self.motors.sendW(0)
         else:
-            # Turn
-            if desv < 0:
-                self.motors.sendW(3.5)
+            if direction == 'left':
+                if desv < 0:
+                    self.motors.sendW(3.5)
+                else:
+                    self.motors.sendW(-3.5)
             else:
-                self.motors.sendW(-3.5)
+                if desv < 0:
+                    self.motors.sendW(-3.5)
+                else:
+                    self.motors.sendW(3.5)
             self.motors.sendV(30)
          
             
@@ -233,14 +267,16 @@ class MyAlgorithm(threading.Thread):
     
     def turn45degrees(self, yaw, direction):
         if self.turn45 == False:
-            if yaw < 180 and yaw > 145:
-                self.motors.sendV(30)
+            if yaw < 180 and yaw > 100:
                 if direction == 'left':
                     print('Girando 45º...')
+                    self.motors.sendV(30)
                     self.motors.sendW(3.5)
                 else:
                     print('Girando -45º...')
-                    self.motors.sendW(-3.5)
+                    self.motors.sendV(20)
+                    self.motors.sendW(-5.4)
+                    print('yaw: ', yaw)
             else:
                 self.turn45 = True
                 
@@ -370,45 +406,63 @@ class MyAlgorithm(threading.Thread):
         
         if self.detectionCar <= self.THRESHOLD_DET:          
             
+            self.turn = True
+            
             # Choose the direction of the rotation
             if self.turnTo == '':
                 self.turnTo = self.chooseDirection()
             self.turnTo = 'right'
             print ('Turn to: ', self.turnTo)
             
-            if self.turnTo == 'left':
-                # Turn 45 degrees
-                self.turn = True
-                yaw = abs(self.pose3d.getYaw() * 180/pi)                 
-                self.turn45degrees(yaw, self.turnTo)
-                print('YAW:', yaw)
-
-                if self.turn45:        
-                    # ROAD DETECTION
+            # Turn 45 degrees 
+            yaw = abs(self.pose3d.getYaw() * 180/pi)                 
+            self.turn45degrees(yaw, self.turnTo)
+            
+            if self.turn45:
+                # ROAD DETECTION    
                     
-                    # Center image
-                    imageC = self.cameraC.getImage()
-                     
-                    # RGB model change to HSV
-                    image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
-                    #cv2.imshow("filtered", image_filtered)
-                                   
-                    # Find the position of the road
-                    border_left, border_right = self.findRoad(image_filtered)
-                    
-                    columns = imageC.shape[1]
-                    
+                # Center image
+                imageC = self.cameraC.getImage()
+                columns = imageC.shape[1]
+                cv2.rectangle(imageC, (1, 1), ( 1+1,1+1), (255,255,0), 2)
+                # RGB model change to HSV
+                image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
+                cv2.imshow("filtered", image_filtered)
+                
+                if self.turnTo == 'left':    
                     # TURN LEFT
+                             
+                    # Find the position of the road
+                    border_left, border_right = self.findRoadL(image_filtered)
+
                     middle_lane = self.findMidLane(border_left, border_right, columns)
+                    print('middle_lane', middle_lane) 
+                    
                     if middle_lane != 0:
-                        cv2.rectangle(imageC, (300, middle_lane), (300 + 1, middle_lane + 1), (0,255,0), 2)
+                        #cv2.rectangle(imageC, (300, middle_lane), (300 + 1, middle_lane + 1), (0,255,0), 2)
+                        cv2.rectangle(imageC, (middle_lane, 300), ( middle_lane + 1,300 + 1), (0,255,0), 2)
                         # Calculating the desviation
                         desviation = middle_lane - (columns/2)
                         # Speed
-                        self.controlDesviation(desviation) 
-            else:
-                # Turn 45 degrees
-                self.turn = True
-                yaw = abs(self.pose3d.getYaw() * 180/pi)                 
-                self.turn45degrees(yaw, self.turnTo)
-                print('YAW:', yaw)     
+                        self.controlDesviation(desviation, self.turnTo) 
+                else:
+                    # TURN RIGHT
+
+                    # Find the position of the road
+                    border_left, border_right = self.findRoadR(image_filtered)
+                    cv2.rectangle(imageC, (border_left, self.ROW_R), (border_left+1, self.ROW_R +1 ), (255,0,0), 2)
+                    cv2.rectangle(imageC, (border_right, self.ROW_R), (border_right+1, self.ROW_R+1), (0,0,255), 2)
+                    
+                    middle_lane = self.findMidLane(border_left, border_right, columns)
+                    print('middle_lane', middle_lane) 
+                    
+                    if middle_lane != 0:
+                        #cv2.rectangle(imageC, (300, middle_lane), (300 + 1, middle_lane + 1), (0,255,0), 2)
+                        cv2.rectangle(imageC, (middle_lane, self.ROW_R), ( middle_lane + 1,self.ROW_R + 1), (0,255,0), 2)
+                        # Calculating the desviation
+                        desviation = middle_lane - (columns/2)
+                        # Speed
+                        print ('DESVIATION: ', desviation)
+                        self.controlDesviation(desviation, self.turnTo) 
+                   
+                    
