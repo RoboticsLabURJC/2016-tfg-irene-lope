@@ -47,7 +47,8 @@ class MyAlgorithm(threading.Thread):
         self.THRESHOLD_DET = 70
         self.MIN_DET = 2
         self.ADD_DET = 20
-        self.ROW_R = 320
+        self.ROW_R = 300
+        self.ROW_L = 300
         
         self.turnTo = '' 
         
@@ -186,17 +187,17 @@ class MyAlgorithm(threading.Thread):
             # Busco el cambio de blanco a negro                 
             if i == 0:
                 # Si estoy en el primer pixel resto con el siguiente
-                value = image[300, i+1] - image[300, i] 
+                value = image[self.ROW_L, i+1] - image[self.ROW_L, i] 
             else:
                 # Si no resto con el anterior
-                value = image[300, i] - image[300, i-1]
+                value = image[self.ROW_L, i] - image[self.ROW_L, i-1]
                 
             if(value != 0): # Si ha habido cambio de color
                 if (value == 255):
-                    # Ha pasado de negro a blanco, esta en el borde izq
+                    # Ha pasado de blanco a negro
                     border_left = i
                 else:
-                    # -255, ha pasado de negro a blanco, esta en el borde dcho
+                    # -255, ha pasado de negro a blanco
                     border_right = i - 1
                     
         return border_left, border_right 
@@ -216,16 +217,19 @@ class MyAlgorithm(threading.Thread):
             # Busco el cambio de blanco a negro
             if i != (columns-1):
                 value = image[self.ROW_R, columns - i-1] - image[self.ROW_R, columns -i-2]
+                print('columns - i -1: ', (columns -i -1))
+                print('columns - i -2: ', (columns -i -2))
+                print('value: ', value)
             else:
                 value = image[self.ROW_R, columns - i] - image[self.ROW_R, columns -i+1]
             
             if(value != 0): # Si ha habido cambio de color
                 if (value == 255):
-                    # Ha pasado de negro a blanco, esta en el borde dcho
+                    # Ha pasado de blanco a negro
                     border_right = i
                 else:
-                    # -255, ha pasado de negro a blanco, esta en el borde izq
-                    border_left = i - 1
+                    # -255, ha pasado de negro a blanco
+                    border_left = i 
               
         return border_left, border_right 
         
@@ -425,6 +429,7 @@ class MyAlgorithm(threading.Thread):
                 imageC = self.cameraC.getImage()
                 columns = imageC.shape[1]
                 cv2.rectangle(imageC, (1, 1), ( 1+1,1+1), (255,255,0), 2)
+                
                 # RGB model change to HSV
                 image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
                 cv2.imshow("filtered", image_filtered)
@@ -434,13 +439,14 @@ class MyAlgorithm(threading.Thread):
                              
                     # Find the position of the road
                     border_left, border_right = self.findRoadL(image_filtered)
+                    cv2.rectangle(imageC, (border_left, self.ROW_L), (border_left+1, self.ROW_L +1 ), (0,0,255), 2)
+                    cv2.rectangle(imageC, (border_right, self.ROW_L), (border_right+1, self.ROW_L+1), (255,0,0), 2)
 
                     middle_lane = self.findMidLane(border_left, border_right, columns)
                     print('middle_lane', middle_lane) 
                     
                     if middle_lane != 0:
-                        #cv2.rectangle(imageC, (300, middle_lane), (300 + 1, middle_lane + 1), (0,255,0), 2)
-                        cv2.rectangle(imageC, (middle_lane, 300), ( middle_lane + 1,300 + 1), (0,255,0), 2)
+                        cv2.rectangle(imageC, (middle_lane, self.ROW_L), ( middle_lane + 1,self.ROW_L + 1), (0,255,0), 2)
                         # Calculating the desviation
                         desviation = middle_lane - (columns/2)
                         # Speed
@@ -450,8 +456,9 @@ class MyAlgorithm(threading.Thread):
 
                     # Find the position of the road
                     border_left, border_right = self.findRoadR(image_filtered)
-                    cv2.rectangle(imageC, (border_left, self.ROW_R), (border_left+1, self.ROW_R +1 ), (255,0,0), 2)
-                    cv2.rectangle(imageC, (border_right, self.ROW_R), (border_right+1, self.ROW_R+1), (0,0,255), 2)
+                    print('border_left: ',border_left, '   border_right: ', border_right)
+                    cv2.rectangle(imageC, (border_left, self.ROW_R), (border_left+1, self.ROW_R +1 ), (0,0,255), 2)
+                    cv2.rectangle(imageC, (border_right, self.ROW_R), (border_right+1, self.ROW_R+1), (255,0,0), 2)
                     
                     middle_lane = self.findMidLane(border_left, border_right, columns)
                     print('middle_lane', middle_lane) 
