@@ -7,21 +7,22 @@ from PyQt5.QtGui import (QBrush, QConicalGradient, QLinearGradient, QPainter, QP
 from PyQt5.QtWidgets import (QApplication, QProgressBar, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QSpinBox, QWidget, QPushButton, QSpacerItem, QSizePolicy, QLCDNumber )
 from PyQt5 import QtGui, QtCore
 from parallelIce.pose3dClient import Pose3DClient
+from parallelIce.laserClient import LaserClient
 import easyiceconfig as EasyIce
 from gui.threadGUI import ThreadGUI
 
 class MainWindow(QWidget):
 
     updGUI=pyqtSignal()
-    def __init__(self, pose3d, parent=None):
+    def __init__(self, pose3d, laser1, laser2, laser3, parent=None):
         super(MainWindow, self).__init__(parent)
         
         layout = QGridLayout()
         self.quesito = quesoWidget(self, pose3d)
         self.tiempo = tiempoWidget(self)
-        self.calidad = calidadWidget(self)
+        self.calidad = calidadWidget(self, laser1, laser2, laser3)
         self.distancia = distanciaWidget(self, pose3d)
-        self.nota = notaWidget(self,pose3d)
+        self.nota = notaWidget(self,pose3d, self.tiempo, self.calidad, self.distancia)
         self.logo = logoWidget(self)
         layout.addWidget(self.quesito,1,0)
         layout.addWidget(self.tiempo,0,0)
@@ -33,7 +34,7 @@ class MainWindow(QWidget):
         vSpacer = QSpacerItem(30, 50, QSizePolicy.Ignored, QSizePolicy.Ignored)
         layout.addItem(vSpacer,1,0)
         
-        self.setFixedSize(740,640);
+        self.setFixedSize(940,640);
 
         self.setLayout(layout)
         self.updGUI.connect(self.update)
@@ -41,7 +42,9 @@ class MainWindow(QWidget):
     def update(self):
         self.quesito.updateG()
         self.distancia.updateG()
+        self.calidad.updateG()
         self.nota.updateG()
+        
 
 class logoWidget(QWidget):
     def __init__(self, winParent):
@@ -58,26 +61,58 @@ class logoWidget(QWidget):
         self.mapWidget.resize(self.width, self.height)
         self.setMinimumSize(100,100)
         
+        
 class calidadWidget(QWidget):
-    def __init__(self,winParent):    
+    def __init__(self,winParent, laser1, laser2, laser3):    
         super(calidadWidget, self).__init__()
         self.winParent=winParent
+        self.laser1 = laser1
+        self.laser2 = laser2
+        self.laser3 = laser3
+        self.numCrash = 0
+        self.MAX_CRASH = 1000
 
         vLayout = QVBoxLayout()
         choquesLabel = QLabel("Choques:")
-        bar = QProgressBar()
-        bar.setValue(50)
+        self.bar = QProgressBar()
+        self.bar.setValue(self.numCrash)
         st = "QProgressBar::chunk {background-color: #ff0000;}\n QProgressBar {border: 1px solid grey;border-radius: 2px;text-align: center;background: #eeeeee;}"
-        bar.setStyleSheet(st)
-        bar.setTextVisible(False)
+        self.bar.setStyleSheet(st)
+        self.bar.setTextVisible(False)
         vLayout.addWidget(choquesLabel, 0)
-        vLayout.addWidget(bar, 0)
+        vLayout.addWidget(self.bar, 0)
 
         vSpacer = QSpacerItem(30, 80, QSizePolicy.Ignored, QSizePolicy.Ignored)
         vLayout.addItem(vSpacer)
 
         self.setLayout(vLayout)
+        
+        
+    def get_laser_distance(self, laser):
+        DIST = 15
+        maxAngle = 180
+        crash = False
+        for i in range(0, maxAngle+1):
+            # Distance in millimeters, we change to cm
+            laserI = float(laser.distanceData[i])/float(10)
+            if i != 0 and i != 180:
+                if laserI <= DIST:
+                    crash = True
+        return crash
+                    
 
+    def updateG(self):
+        laser_data_Front = self.laser1.getLaserData()
+        laser_data_Rear = self.laser2.getLaserData()
+        laser_data_Right = self.laser3.getLaserData()
+        crashFront = self.get_laser_distance(laser_data_Front)
+        crashRear = self.get_laser_distance(laser_data_Rear)
+        crashRight = self.get_laser_distance(laser_data_Right)
+        if crashFront or crashRear or crashRight:
+            self.numCrash = self.numCrash + 1
+        percentajeCrash = self.numCrash * 100/self.MAX_CRASH
+        self.bar.setValue(self.numCrash)
+        self.update()
 
 
 class distanciaWidget(QWidget):
@@ -176,6 +211,7 @@ class distanciaWidget(QWidget):
 
     def distances(self):
         carSize = [5.75, 2.5]
+        carSizeTaxi = [4, 2]
         
         #Poses sidewalk
         positionSideWalk_start = [-25, -4.25]
@@ -195,10 +231,10 @@ class distanciaWidget(QWidget):
 
         
         # Pose 3D (origin poses)
-        xFront = self.pose3d.getX() + carSize[0]/2
-        xRear = self.pose3d.getX() - carSize[0]/2
-        yLeft = self.pose3d.getY() + carSize[1]/2
-        yRight = self.pose3d.getY() - carSize[1]/2
+        xFront = self.pose3d.getX() + carSizeTaxi[0]/2
+        xRear = self.pose3d.getX() - carSizeTaxi[0]/2
+        yLeft = self.pose3d.getY() + carSizeTaxi[1]/2
+        yRight = self.pose3d.getY() - carSizeTaxi[1]/2
 
         # Final poses (Car's rotation)
         pointFrontLeft = self.RTCar() * np.matrix([[xFront], [yLeft], [1], [1]])
@@ -247,18 +283,21 @@ class distanciaWidget(QWidget):
    
         
 class notaWidget(QWidget):
-    def __init__(self,winParent,pose3d):    
+    def __init__(self,winParent,pose3d, tiempo, calidad, distancia):    
         super(notaWidget, self).__init__()
         self.winParent=winParent
         self.pose3d = pose3d
+        self.time = tiempo
+        self.calidad = calidad
+        self.distancia = distancia
 
-        hLayout = QHBoxLayout()
-         
-        nota = self.notaFinal()
-        notaLabel = QLabel('Nota final: ' + str(nota))
-        hLayout.addWidget(notaLabel, 0) 
+        self.hLayout = QHBoxLayout()
         
-        self.setLayout(hLayout) 
+        self.button = QPushButton('Show me my mark')
+        self.button.clicked.connect(self.notaFinal)
+        self.hLayout.addWidget(self.button, 0)
+        
+        self.setLayout(self.hLayout) 
         
     def notaFinal(self):
         notaAngle = self.testAngle() * 0.025
@@ -266,7 +305,8 @@ class notaWidget(QWidget):
         notaDist = self.testDistance() * 0.025
         notaCol = self.testCollision() * 0.025
         nota = notaAngle + notaTime + notaDist + notaCol
-        return nota
+        notaLabel = QLabel('Nota final: ' + str(nota))
+        self.hLayout.addWidget(notaLabel, 0)
         
     def testAngle(self):
         yawRad = self.pose3d.getYaw()
@@ -282,50 +322,48 @@ class notaWidget(QWidget):
         return notaAngle
     
     def testTime(self):
-        time = tiempoWidget(self)
-        myTime = time.seconds
-        if myTime <= 30:
-            notaTime = 100
-        elif myTime > 30 and myTime <= 60:
-            notaTime = 80
-        elif myTime > 60 and myTime <= 120:
-            notaTime = 50
-        else:
-            notaTime = 0    
+        minTime = 170
+        myTime = self.time.seconds
+        notaTime = float(minTime*100)/float(myTime)
+        if myTime < 170:
+            notaTime = 100  
         return notaTime
     
     def testDistance(self):
-        distancia = distanciaWidget(self,pose3d)
-        MyDistFront = distancia.distFrontFinal
-        MyDistRear = distancia.distRearFinal
-        MyDistSidewalk = distancia.distanceSidewalk
+        MyDistFront = self.distancia.distFrontFinal
+        MyDistRear = self.distancia.distRearFinal
+        MyDistSidewalk = self.distancia.distanceSidewalk
 
-        if MyDistFront >= 2 and MyDistFront < 3.5:
+        if MyDistFront >= 1.5 and MyDistFront < 3.5:
             notaDistFront = 100
-        elif MyDistFront < 2 and MyDistFront >= 1:
+        elif MyDistFront < 1.5 and MyDistFront >= 1:
             notaDistFront = 50
         else:
             notaDistFront = 0
 
-        if MyDistRear >= 2 and MyDistRear < 3.5:
+        if MyDistRear >= 1.5 and MyDistRear < 3.5:
             notaDistRear = 100
-        elif MyDistRear < 2 and MyDistRear >= 1:
+        elif MyDistRear < 1.5 and MyDistRear >= 1:
             notaDistRear = 50
         else:
             notaDistRear = 0
 
-        if MyDistSidewalk <= 0.75:
+        if MyDistSidewalk > 0 and MyDistSidewalk <= 0.75:
             notaDistSidewalk = 100
         elif MyDistSidewalk > 0.75 and MyDistSidewalk < 1.5:
             notaDistSidewalk = 50
         else:
             notaDistSidewalk = 0
 
-        notaDist = notaDistFront*1/3 + notaDistRear*1/3 + notaDistSidewalk*1/3
+        notaDist = float(notaDistFront+notaDistRear+notaDistSidewalk)/float(3)
         return notaDist
     
     def testCollision(self):
-        notaCol = 0
+        minCrash = 0
+        if self.calidad.numCrash == 0:
+            notaCol = 100
+        else:
+            notaCol = float(minCrash*100)/float(self.calidad.numCrash)
         return notaCol
 
     def updateG(self):
@@ -462,8 +500,11 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     ic = EasyIce.initialize(sys.argv)
     pose3d = Pose3DClient(ic, "Autopark.Pose3D", True)
+    laser1 = LaserClient(ic, "Autopark.Laser1", True)
+    laser2 = LaserClient(ic, "Autopark.Laser2", True)
+    laser3 = LaserClient(ic, "Autopark.Laser3", True)
 
-    myGUI = MainWindow(pose3d)
+    myGUI = MainWindow(pose3d, laser1, laser2, laser3)
     myGUI.show()
     t2 = ThreadGUI(myGUI)
     t2.daemon=True
