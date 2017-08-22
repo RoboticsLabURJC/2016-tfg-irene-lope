@@ -32,7 +32,7 @@ class MyAlgorithm(threading.Thread):
         self.sleep = False
         self.detection = False
         self.stop = False
-        self.turn = False
+        self.turning = False
         self.turn45 = False
         
         self.yaw = 0
@@ -146,14 +146,6 @@ class MyAlgorithm(threading.Thread):
         return v
     
     
-    def saveFrame(self, image, frame, numFrames):
-        numFrames += 1
-        if numFrames == self.FRAMES:
-            frame = image
-            numFrames = 0
-        return frame, numFrames
-    
-    
     def findCar(self, cont, image):
         if len(cont) != 0:
             # Si hay movimiento
@@ -171,7 +163,50 @@ class MyAlgorithm(threading.Thread):
         if self.detectionCar >= self.MIN_DET:
             self.detectionCar -= self.MIN_DET
         
-               
+        
+    def saveFrame(self, image, frame, numFrames):
+        numFrames += 1
+        if numFrames == self.FRAMES:
+            frame = image
+            numFrames = 0
+        return frame, numFrames 
+        
+           
+    def imageToGray(self, image):
+        # Converting to grayscale
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # Applying smoothing to eliminate noise
+        image_gray = cv2.GaussianBlur(image_gray, (21, 21), 0)
+        return image_gray
+    
+         
+    def setPrevFrames(self, imageL_gray, imageR_gray):
+        # Initializing previous frames
+        if self.framePrevL is None:
+            self.framePrevL = imageL_gray
+        if self.framePrevR is None:
+            self.framePrevR = imageR_gray
+        
+        # Saving one frame every 5 
+        self.framePrevL, self.numFramesL = self.saveFrame(imageL_gray, self.framePrevL, self.numFramesL)
+        self.framePrevR, self.numFramesR = self.saveFrame(imageR_gray, self.framePrevR, self.numFramesR)
+
+            
+    def motionDetection(self, image, image_gray, framePrev):
+        # Calculating the difference between the previous frame and the current frame
+        image_diff = cv2.absdiff(framePrev, image_gray)
+
+        # Applying a threshold
+        image_seg = cv2.threshold(image_diff, 25, 255, cv2.THRESH_BINARY)[1]
+        
+        # Dilating the image to cover holes
+        image_dil = cv2.dilate(image_seg, None, iterations=2)
+        
+        # Looking for contours on the image and finding the cars
+        im, cont, hierarchy = cv2.findContours(image_dil,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
+        self.findCar(cont, image)
+            
+                  
     def findRoad(self, image):
 
         # Shape gives us the number of rows and columns of an image
@@ -241,20 +276,20 @@ class MyAlgorithm(threading.Thread):
     def turn45degrees(self, yaw, direction):
         if self.turn45 == False:
             if yaw < 180 and yaw > 100:
+                self.motors.sendV(30)
                 if direction == 'left':
-                    print('Girando 45º...')
-                    self.motors.sendV(30)
+                    print('Girando 45º (izquierda)...')
                     self.motors.sendW(3.5)
                 else:
-                    print('Girando -45º...')
-                    self.motors.sendV(30)
+                    print('Girando -45º (derecha)...')
                     self.motors.sendW(-5.4)
-                    print('yaw: ', yaw)
+                print('yaw: ', yaw)
+
             else:
                 self.turn45 = True
                 
                 
-    def chooseDirection(self):
+    def randomDir(self):
         # Random int number between [0,2) --> 0 o 1
         randm = np.random.randint(2)
         if randm == 1:
@@ -262,24 +297,30 @@ class MyAlgorithm(threading.Thread):
         else:
             return 'right'
           
-                                                         
+          
+    def chooseDir(self):
+        if self.turnTo == '':
+            self.turnTo = self.randomDir()
+            print ('Turn to: ', self.turnTo) 
+                                             
+                                                                  
     def execute(self):
         
         # TODO
         
-        # FILTRADO
+        # FILTTER
        
-        # Getting the imges
+        # Getting the images
         input_image = self.cameraC.getImage()
 
-        # RGB model change to HSV
+        # Filtering the images
         image_filtered = self.filterHSV(input_image, 131, 179, 71, 232, 0, 63, 11)
         
         # Template's size
         h, w = self.template.shape
 
             
-        # DETECCION DE STOP
+        # STOP DETECTION
         
         img2, contours, hierarchy = cv2.findContours(image_filtered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if (len(contours) != 0):
@@ -290,13 +331,14 @@ class MyAlgorithm(threading.Thread):
             # Let (x,y) be the top-left coordinate of the rectangle and (w,h) be its width and height. 
             x, y, bw, bh = cv2.boundingRect(cnt)
             
-            # Draw the box
+            # Draw the box around the signal
             img_rect = cv2.rectangle(image_filtered, (x, y), (x+bw,y+bh), (0,0,0) ,0)
+            
             # Cut an image (the signal)
             img_bounding = img_rect[(y-4):(y+bh+4), (x-4):(x+bw+4)]
             
             if img_bounding != []:
-                # Resize an image
+                # Resize the signal
                 img_res = cv2.resize(img_bounding, (w, h), interpolation=cv2.INTER_CUBIC)
                 
                 # Matching with template image
@@ -312,9 +354,10 @@ class MyAlgorithm(threading.Thread):
                     print("Found signal")
                 
                 
-                # BRAKE 
-                v = self.brake(bw)
-                self.motors.sendV(v)
+                # BRAKE
+                if self.detection == True:
+                    v = self.brake(bw)
+                    self.motors.sendV(v)
                 
           
         print('DETECTION:            ', self.detection)
@@ -322,70 +365,35 @@ class MyAlgorithm(threading.Thread):
         
         
         
-        # DETECCION DE COCHES
+        # CAR DETECTION
         
-        if self.stop == True and self.turn == False:
-
+        if self.stop == True and self.turning == False:
             # Getting the imges
             imageL = self.cameraL.getImage()
             imageR = self.cameraR.getImage()
-
-            # Convertimos a escala de grises
-            imageL_gray = cv2.cvtColor(imageL, cv2.COLOR_BGR2GRAY)
-            imageR_gray = cv2.cvtColor(imageR, cv2.COLOR_BGR2GRAY)
+            imageL_gray = self.imageToGray(imageL)
+            imageR_gray = self.imageToGray(imageR)
             
-            # Aplicamos suavizado para eliminar ruido
-            imageL_gray = cv2.GaussianBlur(imageL_gray, (21, 21), 0)
-            imageR_gray = cv2.GaussianBlur(imageR_gray, (21, 21), 0)
+            # Setting the previous frames 
+            self.setPrevFrames(imageL_gray, imageR_gray)
             
-            if self.framePrevL is None:
-                self.framePrevL = imageL_gray
-            if self.framePrevR is None:
-                self.framePrevR = imageR_gray
-               
-            # Calculo de la diferencia entre el fondo y el frame actual
-            imageL_diff = cv2.absdiff(self.framePrevL, imageL_gray)
-            imageR_diff = cv2.absdiff(self.framePrevR, imageR_gray)
+            # Motion Detection
+            self.motionDetection(imageL, imageL_gray, self.framePrevL)
+            self.motionDetection(imageR, imageR_gray, self.framePrevR)
             
-            # Guardo cada 5 frames
-            self.framePrevL, self.numFramesL = self.saveFrame(imageL_gray, self.framePrevL, self.numFramesL)
-            self.framePrevR, self.numFramesR = self.saveFrame(imageR_gray, self.framePrevR, self.numFramesR)
-   
-            # Aplicamos un umbral
-            imageL_seg = cv2.threshold(imageL_diff, 25, 255, cv2.THRESH_BINARY)[1]
-            imageR_seg = cv2.threshold(imageR_diff, 25, 255, cv2.THRESH_BINARY)[1]
-            
-            # Dilatamos el umbral para tapar agujeros
-            imageL_dil = cv2.dilate(imageL_seg, None, iterations=2)
-            imageR_dil = cv2.dilate(imageR_seg, None, iterations=2)
-            #cv2.imshow("image_dil", image_dil)
-            
-            # Copiamos el umbral para detectar los contornos
-            contornosimgL = imageL_dil.copy()
-            contornosimgR = imageR_dil.copy()
-            
-            # Buscamos contorno en la imagen
-            im, contL, hierarchy = cv2.findContours(contornosimgL,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
-            self.findCar(contL, imageL)
-            
-            im, contR, hierarchy = cv2.findContours(contornosimgR,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE) 
-            self.findCar(contR, imageR)
-
+            # Checking the dinamic variable detectionCar
             self.checkDetectionCar()
             print('DETECTION CAR: ', self.detectionCar)
-        
-        
+            
+
         # GO 
         
         if self.detectionCar <= self.THRESHOLD_DET:          
             
-            self.turn = True
+            self.turning = True
             
             # Choose the direction of the rotation
-            if self.turnTo == '':
-                self.turnTo = self.chooseDirection()
-            self.turnTo = 'right'
-            print ('Turn to: ', self.turnTo)
+            self.chooseDir()
             
             # Turn 45 degrees 
             yaw = abs(self.pose3d.getYaw() * 180/pi)                 
@@ -394,12 +402,11 @@ class MyAlgorithm(threading.Thread):
             if self.turn45:
                 # ROAD DETECTION
                  
-                # Center image
+                # Getting the images
                 imageC = self.cameraC.getImage()
                 
-                # RGB model change to HSV
+                # Filtering the images
                 image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
-                #cv2.imshow("filtered", image_filtered)
                 
                 # Find the position of the road
                 border_left, border_right = self.findRoad(image_filtered)
@@ -407,7 +414,9 @@ class MyAlgorithm(threading.Thread):
                 # Shape gives the size of image
                 columns = imageC.shape[1]
                 
-                # TURN RIGHT
+                
+                # TURN 
+
                 middle_lane = self.findMidLane(border_left, border_right, columns)
                 if middle_lane != 0:
                     cv2.rectangle(imageC, (middle_lane, self.ROW), ( middle_lane + 1,self.ROW + 1), (0,255,0), 2)
