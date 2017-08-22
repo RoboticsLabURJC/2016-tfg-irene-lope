@@ -38,7 +38,6 @@ class MyAlgorithm(threading.Thread):
         self.yaw = 0
         self.numFramesL = 0
         self.numFramesR = 0
-        self.time = 0
         
         self.detectionCar = 100 
         self.FRAMES = 10
@@ -368,7 +367,7 @@ class MyAlgorithm(threading.Thread):
         # CAR DETECTION
         
         if self.stop == True and self.turning == False:
-            # Getting the imges
+            # Getting the images
             imageL = self.cameraL.getImage()
             imageR = self.cameraR.getImage()
             imageL_gray = self.imageToGray(imageL)
