@@ -23,11 +23,13 @@ import sys
 from PyQt5.QtWidgets import QApplication
 from gui.GUI import MainWindow
 from gui.threadGUI import ThreadGUI
+from parallelIce.cameraClient import CameraClient
 from parallelIce.motors import Motors
 from parallelIce.pose3dClient import Pose3DClient
 from parallelIce.laserClient import LaserClient
 import easyiceconfig as EasyIce
 from MyAlgorithm import MyAlgorithm
+
 
 
 
@@ -38,8 +40,7 @@ if __name__ == "__main__":
     laser1 = LaserClient(ic, "Autopark.Laser1", True)
     laser2 = LaserClient(ic, "Autopark.Laser2", True)
     laser3 = LaserClient(ic, "Autopark.Laser3", True)
-    bumper = LaserClient(ic, "Autopark.Bumper", True)
-    algorithm=MyAlgorithm(pose3d, laser1, laser2, laser3, motors, bumper)
+    algorithm=MyAlgorithm(pose3d, laser1, laser2, laser3, motors)
 
     app = QApplication(sys.argv)
     myGUI = MainWindow()
@@ -48,7 +49,6 @@ if __name__ == "__main__":
     myGUI.setLaser1(laser1)
     myGUI.setLaser2(laser2)
     myGUI.setLaser3(laser3)
-    myGUI.setBumper(bumper)
     myGUI.setAlgorithm(algorithm)
     myGUI.show()
 
