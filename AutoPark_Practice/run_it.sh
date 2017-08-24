@@ -8,12 +8,12 @@
 world=autopark.world
 
 gzserver --verbose --minimal_comms $world &
-sleep 5 # up to 20 for circuit.world
+sleep 5 # up to 20 for autopark.world
 
 [ "$1" = "GUI" ] && gzclient &
 
 python2 autopark.py --Ice.Config=autopark.cfg &
-#python3 autopark.py --Ice.Config=autopark.cfg
+
 python2 referee.py --Ice.Config=autopark.cfg
 
 killall gzserver
