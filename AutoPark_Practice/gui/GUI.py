@@ -48,15 +48,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton.clicked.connect(self.playClicked)
         self.pushButton.setCheckable(True)
         self.updGUI.connect(self.updateGUI)
-        #self.camera1=CameraWidget(self)
 
         self.stopButton.clicked.connect(self.stopClicked)
 
     def updateGUI(self):
-        #self.camera1.updateImage()
-        (cx, cy) = self.algorithm.getCarDirection()
-        (ox, oy) = self.algorithm.getObstaclesDirection()
-        (ax, ay) = self.algorithm.getAverageDirection()
         laserdata1 = self.laser1.getLaserData()
         laserdata2 = self.laser2.getLaserData()
         laserdata3 = self.laser3.getLaserData()
@@ -86,9 +81,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setLaser3(self,laser):
         self.laser3=laser
-    
-    def setBumper(self,bumper):
-        self.bumper=bumper
 
     def getMotors(self):
         return self.motors
