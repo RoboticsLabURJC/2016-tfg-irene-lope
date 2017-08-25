@@ -213,9 +213,12 @@ class MyAlgorithm2(threading.Thread):
                     # Stop
                     self.stopVacuum()
                 self.timeSat = 0
-                
-    '''                
+
+    
     def checkCrash(self):
+        crash = 0
+        
+        # Bumper
         for i in range(0, 350):
             # Returns 1 if it collides, and 0 if it doesn't collides
             crash = self.bumper.getBumperData().state
@@ -223,11 +226,7 @@ class MyAlgorithm2(threading.Thread):
                 self.motors.sendW(0)
                 self.motors.sendV(0)
                 break
-        return crash
-    '''
-    
-    def checkCrash(self):
-        crash = 0
+                
         # Get the data of the laser sensor, which consists of 180 pairs of values
         laser_data = self.laser.getLaserData()
         
@@ -249,9 +248,11 @@ class MyAlgorithm2(threading.Thread):
     def stopAndBackwards(self):
         # Stop
         self.stopVacuum()
+        print('sleep1')
         time.sleep(1)
         # Go backwards
         self.motors.sendV(-0.1)
+        print('sleep2')
         time.sleep(1)
         
         
@@ -279,17 +280,17 @@ class MyAlgorithm2(threading.Thread):
         angle1 = angle1 * 180/pi
         angle2 = angle2 * 180/pi
         yawNow = yawNow * 180/pi
-        
-        print ('angle1 (left): ', angle1)
-        print ('angle2 (right): ', angle2)
+  
         print ('yawNow: ', yawNow)
         
         self.motors.sendV(0)   
         if (self.orientation == 'left') and (yawNow <= (angle1-rangeDegrees) or yawNow >= (angle1+rangeDegrees)):
-            # Look left and turn to left 
+            # Look left and turn to left
+            print ('angle1 (left): ', angle1) 
             self.motors.sendW(0.2)
         elif (self.orientation == 'right') and (yawNow <= (angle2-rangeDegrees) or yawNow >= (angle2+rangeDegrees)):
             # Look right and turn to right
+            print ('angle2 (right): ', angle2)
             self.motors.sendW(-0.2)
         else:
             turn = False
@@ -352,7 +353,6 @@ class MyAlgorithm2(threading.Thread):
     
     def goForward(self,v):
         self.motors.sendW(0)
-        #time.sleep(1)
         self.motors.sendV(v)
         
                
@@ -368,7 +368,11 @@ class MyAlgorithm2(threading.Thread):
     def execute(self):
 
         # TODO
-
+        
+        # Check crash
+        crash = self.checkCrash()
+        print crash
+        
         # Time
         self.initSatTime()
         
@@ -377,16 +381,14 @@ class MyAlgorithm2(threading.Thread):
         
         # Change and show grid
         self.changeValuesGrid()
-        self.showGrid()
+        #self.showGrid()
                 
         # Vacuum's poses
         x = self.pose3d.getX()
         y = self.pose3d.getY()
         yaw = self.pose3d.getYaw()
         
-        # Check crash
-        crash = self.checkCrash()
-        print crash
+        
 
         if self.saturation == False:
             if crash == 1:
@@ -413,6 +415,7 @@ class MyAlgorithm2(threading.Thread):
                     
                     # Go forwards
                     self.goForward(0.22)
+                    print('sleep3')
                     time.sleep(1)
                     self.secondTurn = False
                     
@@ -427,7 +430,7 @@ class MyAlgorithm2(threading.Thread):
             else:
                 print ("AVANZAR")
                 # Go forward
-                self.goForward(0.5)
+                self.goForward(0.4)
                 self.crash = False
                 self.firstTurn = True
                 
