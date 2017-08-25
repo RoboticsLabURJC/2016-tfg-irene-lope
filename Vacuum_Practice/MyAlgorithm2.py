@@ -214,7 +214,7 @@ class MyAlgorithm2(threading.Thread):
                     self.stopVacuum()
                 self.timeSat = 0
                 
-                    
+    '''                
     def checkCrash(self):
         for i in range(0, 350):
             # Returns 1 if it collides, and 0 if it doesn't collides
@@ -223,6 +223,21 @@ class MyAlgorithm2(threading.Thread):
                 self.motors.sendW(0)
                 self.motors.sendV(0)
                 break
+        return crash
+    '''
+    
+    def checkCrash(self):
+        crash = 0
+        # Get the data of the laser sensor, which consists of 180 pairs of values
+        laser_data = self.laser.getLaserData()
+        
+        # Distance in millimeters, we change to cm
+        laserCenter = laser_data.distanceData[90]/10
+        print laserCenter
+        if laserCenter <= 10:
+            crash = 1
+            self.stopVacuum
+            
         return crash
         
         
@@ -252,7 +267,7 @@ class MyAlgorithm2(threading.Thread):
         # angle1: orientacion a la que tiene que llegar si la orientacion es izq
         # angle2: orientacion a la que tiene que llegar si la orientacion es derecha
         turn = True
-        rangeDegrees = 0.2
+        rangeDegrees = 0.5
         
         #if angle1 == pi or angle2 == 0:
         #    rangeDegrees = 0.145
@@ -260,19 +275,28 @@ class MyAlgorithm2(threading.Thread):
         if angle2 == pi and yawNow < 0:
             angle2 = -angle2
             
+        # To degrees  
+        angle1 = angle1 * 180/pi
+        angle2 = angle2 * 180/pi
+        yawNow = yawNow * 180/pi
+        
+        print ('angle1 (left): ', angle1)
+        print ('angle2 (right): ', angle2)
+        print ('yawNow: ', yawNow)
+        
+        self.motors.sendV(0)   
         if (self.orientation == 'left') and (yawNow <= (angle1-rangeDegrees) or yawNow >= (angle1+rangeDegrees)):
-            # Look left and turn to left
-            self.motors.sendV(0)
+            # Look left and turn to left 
             self.motors.sendW(0.2)
         elif (self.orientation == 'right') and (yawNow <= (angle2-rangeDegrees) or yawNow >= (angle2+rangeDegrees)):
             # Look right and turn to right
-            self.motors.sendV(0)
             self.motors.sendW(-0.2)
         else:
             turn = False
+            self.motors.sendW(0)
         return turn
-        
-        
+    
+    
     def calculateSideTriangle(self, a, b, angle):
         c = math.sqrt(pow(a,2) + pow(b,2) - 2*a*b*math.cos(angle))
         return c
@@ -328,7 +352,7 @@ class MyAlgorithm2(threading.Thread):
     
     def goForward(self,v):
         self.motors.sendW(0)
-        time.sleep(1)
+        #time.sleep(1)
         self.motors.sendV(v)
         
                
@@ -362,10 +386,8 @@ class MyAlgorithm2(threading.Thread):
         
         # Check crash
         crash = self.checkCrash()
-        
-        #print (crash)
-        #self.saturation = True
-        
+        print crash
+
         if self.saturation == False:
             if crash == 1:
                 print ("First crash")
@@ -384,8 +406,7 @@ class MyAlgorithm2(threading.Thread):
                 # Orientation
                 self.orientation = self.returnOrientation(self.yaw)
                 # Turn 90
-                giro = self.turn90(pi/2, pi/2, yawNow)
-                    
+                giro = self.turn90(pi/2, pi/2, yawNow)  
                 if giro == False:
                     print ("GIRO HECHO")
                     self.firstTurn = True
@@ -398,10 +419,8 @@ class MyAlgorithm2(threading.Thread):
                     
             elif self.secondTurn == False and self.crash == True:
                 print ("SEGUNDO GIRO")
-                # Yaw
                 yawNow = self.pose3d.getYaw()
                 giro = self.turn90(pi, 0, yawNow)
-                
                 if giro == False:
                     self.secondTurn = True
             
