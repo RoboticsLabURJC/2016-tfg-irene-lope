@@ -44,13 +44,21 @@ class MyAlgorithm2(threading.Thread):
         self.time = 0
         self.timeSat = 0
         self.yaw = 0
-        self.numIteracion = 0
         self.DIST_TO_OBST_RIGHT = 30
         self.DIST_MIN_TO_OBST_RIGHT = 15
         self.DIST_TO_OBST_FRONT = 15
         self.MARGIN = 0.2
         self.MARGIN_OBST_RIGHT = 0.1
-
+        self.TIME_PERIM = 60
+        self.NUM_ROWS_COLUMNS = 10
+        self.SCALE = 50
+        self.MAX_VAL_GRID = 100
+        self.ADD_VAL_GRID = 10
+        self.SUB_VAL_GRID = 5
+        self.MAX_SQUARES = 3
+        self.SECONDS_REDUCE = 1
+        self.SECONDS_SAT = 20
+        
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
         self.lock = threading.Lock()
@@ -133,19 +141,16 @@ class MyAlgorithm2(threading.Thread):
         
     def reduceValueSquare(self, numRow, numColumn):
         # Reduce the value of a particular square
-        scale = 50
-        for i in range((numColumn * scale), (numColumn*scale + scale)):
-            for j in range((numRow * scale), (numRow*scale + scale)):
+        for i in range((numColumn * self.SCALE), (numColumn * self.SCALE + self.SCALE)):
+            for j in range((numRow * self.SCALE), (numRow * self.SCALE + self.SCALE)):
                 if self.grid[i][j] != 0:
-                    self.grid[i][j] = self.grid[i][j] - 1
+                    self.grid[i][j] = self.grid[i][j] - self.SUB_VAL_GRID
         
         
-    def reduceValueTime(self):
-        # Number of rows is 10 and number of columns is 10
-        numRowsColumns = 10
+    def reduceValueGrid(self):
         # Scrolls the entire image
-        for i in range(0, numRowsColumns):
-            for j in range(0, numRowsColumns):
+        for i in range(0, self.NUM_ROWS_COLUMNS):
+            for j in range(0, self.NUM_ROWS_COLUMNS):
                 self.reduceValueSquare(i, j)
             
         
@@ -153,18 +158,18 @@ class MyAlgorithm2(threading.Thread):
         # Change the value of the grid depending on where the vacuum goes
         x = self.pose3d.getX()
         y = self.pose3d.getY()
-        scale = 50
 
-        final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
+        final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * self.SCALE
 
         # Grid 500 x 500 and we want a grid of 10 x 10
         # We keep the whole section of the division to know in which square this is
-        numX = int(final_poses.flat[0] / scale)
-        numY = int(final_poses.flat[1] / scale)
+        numX = int(final_poses.flat[0] / self.SCALE)
+        numY = int(final_poses.flat[1] / self.SCALE)
         
-        for i in range((numX * scale), (numX*scale + scale)):
-            for j in range((numY * scale), (numY*scale + scale)):
-                self.grid[j][i] = self.grid[j][i] + 10.0
+        for i in range((numX * self.SCALE), (numX*self.SCALE + self.SCALE)):
+            for j in range((numY * self.SCALE), (numY*self.SCALE + self.SCALE)):
+                if self.grid[j][i] < self.MAX_VAL_GRID:
+                    self.grid[j][i] = self.grid[j][i] + self.ADD_VAL_GRID
         
         
     def showGrid(self):
@@ -173,32 +178,46 @@ class MyAlgorithm2(threading.Thread):
 		maxVal = np.amax(self.grid)
 		if maxVal != 0:
 		    # Saves a copy of the image but divided by the maximum value so that it is not saturated
-			nCopy = np.dot(self.grid, (1/maxVal))
+			copy = np.dot(self.grid, (1/maxVal))
 		else:
-			 nCopy = self.grid
-		cv2.imshow("Grid ", nCopy)
+			 copy = self.grid
+		cv2.imshow("Grid ", copy)
 		
 		
     def checkSaturation(self):
         saturation = False
-        numRowsColumns = 10
-        scale = 50
         numSquaresVisited = 0
-        for i in range(0, numRowsColumns):
-            for j in range(0, numRowsColumns):
-                # I check the first pixel of the square because they all have the same value
-                valuePos = self.grid[j*scale][i*scale]
+        for i in range(0, self.NUM_ROWS_COLUMNS):
+            for j in range(0, self.NUM_ROWS_COLUMNS):
+                # Check the first pixel of the square because they all have the same value
+                valuePos = self.grid[j*self.SCALE][i*self.SCALE]
                 if valuePos != 0:
                     numSquaresVisited = numSquaresVisited + 1
                     
-        if numSquaresVisited < 3:
+        if numSquaresVisited < self.MAX_SQUARES:
             saturation = True
         return saturation
         
         
+    def checkSaturationVacuum(self):
+        timeNow = time.time()
+        if self.saturation == False:          
+            if abs(self.time - timeNow) >= self.SECONDS_REDUCE:
+                # If 2 seconds have elapsed we reduce the value of the squares of the grid
+                self.reduceValueGrid()
+                self.time = 0
+                
+            if abs(self.timeSat - timeNow) >= self.SECONDS_SAT:
+                self.saturation = self.checkSaturation()
+                if self.saturation == True:
+                    # Stop
+                    self.stopVacuum()
+                self.timeSat = 0
+                
+                    
     def checkCrash(self):
         for i in range(0, 350):
-            # Returns 1 if it collides, and 0 if it doesn't collide
+            # Returns 1 if it collides, and 0 if it doesn't collides
             crash = self.bumper.getBumperData().state
             if crash == 1:
                 self.motors.sendW(0)
@@ -233,10 +252,10 @@ class MyAlgorithm2(threading.Thread):
         # angle1: orientacion a la que tiene que llegar si la orientacion es izq
         # angle2: orientacion a la que tiene que llegar si la orientacion es derecha
         turn = True
-        rangeDegrees = 0.125
+        rangeDegrees = 0.2
         
-        if angle1 == pi or angle2 == 0:
-            rangeDegrees = 0.145
+        #if angle1 == pi or angle2 == 0:
+        #    rangeDegrees = 0.145
             
         if angle2 == pi and yawNow < 0:
             angle2 = -angle2
@@ -282,7 +301,6 @@ class MyAlgorithm2(threading.Thread):
         # Stop
         self.motors.sendV(0)
         
-        # Gira 90 grados a la izq
         if self.yaw <= (pi + self.MARGIN) and self.yaw >= (pi - self.MARGIN):
             self.yaw = -pi
 
@@ -321,23 +339,7 @@ class MyAlgorithm2(threading.Thread):
         self.noObstRight = False
         self.corner = False
         self.sizeVacuum = False
-    
-    
-    def checkSaturationVacuum(self):
-        timeNow = time.time()
-        if self.saturation == False:          
-            if abs(self.time - timeNow) >= 5:
-                # If 5 seconds have elapsed we reduce the value of the squares of the grid
-                self.reduceValueTime()
-                self.time = 0
-                
-            if abs(self.timeSat - timeNow) >= 20:
-                self.saturation = self.checkSaturation()
-                if self.saturation == True:
-                    # Stop
-                    self.stopVacuum()
-                self.timeSat = 0
-                
+         
 
     def execute(self):
 
@@ -362,7 +364,7 @@ class MyAlgorithm2(threading.Thread):
         crash = self.checkCrash()
         
         #print (crash)
-        self.saturation = True
+        #self.saturation = True
         
         if self.saturation == False:
             if crash == 1:
@@ -431,11 +433,10 @@ class MyAlgorithm2(threading.Thread):
             timeNow = time.time()
             
             # Only walks the wall for a while
-            if self.startTime - timeNow < 60:
+            if self.startTime - timeNow < self.TIME_PERIM:
                 if crash == 0 and self.crashObstacle == False:             
                     # I go forward until I find an obstacle
                     self.goForward(0.5)
-                    #self.motors.sendV(0.5)
                     print("GO FORWARD")
                 elif crash == 1 and self.crashObstacle == False:
                     self.crashObstacle = True
