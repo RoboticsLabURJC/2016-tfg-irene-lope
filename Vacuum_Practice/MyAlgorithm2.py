@@ -214,11 +214,8 @@ class MyAlgorithm2(threading.Thread):
                     self.stopVacuum()
                 self.timeSat = 0
 
-    
-    def checkCrash(self):
-        crash = 0
-        
-        # Bumper
+
+    def checkBumper(self):
         for i in range(0, 350):
             # Returns 1 if it collides, and 0 if it doesn't collides
             crash = self.bumper.getBumperData().state
@@ -226,7 +223,11 @@ class MyAlgorithm2(threading.Thread):
                 self.motors.sendW(0)
                 self.motors.sendV(0)
                 break
-                
+        return crash
+        
+        
+    def checkLaser(self):
+        crash = 0
         # Get the data of the laser sensor, which consists of 180 pairs of values
         laser_data = self.laser.getLaserData()
         
@@ -235,8 +236,21 @@ class MyAlgorithm2(threading.Thread):
         print laserCenter
         if laserCenter <= 10:
             crash = 1
-            self.stopVacuum
-            
+            self.stopVacuum 
+        return crash 
+        
+          
+    def checkCrash(self): 
+        # Bumper
+        crashBumper = self.checkBumper()
+        # Laser
+        crashLaser= self.checkLaser()        
+        
+        if crashBumper == 1 or crashLaser == 1:
+            crash = 1
+        else:
+            crash = 0
+                
         return crash
         
         
