@@ -44,6 +44,7 @@ class MyAlgorithm2(threading.Thread):
         self.time = 0
         self.timeSat = 0
         self.yaw = 0
+        
         self.DIST_TO_OBST_RIGHT = 30
         self.DIST_MIN_TO_OBST_RIGHT = 15
         self.DIST_TO_OBST_FRONT = 15
@@ -116,19 +117,66 @@ class MyAlgorithm2(threading.Thread):
     def kill (self):
         self.kill_event.set()
         
+
+
+
+
+
+    ######    CRASH FUNCTIONS   ######
     
+    
+    def checkBumper(self):
+        for i in range(0, 350):
+            # Returns 1 if it collides, and 0 if it doesn't collides
+            crash = self.bumper.getBumperData().state
+            if crash == 1:
+                self.motors.sendW(0)
+                self.motors.sendV(0)
+                break
+        return crash
+        
+        
+    def checkLaser(self):
+        crash = 0
+        # Get the data of the laser sensor, which consists of 180 pairs of values
+        laser_data = self.laser.getLaserData()
+        
+        # Distance in millimeters, we change to cm
+        laserCenter = laser_data.distanceData[90]/10
+        print laserCenter
+        if laserCenter <= 10:
+            crash = 1
+            self.stopVacuum 
+        return crash 
+        
+          
+    def checkCrash(self): 
+        # Bumper
+        crashBumper = self.checkBumper()
+        # Laser
+        crashLaser= self.checkLaser()        
+        
+        if crashBumper == 1 or crashLaser == 1:
+            crash = 1
+        else:
+            crash = 0
+                
+        return crash
+        
+  
+  
+        
+        
+    ######   SATURATION FUNCTIONS   ###### 
+        
+        
     def initSatTime(self):
         if self.time == 0:
             self.time = time.time()
         if self.timeSat == 0:
             self.timeSat = time.time()
-    
-    
-    def initPerimTime(self):
-        if self.startTime == 0:
-            self.startTime = time.time()   
-        
-        
+            
+               
     def RTy(self, angle, tx, ty, tz):
         RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
         return RT
@@ -214,45 +262,12 @@ class MyAlgorithm2(threading.Thread):
                     self.stopVacuum()
                 self.timeSat = 0
 
-
-    def checkBumper(self):
-        for i in range(0, 350):
-            # Returns 1 if it collides, and 0 if it doesn't collides
-            crash = self.bumper.getBumperData().state
-            if crash == 1:
-                self.motors.sendW(0)
-                self.motors.sendV(0)
-                break
-        return crash
-        
-        
-    def checkLaser(self):
-        crash = 0
-        # Get the data of the laser sensor, which consists of 180 pairs of values
-        laser_data = self.laser.getLaserData()
-        
-        # Distance in millimeters, we change to cm
-        laserCenter = laser_data.distanceData[90]/10
-        print laserCenter
-        if laserCenter <= 10:
-            crash = 1
-            self.stopVacuum 
-        return crash 
-        
-          
-    def checkCrash(self): 
-        # Bumper
-        crashBumper = self.checkBumper()
-        # Laser
-        crashLaser= self.checkLaser()        
-        
-        if crashBumper == 1 or crashLaser == 1:
-            crash = 1
-        else:
-            crash = 0
-                
-        return crash
-        
+    
+    
+     
+    
+    ######   VACUUM FUNCTIONS   #######
+    
         
     def stopVacuum(self):
         self.motors.sendW(0)
@@ -270,14 +285,19 @@ class MyAlgorithm2(threading.Thread):
         time.sleep(1)
         
         
+    def goForward(self,v):
+        self.motors.sendW(0)
+        self.motors.sendV(v)
+        
+   
     def returnOrientation(self, yaw):
         if -pi/2 <= yaw <= pi/2:
             orientation = 'left'
         elif pi/2 <= yaw <= pi or -pi <= yaw <= -pi/2:
             orientation = 'right'
         return orientation
-        
-        
+
+
     def turn90(self, angle1, angle2, yawNow):
         # angle1: orientacion a la que tiene que llegar si la orientacion es izq
         # angle2: orientacion a la que tiene que llegar si la orientacion es derecha
@@ -310,8 +330,28 @@ class MyAlgorithm2(threading.Thread):
             turn = False
             self.motors.sendW(0)
         return turn
+        
+        
+    def restartVariables(self):
+        self.startTime = 0
+        self.crashObstacle = False
+        self.obstacleRight = False
+        self.noObstRight = False
+        self.corner = False
+        self.sizeVacuum = False
+        
+        
+          
+          
+            
+    ######   PERIMETER FUNCTIONS   ######
     
-    
+        
+    def initPerimTime(self):
+        if self.startTime == 0:
+            self.startTime = time.time() 
+            
+
     def calculateSideTriangle(self, a, b, angle):
         c = math.sqrt(pow(a,2) + pow(b,2) - 2*a*b*math.cos(angle))
         return c
@@ -365,18 +405,7 @@ class MyAlgorithm2(threading.Thread):
             self.motors.sendV(0.1)
             
     
-    def goForward(self,v):
-        self.motors.sendW(0)
-        self.motors.sendV(v)
-        
-               
-    def restartVariables(self):
-        self.startTime = 0
-        self.crashObstacle = False
-        self.obstacleRight = False
-        self.noObstRight = False
-        self.corner = False
-        self.sizeVacuum = False
+    
          
 
     def execute(self):
