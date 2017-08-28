@@ -57,7 +57,7 @@ class MyAlgorithm2(threading.Thread):
         self.ADD_VAL_GRID = 10
         self.SUB_VAL_GRID = 5
         self.MAX_SQUARES = 3
-        self.SECONDS_REDUCE = 2
+        self.SECONDS_REDUCE = 5
         self.SECONDS_SAT = 20
         
         self.stop_event = threading.Event()
@@ -130,8 +130,7 @@ class MyAlgorithm2(threading.Thread):
             # Returns 1 if it collides, and 0 if it doesn't collides
             crash = self.bumper.getBumperData().state
             if crash == 1:
-                self.motors.sendW(0)
-                self.motors.sendV(0)
+                self.stopVacuum()
                 break
         return crash
         
@@ -250,7 +249,7 @@ class MyAlgorithm2(threading.Thread):
         timeNow = time.time()
         if self.saturation == False:          
             if abs(self.time - timeNow) >= self.SECONDS_REDUCE:
-                # If 2 seconds have elapsed we reduce the value of the squares of the grid
+                # If 5 seconds have elapsed we reduce the value of the squares of the grid
                 self.reduceValueGrid()
                 self.time = 0
                 
@@ -270,8 +269,8 @@ class MyAlgorithm2(threading.Thread):
     
     def getYaw(self):
         yaw = self.pose3d.getYaw()
-        if yaw < 0:
-            yaw = yaw + 2*pi
+        #if yaw < 0:
+        #    yaw = yaw + 2*pi
         return yaw  
     
      
@@ -297,7 +296,6 @@ class MyAlgorithm2(threading.Thread):
         
    
     def returnOrientation(self, yaw):
-
         if pi/2 <= yaw <= 3*pi/2:
             orientation = 'right'
         else:
@@ -306,33 +304,58 @@ class MyAlgorithm2(threading.Thread):
 
         
     def turn90(self, angle1, angle2, yawNow):
+        # angle1: orientacion a la que tienes que llegar si la orientacion es izq
+        # angle2: orientacion a la que tienes que llegar si la orientacion es decha
+        # yawNow: orientacion actual
+        turning = True
+        rangeDegrees = 0.115
+        
+        if angle1 == pi or angle2 == 0:
+            rangeDegrees = 0.145
+  
+        if angle2 == pi and yawNow < 0:
+            angle2 = -angle2
+        
+        print ('yawNow: ', yawNow)  
+        
+        self.motors.sendV(0)   
+        if (self.orientation == 'left') and (yawNow <= (angle1-rangeDegrees) or yawNow >= (angle1+rangeDegrees)):
+            # Look left and turn left
+            self.motors.sendW(0.2)
+        elif (self.orientation == 'right') and (yawNow <= (angle2-rangeDegrees) or yawNow >= (angle2+rangeDegrees)):
+            # Look right and turn right
+            self.motors.sendW(-0.2)
+        else:
+            turning = False
+        return turning
+        '''
         # angle1: orientacion a la que tiene que llegar si la orientacion de la aspiradora es izq
         # angle2: orientacion a la que tiene que llegar si la orientacion de la aspiradora es derecha
         turning = True
-        rangeDegrees = 0.1
-   
-        # To degrees  
-        angle1Deg = angle1 * 180/pi
-        angle2Deg = angle2 * 180/pi
-        yawNowDeg = yawNow * 180/pi
+        rangeRad = 0.01
+
+        print ('yawNow: ', yawNow)
         
-        print ('yawNowDeg: ', yawNowDeg)
+        self.motors.sendV(0) 
         
-        self.motors.sendV(0)   
-        if (self.orientation == 'left') and (yawNow < (angle1-rangeDegrees)):
+        if (self.orientation == 'left') and (yawNow < (angle1-rangeRad)):
             # Look left and turn to left
-            print ('angle1Deg (left): ', angle1Deg) 
+            print ('angle1 (left): ', angle1) 
             self.motors.sendW(0.2)
-        elif (self.orientation == 'right') and (yawNow > (angle2+rangeDegrees)):
+            
+                
+        elif (self.orientation == 'right') and (yawNow > (angle2+rangeRad)):
             # Look right and turn to right
-            print ('angle2Deg (right): ', angle2Deg)
+            print ('angle2 (right): ', angle2)
             self.motors.sendW(-0.2)
+
         else:
             self.motors.sendW(0)
             turning = False
+            
         return turning
-        
-        
+        '''
+    
     def restartVariables(self):
         self.startTime = 0
         self.crashObstacle = False
@@ -416,15 +439,7 @@ class MyAlgorithm2(threading.Thread):
         # Check crash
         crash = self.checkCrash()
         
-        # Time to check saturation
-        self.initSatTime()
         
-        # Check saturation
-        self.checkSaturationVacuum()
-        
-        # Change and show grid
-        self.changeValuesGrid()
-        #self.showGrid()
         
         if crash == 1:
             print ("First crash")
@@ -432,7 +447,6 @@ class MyAlgorithm2(threading.Thread):
             self.stopAndBackwards()
             
             # Yaw 
-            #self.yaw = self.pose3d.getYaw()
             self.yaw = self.getYaw()
             self.firstTurn = False
             self.crash = True
@@ -440,25 +454,21 @@ class MyAlgorithm2(threading.Thread):
         if self.firstTurn == False and self.crash == True:
             print ("PRIMER GIRO")
             # Yaw
-            #yawNow = self.pose3d.getYaw()
             yawNow = self.getYaw()
             # Orientation
             self.orientation = self.returnOrientation(self.yaw)
-            print(self.orientation)
             # Turn 90
-            giro = self.turn90(pi/2, pi/2, yawNow)  
+            giro = self.turn90(pi/2, pi/2, yawNow) 
             if giro == False:
                 print ("PRIMER GIRO HECHO")
                 self.firstTurn = True
                 # Go forward
                 self.goForward(0.22)
-                print('sleep3')
                 time.sleep(1)
                 self.secondTurn = False
                 
         elif self.secondTurn == False and self.crash == True:
             print ("SEGUNDO GIRO")
-            #yawNow = self.pose3d.getYaw()
             yawNow = self.getYaw()
             giro = self.turn90(pi, 0, yawNow)
             if giro == False:
