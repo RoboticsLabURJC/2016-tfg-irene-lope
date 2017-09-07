@@ -103,6 +103,11 @@ class MyAlgorithm(threading.Thread):
         self.kill_event.set()
 
     
+    
+    
+    ######   STOP DETECTION   ######
+    
+    
     def filterHSV(self, input_image, Hmin, Hmax, Smin, Smax, Vmin, Vmax, size_Kernel):
         # RGB model change to HSV
         hsv_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2HSV)
@@ -143,6 +148,11 @@ class MyAlgorithm(threading.Thread):
             print('Going foward..')
         print('VELOCIDAD: ', v)
         return v
+    
+    
+    
+    
+    ######   CAR DETECTION   ######
     
     
     def findCar(self, cont, image):
@@ -206,6 +216,11 @@ class MyAlgorithm(threading.Thread):
         self.findCar(cont, image)
             
                   
+    
+         
+    ######   TURN   ######
+    
+    
     def findRoad(self, image):
 
         # Shape gives us the number of rows and columns of an image
@@ -234,8 +249,8 @@ class MyAlgorithm(threading.Thread):
                     border_right = i - 1
                     
         return border_left, border_right  
-    
-                 
+        
+                     
     def controlDesviation(self, desv, direction):
         if abs(desv) < self.MAX_DESV:
             # Go straight
@@ -301,6 +316,7 @@ class MyAlgorithm(threading.Thread):
         if self.turnTo == '':
             self.turnTo = self.randomDir()
             print ('Turn to: ', self.turnTo) 
+         
                                              
                                                                   
     def execute(self):
@@ -392,8 +408,8 @@ class MyAlgorithm(threading.Thread):
             self.turning = True
             
             # Choose the direction of the rotation
-            self.chooseDir()
-            
+            #self.chooseDir()
+            self.turnTo = 'right'
             # Turn 45 degrees 
             yaw = abs(self.pose3d.getYaw() * 180/pi)                 
             self.turn45degrees(yaw, self.turnTo)
