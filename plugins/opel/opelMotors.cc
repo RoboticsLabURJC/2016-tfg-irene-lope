@@ -16,7 +16,7 @@ namespace gazebo
         pthread_mutex_init(&mutex, NULL);
         pthread_mutex_init(&mutexMotor, NULL);
         count = 0;
-        std::cout << "constructor mini motors" << std::endl;
+        std::cout << "constructor motors" << std::endl;
         this->motorsteer = 0;
         this->motorspeed = 0;
     }
@@ -57,7 +57,7 @@ namespace gazebo
             //std::cout << "Model name " << name << std::endl;
 
             //nameMotors = std::string("--Ice.Config=" + name +"motors.cfg");
-            nameMotors = std::string("--Ice.Config=miniCarMotors.cfg");
+            nameMotors = std::string("--Ice.Config=opelMotors.cfg");
             pthread_t thr_gui;
             pthread_create(&thr_gui, NULL, &motorsICE, (void*) this);
 
