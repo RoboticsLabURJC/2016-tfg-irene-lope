@@ -59,6 +59,8 @@ class MyAlgorithm2(threading.Thread):
         self.MAX_SQUARES = 3
         self.SECONDS_REDUCE = 1
         self.SECONDS_SAT = 200
+        self.VACUUM_SIZE = 8
+        self.ADD_VAL_MAP = 128
         
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
@@ -169,10 +171,10 @@ class MyAlgorithm2(threading.Thread):
     def RTy(self, angle, tx, ty, tz):
         RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
         return RT
-
+        
 
     def RTVacuum(self):
-        RTy = self.RTy(pi, 5.6, 4, 0)
+        RTy = self.RTy(pi, 0.6, -1, 0)
         return RTy
         
         
@@ -203,8 +205,8 @@ class MyAlgorithm2(threading.Thread):
         numX = int(final_poses.flat[0] / self.SCALE)
         numY = int(final_poses.flat[1] / self.SCALE)
         
-        for i in range((numX * self.SCALE), (numX*self.SCALE + self.SCALE)):
-            for j in range((numY * self.SCALE), (numY*self.SCALE + self.SCALE)):
+        for i in range((numX * self.SCALE), (numX * self.SCALE + self.SCALE)):
+            for j in range((numY * self.SCALE), (numY * self.SCALE + self.SCALE)):
                 if self.grid[j][i] < self.MAX_VAL_GRID:
                     self.grid[j][i] = self.grid[j][i] + self.ADD_VAL_GRID
         
@@ -304,6 +306,7 @@ class MyAlgorithm2(threading.Thread):
             self.motors.sendW(-0.2)
         else:
             turning = False
+            self.motors.sendW(0)
         return turning
         
         
@@ -315,7 +318,40 @@ class MyAlgorithm2(threading.Thread):
         self.corner = False
         self.sizeVacuum = False
         self.saturation = False
+  
+  
         
+    ######   MAP FUNCTIONS   ######
+    
+    def whitePixels(self):
+        # Calculate the white pixels of the map
+        numPixels = 0
+        for i in range(0, self.map.shape[1]):
+            for j in range(0, self.map.shape[0]):
+                if self.map[i][j] == 255:
+                    numPixels = numPixels + 1
+        return numPixels
+         
+              
+    def changeMap(self):
+        # Change the value of the pixels depending on where the vacuum goes
+        x = self.pose3d.getX()
+        y = self.pose3d.getY()
+
+        final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * self.SCALE
+
+        poseX = int(final_poses.flat[0])
+        poseY = int(final_poses.flat[1])
+        
+        self.map[poseY][poseX] = self.ADD_VAL_MAP
+        
+        '''
+        for i in range((poseY - self.VACUUM_SIZE), (poseY + self.VACUUM_SIZE)):
+            for j in range((poseX - self.VACUUM_SIZE), (poseX + self.VACUUM_SIZE)):
+                self.map[i][j] = self.ADD_VAL_MAP
+        '''       
+        cv2.imshow("MAP ", self.map)
+         
          
     ######   PERIMETER FUNCTIONS   ######
         
@@ -402,6 +438,8 @@ class MyAlgorithm2(threading.Thread):
         # Check crash
         crash = self.checkCrash() 
         
+        self.changeMap()
+        
         if self.saturation == False:
             if crash == 1 and self.crash == False:
                 print ("CRAAASH")
@@ -441,7 +479,7 @@ class MyAlgorithm2(threading.Thread):
                     self.secondTurn = True
             
             else:
-                print ("AVANZAR")
+                print ("Go forward...")
                 # Go forward
                 self.goForward(0.5)
                 self.crash = False
