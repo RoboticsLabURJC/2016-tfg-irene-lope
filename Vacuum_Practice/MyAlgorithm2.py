@@ -59,7 +59,7 @@ class MyAlgorithm2(threading.Thread):
         self.MAX_SQUARES = 3
         self.SECONDS_REDUCE = 1
         self.SECONDS_SAT = 200
-        self.VACUUM_SIZE = 8
+        self.VACUUM_SIZE = 9
         self.ADD_VAL_MAP = 128
         
         self.stop_event = threading.Event()
@@ -166,17 +166,7 @@ class MyAlgorithm2(threading.Thread):
             self.time = time.time()
         if self.timeSat == 0:
             self.timeSat = time.time()
-            
-               
-    def RTy(self, angle, tx, ty, tz):
-        RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
-        return RT
-        
-
-    def RTVacuum(self):
-        RTy = self.RTy(pi, 0.6, -1, 0)
-        return RTy
-        
+              
         
     def reduceValueSquare(self, numRow, numColumn):
         # Reduce the value of a particular square
@@ -256,6 +246,16 @@ class MyAlgorithm2(threading.Thread):
 
     ######   VACUUM FUNCTIONS   #######
     
+    def RTy(self, angle, tx, ty, tz):
+        RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
+        return RT
+        
+
+    def RTVacuum(self):
+        RTy = self.RTy(pi, 5.8, 4, 0)
+        return RTy
+        
+        
     def stopVacuum(self):
         self.motors.sendW(0)
         self.motors.sendV(0)
@@ -343,13 +343,12 @@ class MyAlgorithm2(threading.Thread):
         poseX = int(final_poses.flat[0])
         poseY = int(final_poses.flat[1])
         
-        self.map[poseY][poseX] = self.ADD_VAL_MAP
-        
-        '''
+        #self.map[poseY][poseX] = self.ADD_VAL_MAP
+ 
         for i in range((poseY - self.VACUUM_SIZE), (poseY + self.VACUUM_SIZE)):
             for j in range((poseX - self.VACUUM_SIZE), (poseX + self.VACUUM_SIZE)):
                 self.map[i][j] = self.ADD_VAL_MAP
-        '''       
+        self.map[poseY][poseX] = 0       
         cv2.imshow("MAP ", self.map)
          
          
@@ -419,7 +418,7 @@ class MyAlgorithm2(threading.Thread):
     def execute(self):
 
         # TODO
-        
+        '''
         # Time to check saturation
         self.initSatTime()
         
@@ -429,7 +428,7 @@ class MyAlgorithm2(threading.Thread):
         # Change and show grid
         self.changeValuesGrid()
         self.showGrid()
-                
+        '''        
         # Vacuum's poses
         x = self.pose3d.getX()
         y = self.pose3d.getY()
@@ -464,11 +463,10 @@ class MyAlgorithm2(threading.Thread):
                     print ("Turn done")
                     self.firstTurn = True
                     # Go forwards
-                    self.goForward(0.24)
-                    time.sleep(0.7)
+                    self.goForward(0.2)
+                    time.sleep(1)
                     self.secondTurn = False
-                    
-                    
+                            
             elif self.secondTurn == False and self.crash == True:
                 print ("Second turn")
                 # Yaw
