@@ -146,7 +146,6 @@ class MyAlgorithm(threading.Thread):
         else:
             v = 60
             print('Going foward..')
-        print('VELOCIDAD: ', v)
         return v
     
     
@@ -222,7 +221,6 @@ class MyAlgorithm(threading.Thread):
     
     
     def findRoad(self, image):
-
         # Shape gives us the number of rows and columns of an image
         columns = image.shape[1]
         
@@ -251,23 +249,19 @@ class MyAlgorithm(threading.Thread):
         return border_left, border_right  
         
                      
-    def controlDesviation(self, desv, direction):
+    def controlDesviation(self, desv):
         if abs(desv) < self.MAX_DESV:
             # Go straight
             self.motors.sendV(50)
             self.motors.sendW(0)
         else:
             # Turn
-            if direction == 'left':
-                if desv < 0:
-                    self.motors.sendW(3.5)
-                else:
-                    self.motors.sendW(-3.5)
+            if desv < 0:
+                print 'desv: girando a la izq, 3.5'
+                self.motors.sendW(3.5)
             else:
-                if desv < 0:
-                    self.motors.sendW(4)
-                else:
-                    self.motors.sendW(-4)
+                print 'desv: girando a la dcha, -3.5'
+                self.motors.sendW(-3.5)               
             self.motors.sendV(30)
          
             
@@ -289,14 +283,15 @@ class MyAlgorithm(threading.Thread):
     
     def turn45degrees(self, yaw, direction):
         if self.turn45 == False:
-            if yaw < 180 and yaw > 100:
-                self.motors.sendV(30)
+            if yaw < 180 and yaw > 130:
                 if direction == 'left':
                     print('Girando 45º (izquierda)...')
+                    self.motors.sendV(30)
                     self.motors.sendW(3.5)
                 else:
                     print('Girando -45º (derecha)...')
-                    self.motors.sendW(-5.4)
+                    self.motors.sendV(15)
+                    self.motors.sendW(-4.0)
                 print('yaw: ', yaw)
 
             else:
@@ -322,7 +317,7 @@ class MyAlgorithm(threading.Thread):
     def execute(self):
         
         # TODO
-        
+
         # FILTTER
        
         # Getting the images
@@ -422,6 +417,7 @@ class MyAlgorithm(threading.Thread):
                 
                 # Filtering the images
                 image_filtered = self.filterHSV(imageC, 0, 10, 5, 20, 0, 60, 18)
+                cv2.imshow('Filtro', image_filtered)
                 
                 # Find the position of the road
                 border_left, border_right = self.findRoad(image_filtered)
@@ -441,4 +437,4 @@ class MyAlgorithm(threading.Thread):
                     print('DESVIATION', desviation)
                     
                     # Speed
-                    self.controlDesviation(desviation, self.turnTo)
+                    self.controlDesviation(desviation)
