@@ -41,7 +41,7 @@ class MyAlgorithm(threading.Thread):
         
         self.detectionCar = 100 
         self.FRAMES = 10
-        self.MAX_DESV = 15
+        self.MAX_DESV = 10
         self.MAX_DETECTION = 100
         self.THRESHOLD_DET = 70
         self.MIN_DET = 2
@@ -248,23 +248,7 @@ class MyAlgorithm(threading.Thread):
                     
         return border_left, border_right  
         
-                     
-    def controlDesviation(self, desv):
-        if abs(desv) < self.MAX_DESV:
-            # Go straight
-            self.motors.sendV(50)
-            self.motors.sendW(0)
-        else:
-            # Turn
-            if desv < 0:
-                print 'desv: girando a la izq, 3.5'
-                self.motors.sendW(3.5)
-            else:
-                print 'desv: girando a la dcha, -3.5'
-                self.motors.sendW(-3.5)               
-            self.motors.sendV(30)
-         
-            
+                             
     def mean(self, a, b):
         m = (a + b)/2
         return m
@@ -283,21 +267,38 @@ class MyAlgorithm(threading.Thread):
     
     def turn45degrees(self, yaw, direction):
         if self.turn45 == False:
-            if yaw < 180 and yaw > 130:
+            if yaw < 180 and yaw > 125:
                 if direction == 'left':
                     print('Girando 45º (izquierda)...')
-                    self.motors.sendV(30)
+                    self.motors.sendV(40)
                     self.motors.sendW(3.5)
                 else:
                     print('Girando -45º (derecha)...')
-                    self.motors.sendV(15)
-                    self.motors.sendW(-4.0)
+                    self.motors.sendV(40)
+                    self.motors.sendW(-3.8)
                 print('yaw: ', yaw)
 
             else:
                 self.turn45 = True
                 
                 
+    def controlDesviation(self, desv):
+        if abs(desv) < self.MAX_DESV:
+            # Go straight
+            self.motors.sendW(0)
+        else:
+            # Turn
+            if desv < 0:
+                print 'desv: girando a la izq, 3.5'
+                self.motors.sendW(1.8)
+            elif desv > 30:
+                self.motors.sendW(-4.0)
+            else:
+                print 'desv: girando a la dcha, -3.5'
+                self.motors.sendW(-1.8)               
+        self.motors.sendV(50)
+            
+                        
     def randomDir(self):
         # Random int number between [0,2) --> 0 o 1
         randm = np.random.randint(2)
