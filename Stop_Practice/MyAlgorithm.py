@@ -131,7 +131,7 @@ class MyAlgorithm(threading.Thread):
         if self.detection == True:
             if self.stop == False:
                 if bw >= 10 and bw < 30:
-                    v = 50
+                    v = 45
                 elif bw >= 30 and bw < 45:
                     v = 30
                 elif bw >= 45 and bw < 65:
@@ -271,7 +271,7 @@ class MyAlgorithm(threading.Thread):
                 if direction == 'left':
                     print('Girando 45º (izquierda)...')
                     self.motors.sendV(40)
-                    self.motors.sendW(3.5)
+                    self.motors.sendW(3.8)
                 else:
                     print('Girando -45º (derecha)...')
                     self.motors.sendV(40)
@@ -404,8 +404,8 @@ class MyAlgorithm(threading.Thread):
             self.turning = True
             
             # Choose the direction of the rotation
-            #self.chooseDir()
-            self.turnTo = 'right'
+            self.chooseDir()
+
             # Turn 45 degrees 
             yaw = abs(self.pose3d.getYaw() * 180/pi)                 
             self.turn45degrees(yaw, self.turnTo)
