@@ -36,7 +36,7 @@ add_library(camera_dumpopel SHARED camera_dump.cc)
 target_link_libraries(camera_dumpopel
 	${GAZEBO_libraries} 
 	${ZeroCIce_LIBRARIES} 
-
+    CameraPlugin
     ${easyiceconfig_LIBRARIES}
     colorspacesmm
     JderobotInterfaces
