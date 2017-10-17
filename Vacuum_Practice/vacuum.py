@@ -8,7 +8,8 @@ from parallelIce.laserClient import LaserClient
 from parallelIce.bumperClient import BumperClient
 import easyiceconfig as EasyIce
 #from MyAlgorithm import MyAlgorithm
-from MyAlgorithm2 import MyAlgorithm2
+#from MyAlgorithm2 import MyAlgorithm2
+from MyAlgorithm3 import MyAlgorithm3
 
 
 
@@ -19,7 +20,8 @@ if __name__ == "__main__":
     laser = LaserClient(ic, "Vacuum.Laser", True)
     bumper = BumperClient(ic, "Vacuum.Bumper", True)
     #algorithm=MyAlgorithm(pose3d, motors,laser,bumper)
-    algorithm=MyAlgorithm2(pose3d, motors,laser,bumper)
+    #algorithm=MyAlgorithm2(pose3d, motors,laser,bumper)
+    algorithm=MyAlgorithm3(pose3d, motors,laser,bumper)
     
     app = QApplication(sys.argv)
     myGUI = MainWindow()
