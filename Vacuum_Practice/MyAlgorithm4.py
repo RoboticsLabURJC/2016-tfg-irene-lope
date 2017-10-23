@@ -43,6 +43,8 @@ class MyAlgorithm4(threading.Thread):
         self.xPix = None
         self.yPix = None
         
+        self.goSouth = False
+        
         self.currentCell = []
         
  
@@ -113,22 +115,32 @@ class MyAlgorithm4(threading.Thread):
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
             self.xPix, self.yPix = self.coordToPix(self.x, self.y)
-            self.paintCell(self.xPix, self.yPix)
             self.currentCell = [self.xPix, self. yPix]
+            self.paintCell(self.currentCell[0], self.currentCell[1])
         else:
-            print 'currentCell', self.currentCell
-            north, east, west, south = self.calculateNeigh(self.currentCell[0], self.currentCell[1])
-            nCell, eCell, wCell, sCell = self.checkNeigh(north, east, west, south)
+            north, east, west = self.calculateNeigh(self.currentCell[0], self.currentCell[1])
+            nCell, eCell, wCell = self.checkNeigh(north, east, west)
             print 'n', north, nCell
             print 'e', east, eCell
             print 'w', west, wCell
-            if nCell == 0:
-                self.paintCell(north[0], north[1])
-                self.currentCell = north
+            if self.goSouth == False:
+                if nCell == 0:
+                    self.currentCell = north
+                    self.paintCell(self.currentCell[0], self.currentCell[1])
+                else:
+                    if eCell == 0:
+                        self.currentCell = east
+                        self.paintCell(self.currentCell[0], self.currentCell[1])
+                        self.goSouth = True                      
             else:
-                if eCell == 0:
-                    self.paintCell(east[0], east[1])
-                    self.currentCell = east
+                south = self.calculateSouth(self.currentCell[0], self.currentCell[1])
+                sCell = self.checkSouth(south)
+                print 's: ', sCell
+                if sCell == 0:
+                    self.currentCell = south
+                    self.paintCell(self.currentCell[0], self.currentCell[1])        
+                else:
+                    self.goSouth = False
 
     ######   MAP FUNCTIONS   ######
     
@@ -143,9 +155,13 @@ class MyAlgorithm4(threading.Thread):
         northCell = [x, y - self.VACUUM_PX_SIZE]
         eastCell = [x + self.VACUUM_PX_SIZE, y]
         westCell = [x - self.VACUUM_PX_SIZE, y]
-        return northCell, eastCell, westCell     
+        return northCell, eastCell, westCell    
         
     
+    def calculateSouth(self, x, y):
+        southCell = [x, y + self.VACUUM_PX_SIZE]
+        return southCell
+        
     def coordToPix(self, coordX, coordY):
         final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
         xPix = int(final_poses.flat[0])
@@ -153,8 +169,7 @@ class MyAlgorithm4(threading.Thread):
         return xPix, yPix
     
     
-    def checkCell(self, centerX, centerY):  
-    def checkNorthCell(self, centerX, centerY):
+    def checkCell(self, centerX, centerY): 
         # center: the central position of the cell
         obstacle = 0
         virtualObst = 0
@@ -172,77 +187,26 @@ class MyAlgorithm4(threading.Thread):
         cv2.imshow("MAP ", self.map)
         
         if obstacle == 1:
-            northCell = 1
+            cell = 1
         elif virtualObst == 1:
-            northCell = 2
+            cell = 2
         else:
-            northCell = 0
+            cell = 0
             
-        return northCell
-                
-                           
-    def checkWestCell(self, centerX, centerY):
-        # center: the central position of the cell
-        obstacle = 0
-        virtualObst = 0
- 
-        for i in range((centerY - self.VACUUM_PX_HALF), (centerY + self.VACUUM_PX_HALF)):
-            for j in range((centerX - self.VACUUM_PX_HALF), (centerX + self.VACUUM_PX_HALF)):
-                #self.map[i][j] = 200
-                if self.map[i][j] == 0:
-                    # There is an obstacle
-                    obstacle = 1
-                elif self.map[i][j] == 128:
-                    # There is a virtual obstacle
-                    virtualObst = 1
-                      
-        cv2.imshow("MAP ", self.map)
-        
-        if obstacle == 1:
-            westCell = 1
-        elif virtualObst == 1:
-            westCell = 2
-        else:
-            westCell = 0
-            
-        return westCell 
-
-        
-    def checkEastCell(self, centerX, centerY):
-        # center: the central position of the cell
-        obstacle = 0
-        virtualObst = 0
- 
-        for i in range((centerY - self.VACUUM_PX_HALF), (centerY + self.VACUUM_PX_HALF)):
-            for j in range((centerX - self.VACUUM_PX_HALF), (centerX + self.VACUUM_PX_HALF)):
-                #self.map[i][j] = 30
-                if self.map[i][j] == 0:
-                    # There is an obstacle
-                    obstacle = 1
-                elif self.map[i][j] == 128:
-                    # There is a virtual obstacle
-                    virtualObst = 1 
-                    
-        cv2.imshow("MAP ", self.map) 
-        
-        if obstacle == 1:
-            eastCell = 1
-        elif virtualObst == 1:
-            eastCell = 2
-        else:
-            eastCell = 0
-            
-        return eastCell 
+        return cell
         
         
-    def checkNeigh(self, n, e, w, s):
+    def checkNeigh(self, n, e, w):
         northCell = self.checkCell(n[0], n[1])  
         eastCell = self.checkCell(e[0], e[1])  
-        westCell = self.checkCell(w[0], w[1])  
-        southCell = self.checkCell(s[0], s[1])  
-        return northCell, eastCell, westCell, southCell
+        westCell = self.checkCell(w[0], w[1])    
+        return northCell, eastCell, westCell
               
-                    
+    def checkSouth(self, s):
+        southCell = self.checkCell(s[0], s[1]) 
+        return southCell
+        
+                   
     def execute(self):
 
         # TODO
