@@ -46,6 +46,7 @@ class MyAlgorithm4(threading.Thread):
         self.goSouth = False
         
         self.currentCell = []
+        self.returnPoints = []
         
  
     def parse_laser_data(self,laser_data):
@@ -120,9 +121,10 @@ class MyAlgorithm4(threading.Thread):
         else:
             north, east, west = self.calculateNeigh(self.currentCell[0], self.currentCell[1])
             nCell, eCell, wCell = self.checkNeigh(north, east, west)
-            print 'n', north, nCell
-            print 'e', east, eCell
-            print 'w', west, wCell
+            #print 'n', north, nCell
+            #print 'e', east, eCell
+            #print 'w', west, wCell
+            self.checkReturnPoints()
             if self.goSouth == False:
                 if nCell == 0:
                     self.currentCell = north
@@ -135,12 +137,13 @@ class MyAlgorithm4(threading.Thread):
             else:
                 south = self.calculateSouth(self.currentCell[0], self.currentCell[1])
                 sCell = self.checkSouth(south)
-                print 's: ', sCell
+                #print 's: ', sCell
                 if sCell == 0:
                     self.currentCell = south
                     self.paintCell(self.currentCell[0], self.currentCell[1])        
                 else:
                     self.goSouth = False
+
 
     ######   MAP FUNCTIONS   ######
     
@@ -162,6 +165,7 @@ class MyAlgorithm4(threading.Thread):
         southCell = [x, y + self.VACUUM_PX_SIZE]
         return southCell
         
+        
     def coordToPix(self, coordX, coordY):
         final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
         xPix = int(final_poses.flat[0])
@@ -180,12 +184,10 @@ class MyAlgorithm4(threading.Thread):
                 if self.map[i][j] == 0:
                     # There is an obstacle
                     obstacle = 1
-                elif self.map[i][j] == 128:
+                elif self.map[i][j] == self.VIRTUAL_OBST:
                     # There is a virtual obstacle
                     virtualObst = 1
-                      
-        cv2.imshow("MAP ", self.map)
-        
+                          
         if obstacle == 1:
             cell = 1
         elif virtualObst == 1:
@@ -199,14 +201,46 @@ class MyAlgorithm4(threading.Thread):
     def checkNeigh(self, n, e, w):
         northCell = self.checkCell(n[0], n[1])  
         eastCell = self.checkCell(e[0], e[1])  
-        westCell = self.checkCell(w[0], w[1])    
+        westCell = self.checkCell(w[0], w[1])
+
+        if northCell == 0:
+            self.savePoint(n)
+        if eastCell == 0:
+            self.savePoint(e)
+        if westCell == 0:
+            self.savePoint(w)  
+             
         return northCell, eastCell, westCell
               
+              
+    def savePoint(self, p):
+        x = 0
+        for i in range(len(self.returnPoints)): 
+            if (self.returnPoints[i][0] == p[0]) and (self.returnPoints[i][1] == p[1]):
+                x = 1
+        if x == 0:
+            self.returnPoints.append(p)
+                       
+                    
     def checkSouth(self, s):
         southCell = self.checkCell(s[0], s[1]) 
+        if southCell == 0:
+            self.savePoint(s)
         return southCell
-        
-                   
+             
+            
+    def checkReturnPoints(self):
+        print 'RETURN POINTS: ', self.returnPoints
+        x = None
+        for i in range(len(self.returnPoints)): 
+            if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
+                print 'Remove: ', self.returnPoints[i]
+                x = i
+                
+        if x != None:
+            self.returnPoints.pop(x)
+        #print 'RETURN POINTS: ', self.returnPoints
+                    
     def execute(self):
 
         # TODO
