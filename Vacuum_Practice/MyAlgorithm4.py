@@ -110,9 +110,17 @@ class MyAlgorithm4(threading.Thread):
         RTy = self.RTy(pi, 5.8, 4.2, 0)
         return RTy
 
-   
+
+    def euclideanDist(self, p1, p2):
+        # p1 = (x1, y1)
+        # p2 = (x2, y2)
+        d = math.sqrt(pow((p2[0]-p1[0]),2)+pow((p2[1]-p1[1]),2))     
+        return d
+        
+        
     def zigzag(self):
         if self.x == None and self.y == None:
+            # Is the first position
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
             self.xPix, self.yPix = self.coordToPix(self.x, self.y)
@@ -211,8 +219,15 @@ class MyAlgorithm4(threading.Thread):
             self.savePoint(w)  
              
         return northCell, eastCell, westCell
-              
-              
+
+                
+    def checkSouth(self, s):
+        southCell = self.checkCell(s[0], s[1]) 
+        if southCell == 0:
+            self.savePoint(s)
+        return southCell
+        
+             
     def savePoint(self, p):
         x = 0
         for i in range(len(self.returnPoints)): 
@@ -220,29 +235,23 @@ class MyAlgorithm4(threading.Thread):
                 x = 1
         if x == 0:
             self.returnPoints.append(p)
-                       
-                    
-    def checkSouth(self, s):
-        southCell = self.checkCell(s[0], s[1]) 
-        if southCell == 0:
-            self.savePoint(s)
-        return southCell
-             
             
+                  
     def checkReturnPoints(self):
         print 'RETURN POINTS: ', self.returnPoints
         x = None
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
                 print 'Remove: ', self.returnPoints[i]
-                x = i
-                
+                x = i        
         if x != None:
             self.returnPoints.pop(x)
-        #print 'RETURN POINTS: ', self.returnPoints
-                    
+           
+          
+    
+                 
     def execute(self):
 
         # TODO
         self.zigzag()
-        
+
