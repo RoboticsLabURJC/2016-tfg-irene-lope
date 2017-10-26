@@ -182,14 +182,7 @@ class MyAlgorithm4(threading.Thread):
                 
         return northCell, eastCell, westCell, southCell  
         
-        
-    '''
-    def calculateSouth(self, cell):
-        southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
-        return southCell
-    '''    
-       
-        
+
     def coordToPix(self, coordX, coordY):
         final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
         xPix = int(final_poses.flat[0])
@@ -239,14 +232,7 @@ class MyAlgorithm4(threading.Thread):
             self.savePoint(s)  
              
         return northCell, eastCell, westCell, southCell
-
-    '''           
-    def checkSouth(self, s):
-        southCell = self.checkCell(s) 
-        if southCell == 0:
-            self.savePoint(s)
-        return southCell
-    '''   
+  
              
     def savePoint(self, p):
         x = 0
