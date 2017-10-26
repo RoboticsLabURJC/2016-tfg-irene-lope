@@ -37,6 +37,8 @@ class MyAlgorithm4(threading.Thread):
         self.VACUUM_SIZE = 0.32
         self.VIRTUAL_OBST = 128
         self.SCALE = 50 #50 px = 1 m
+        self.MIN_MAP = 24
+        self.MAX_MAP = 476
 
         self.x = None
         self.y = None
@@ -120,12 +122,11 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = [xPix, yPix]
             self.paintCell(self.currentCell)
         else:
-            north, east, west = self.calculateNeigh(self.currentCell)
-            nCell, eCell, wCell = self.checkNeigh(north, east, west)
-            #print 'n', north, nCell
-            #print 'e', east, eCell
-            #print 'w', west, wCell
+            north, east, west, south = self.calculateNeigh(self.currentCell)
+            nCell, eCell, wCell, sCell = self.checkNeigh(north, east, west, south)
+            print 's: ', sCell
             self.checkReturnPoints()
+
             if self.goSouth == False:
                 if nCell == 0:
                     self.currentCell = north
@@ -134,18 +135,16 @@ class MyAlgorithm4(threading.Thread):
                     if eCell == 0:
                         self.currentCell = east
                         self.paintCell(self.currentCell)
-                        self.goSouth = True                      
+                        self.goSouth = True
+                                        
             else:
-                south = self.calculateSouth(self.currentCell)
-                sCell = self.checkSouth(south)
-                #print 's: ', sCell
                 if sCell == 0:
                     self.currentCell = south
                     self.paintCell(self.currentCell)        
                 else:
-                    self.checkMinDist()
+                #    self.checkMinDist()
                     self.goSouth = False
-
+            
 
     ######   MAP FUNCTIONS   ######
     
@@ -159,16 +158,36 @@ class MyAlgorithm4(threading.Thread):
                  
     def calculateNeigh(self, cell):
         # cell = [x,y]
-        northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
-        eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]]
-        westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]]
-        return northCell, eastCell, westCell    
+
+        if cell[1] >= self.MIN_MAP:
+            northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
+        else:
+            northCell = [None, None]
+            
+        if cell[1] <= self.MAX_MAP:
+            southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
+        else:
+            southCell = [None, None]
+            
+        if cell[1] >= self.MIN_MAP:
+            westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]]
+        else:
+            westCell = [None, None]
+            
+        if cell[1] <= self.MAX_MAP:
+            eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]]
+        else:
+            eastCell = [None, None]
+                
+        return northCell, eastCell, westCell, southCell  
         
-    
+        
+    '''
     def calculateSouth(self, cell):
         southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
         return southCell
-        
+    '''    
+       
         
     def coordToPix(self, coordX, coordY):
         final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
@@ -182,47 +201,51 @@ class MyAlgorithm4(threading.Thread):
         # cell = [x,y]
         obstacle = 0
         virtualObst = 0
-        
-        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                if self.map[i][j] == 0:
-                    # There is an obstacle
-                    obstacle = 1
-                elif self.map[i][j] == self.VIRTUAL_OBST:
-                    # There is a virtual obstacle
-                    virtualObst = 1
-                          
-        if obstacle == 1:
-            c = 1
-        elif virtualObst == 1:
-            c = 2
-        else:
-            c = 0
+        c = None
+        if cell[0] != None and cell[1] != None:
+            for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+                for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+                    if self.map[i][j] == 0:
+                        # There is an obstacle
+                        obstacle = 1
+                    elif self.map[i][j] == self.VIRTUAL_OBST:
+                        # There is a virtual obstacle
+                        virtualObst = 1
+                              
+            if obstacle == 1:
+                c = 1
+            elif virtualObst == 1:
+                c = 2
+            else:
+                c = 0
             
         return c
         
         
-    def checkNeigh(self, n, e, w):
+    def checkNeigh(self, n, e, w, s):
         northCell = self.checkCell(n)  
         eastCell = self.checkCell(e)  
         westCell = self.checkCell(w)
+        southCell = self.checkCell(s)
 
         if northCell == 0:
             self.savePoint(n)
         if eastCell == 0:
             self.savePoint(e)
         if westCell == 0:
-            self.savePoint(w)  
+            self.savePoint(w)
+        if southCell == 0:
+            self.savePoint(s)  
              
-        return northCell, eastCell, westCell
+        return northCell, eastCell, westCell, southCell
 
-                
+    '''           
     def checkSouth(self, s):
         southCell = self.checkCell(s) 
         if southCell == 0:
             self.savePoint(s)
         return southCell
-        
+    '''   
              
     def savePoint(self, p):
         x = 0
