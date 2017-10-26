@@ -113,7 +113,7 @@ class MyAlgorithm4(threading.Thread):
         return RTy
   
         
-    def zigzag(self):
+    def sweep(self):
         if self.x == None and self.y == None:
             # Is the first position
             self.x = self.pose3d.getX()
@@ -124,26 +124,34 @@ class MyAlgorithm4(threading.Thread):
         else:
             north, east, west, south = self.calculateNeigh(self.currentCell)
             nCell, eCell, wCell, sCell = self.checkNeigh(north, east, west, south)
-            print 's: ', sCell
             self.checkReturnPoints()
-
-            if self.goSouth == False:
-                if nCell == 0:
-                    self.currentCell = north
-                    self.paintCell(self.currentCell)
-                else:
-                    if eCell == 0:
-                        self.currentCell = east
-                        self.paintCell(self.currentCell)
-                        self.goSouth = True
-                                        
+            
+            print 'NEW CELL'
+            print 'n', nCell
+            print 's', sCell
+            print 'e', eCell
+            print 'w', wCell
+            
+            if self.isCriticalPoint(nCell, eCell, wCell, sCell):
+                print ('CRITICAL POINT')
             else:
-                if sCell == 0:
-                    self.currentCell = south
-                    self.paintCell(self.currentCell)        
+                
+                if self.goSouth == False:
+                    if nCell == 0:
+                        self.currentCell = north
+                        self.paintCell(self.currentCell)
+                    else:
+                        if eCell == 0:
+                            self.currentCell = east
+                            self.paintCell(self.currentCell)
+                            self.goSouth = True
+                                            
                 else:
-                #    self.checkMinDist()
-                    self.goSouth = False
+                    if sCell == 0:
+                        self.currentCell = south
+                        self.paintCell(self.currentCell)        
+                    else:
+                        self.goSouth = False
             
             
 
@@ -273,10 +281,10 @@ class MyAlgorithm4(threading.Thread):
                 self.nextCell = i
         print 'nextCell: ', self.nextCell
         print 'minDist: ', self.minDist
-        #self.paintNextCell(i)
+        #self.paintReturnCell(i)
         
         
-    def paintNextCell(self, cell):
+    def paintReturnCell(self, cell):
         # cell = [x,y]
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
@@ -286,10 +294,15 @@ class MyAlgorithm4(threading.Thread):
            
     #def goToReturnPoint(self):
     
+    def isCriticalPoint(self, n, e, w, s):
+        if (n > 0) and (e > 0) and (w > 0) and (s > 0):
+            return True
+        else:
+            return False
     
            
     def execute(self):
 
         # TODO
-        self.zigzag()
+        self.sweep()
 
