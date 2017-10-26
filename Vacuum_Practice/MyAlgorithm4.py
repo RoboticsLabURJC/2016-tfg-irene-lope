@@ -48,7 +48,7 @@ class MyAlgorithm4(threading.Thread):
         
         self.currentCell = []
         self.returnPoints = []
-        self.nextCell = []
+
         
  
     def parse_laser_data(self,laser_data):
@@ -125,27 +125,29 @@ class MyAlgorithm4(threading.Thread):
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
             self.checkReturnPoints()
-            '''
-            print 'NEW CELL'
-            print 'n', cells[0]
-            print 'e', cells[1]
-            print 'w', cells[2]
-            print 's', cells[3]
-            '''
+
             if self.isCriticalPoint(cells):
-                print ('CRITICAL POINT',  cells)
+                print ('CRITICAL POINT')
                 if len(self.returnPoints) > 0:
-                    self.checkMinDist()
-                    self.currentCell = self.nextCell
+                    print 'NEW ZIGZAG'
+                    self.currentCell = self.checkMinDist()
+                    self.paintCell(self.currentCell)
+                    print 'GO TO:', self.currentCell
                 else:
                     print 'END THE SWEEP'
             else:
+                print 'ZIGZAG: i am in cell: ', self.currentCell
+                print 'n', cells[0]
+                print 'e', cells[1]
+                print 'w', cells[2]
+                print 's', cells[3]
                 self.zigzag(cells, neighbors)
                 
                 
     def zigzag(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
+        print 'I go to cell: '
         if self.goSouth == False:
             if cells[0] == 0:
                 self.currentCell = neighbors[0]
@@ -154,14 +156,18 @@ class MyAlgorithm4(threading.Thread):
                 if cells[1] == 0:
                     self.currentCell = neighbors[1]
                     self.paintCell(self.currentCell)
-                    self.goSouth = True                                    
+                    self.goSouth = True 
+                elif cells[2] == 0:
+                    self.currentCell = neighbors[2]
+                    self.paintCell(self.currentCell)
+                    self.goSouth = True                                   
         else:
             if cells[3] == 0:
                 self.currentCell = neighbors[3]
                 self.paintCell(self.currentCell)        
             else:
-                self.goSouth = False
-            
+                self.goSouth = False 
+        print self.currentCell
             
 
     ######   MAP FUNCTIONS   ######
@@ -172,8 +178,17 @@ class MyAlgorithm4(threading.Thread):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 self.map[i][j] = self.VIRTUAL_OBST             
         cv2.imshow("MAP ", self.map)
+        
+        
                  
-                 
+    def paintNextCell(self, cell):
+        # cell = [x,y]
+        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+                self.map[i][j] = 35             
+        cv2.imshow("MAP ", self.map)
+        
+                    
     def calculateNeigh(self, cell):
         # cell = [x,y]
 
@@ -264,11 +279,11 @@ class MyAlgorithm4(threading.Thread):
             
                   
     def checkReturnPoints(self):
-        #print 'RETURN POINTS: ', self.returnPoints
+        print 'RETURN POINTS: ', self.returnPoints
         x = None
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
-                #print 'Remove: ', self.returnPoints[i]
+                print 'Remove: ', self.returnPoints[i]
                 x = i        
         if x != None:
             self.returnPoints.pop(x)
@@ -287,15 +302,14 @@ class MyAlgorithm4(threading.Thread):
 
             if self.minDist ==None:
                 self.minDist = d
-                self.nextCell = i
+                nextCell = i
                 
             if d < self.minDist:
-                self.nextCell = i
- 
+                nextCell = i
+        #self.paintNextCell(nextCell)
+        return nextCell
            
-    #def goToReturnPoint(self):
-    
-    
+
     def isCriticalPoint(self, cells):
         #cells = [nCell, eCell, wCell, sCell]
         if (cells[0] > 0) and (cells[1] > 0) and (cells[2] > 0) and (cells[3] > 0):
