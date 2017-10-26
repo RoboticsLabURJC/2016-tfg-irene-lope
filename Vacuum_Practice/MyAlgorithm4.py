@@ -145,6 +145,7 @@ class MyAlgorithm4(threading.Thread):
                 #    self.checkMinDist()
                     self.goSouth = False
             
+            
 
     ######   MAP FUNCTIONS   ######
     
