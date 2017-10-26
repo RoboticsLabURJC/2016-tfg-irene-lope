@@ -40,13 +40,13 @@ class MyAlgorithm4(threading.Thread):
 
         self.x = None
         self.y = None
-        self.xPix = None
-        self.yPix = None
+        self.minDist = None
         
         self.goSouth = False
         
         self.currentCell = []
         self.returnPoints = []
+        self.nextCell = []
         
  
     def parse_laser_data(self,laser_data):
@@ -109,25 +109,18 @@ class MyAlgorithm4(threading.Thread):
     def RTVacuum(self):
         RTy = self.RTy(pi, 5.8, 4.2, 0)
         return RTy
-
-
-    def euclideanDist(self, p1, p2):
-        # p1 = (x1, y1)
-        # p2 = (x2, y2)
-        d = math.sqrt(pow((p2[0]-p1[0]),2)+pow((p2[1]-p1[1]),2))     
-        return d
-        
+  
         
     def zigzag(self):
         if self.x == None and self.y == None:
             # Is the first position
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
-            self.xPix, self.yPix = self.coordToPix(self.x, self.y)
-            self.currentCell = [self.xPix, self. yPix]
-            self.paintCell(self.currentCell[0], self.currentCell[1])
+            xPix, yPix = self.coordToPix(self.x, self.y)
+            self.currentCell = [xPix, yPix]
+            self.paintCell(self.currentCell)
         else:
-            north, east, west = self.calculateNeigh(self.currentCell[0], self.currentCell[1])
+            north, east, west = self.calculateNeigh(self.currentCell)
             nCell, eCell, wCell = self.checkNeigh(north, east, west)
             #print 'n', north, nCell
             #print 'e', east, eCell
@@ -136,41 +129,44 @@ class MyAlgorithm4(threading.Thread):
             if self.goSouth == False:
                 if nCell == 0:
                     self.currentCell = north
-                    self.paintCell(self.currentCell[0], self.currentCell[1])
+                    self.paintCell(self.currentCell)
                 else:
                     if eCell == 0:
                         self.currentCell = east
-                        self.paintCell(self.currentCell[0], self.currentCell[1])
+                        self.paintCell(self.currentCell)
                         self.goSouth = True                      
             else:
-                south = self.calculateSouth(self.currentCell[0], self.currentCell[1])
+                south = self.calculateSouth(self.currentCell)
                 sCell = self.checkSouth(south)
                 #print 's: ', sCell
                 if sCell == 0:
                     self.currentCell = south
-                    self.paintCell(self.currentCell[0], self.currentCell[1])        
+                    self.paintCell(self.currentCell)        
                 else:
+                    self.checkMinDist()
                     self.goSouth = False
 
 
     ######   MAP FUNCTIONS   ######
     
-    def paintCell(self, x, y):
-        for i in range((y - self.VACUUM_PX_HALF), (y + self.VACUUM_PX_HALF)):
-            for j in range((x - self.VACUUM_PX_HALF), (x + self.VACUUM_PX_HALF)):
+    def paintCell(self, cell):
+        # cell = [x,y]
+        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 self.map[i][j] = self.VIRTUAL_OBST             
         cv2.imshow("MAP ", self.map)
                  
                  
-    def calculateNeigh(self, x, y):
-        northCell = [x, y - self.VACUUM_PX_SIZE]
-        eastCell = [x + self.VACUUM_PX_SIZE, y]
-        westCell = [x - self.VACUUM_PX_SIZE, y]
+    def calculateNeigh(self, cell):
+        # cell = [x,y]
+        northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
+        eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]]
+        westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]]
         return northCell, eastCell, westCell    
         
     
-    def calculateSouth(self, x, y):
-        southCell = [x, y + self.VACUUM_PX_SIZE]
+    def calculateSouth(self, cell):
+        southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
         return southCell
         
         
@@ -181,14 +177,14 @@ class MyAlgorithm4(threading.Thread):
         return xPix, yPix
     
     
-    def checkCell(self, centerX, centerY): 
-        # center: the central position of the cell
+    def checkCell(self, cell): 
+        # cell: the central position of the cell
+        # cell = [x,y]
         obstacle = 0
         virtualObst = 0
         
-        for i in range((centerY - self.VACUUM_PX_HALF), (centerY + self.VACUUM_PX_HALF)):
-            for j in range((centerX - self.VACUUM_PX_HALF), (centerX + self.VACUUM_PX_HALF)):
-                #self.map[i][j] = 75
+        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 if self.map[i][j] == 0:
                     # There is an obstacle
                     obstacle = 1
@@ -197,19 +193,19 @@ class MyAlgorithm4(threading.Thread):
                     virtualObst = 1
                           
         if obstacle == 1:
-            cell = 1
+            c = 1
         elif virtualObst == 1:
-            cell = 2
+            c = 2
         else:
-            cell = 0
+            c = 0
             
-        return cell
+        return c
         
         
     def checkNeigh(self, n, e, w):
-        northCell = self.checkCell(n[0], n[1])  
-        eastCell = self.checkCell(e[0], e[1])  
-        westCell = self.checkCell(w[0], w[1])
+        northCell = self.checkCell(n)  
+        eastCell = self.checkCell(e)  
+        westCell = self.checkCell(w)
 
         if northCell == 0:
             self.savePoint(n)
@@ -222,7 +218,7 @@ class MyAlgorithm4(threading.Thread):
 
                 
     def checkSouth(self, s):
-        southCell = self.checkCell(s[0], s[1]) 
+        southCell = self.checkCell(s) 
         if southCell == 0:
             self.savePoint(s)
         return southCell
@@ -238,18 +234,50 @@ class MyAlgorithm4(threading.Thread):
             
                   
     def checkReturnPoints(self):
-        print 'RETURN POINTS: ', self.returnPoints
+        #print 'RETURN POINTS: ', self.returnPoints
         x = None
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
-                print 'Remove: ', self.returnPoints[i]
+                #print 'Remove: ', self.returnPoints[i]
                 x = i        
         if x != None:
             self.returnPoints.pop(x)
            
           
+    def euclideanDist(self, p1, p2):
+        # p1 = (x1, y1)
+        # p2 = (x2, y2)
+        d = math.sqrt(pow((p2[0]-p1[0]),2)+pow((p2[1]-p1[1]),2))     
+        return d
+        
+        
+    def checkMinDist(self):
+        for i in self.returnPoints:
+            d = self.euclideanDist(self.currentCell, i)
+
+            if self.minDist ==None:
+                self.minDist = d
+                self.nextCell = i
+                
+            if d < self.minDist:
+                self.nextCell = i
+        print 'nextCell: ', self.nextCell
+        print 'minDist: ', self.minDist
+        #self.paintNextCell(i)
+        
+        
+    def paintNextCell(self, cell):
+        # cell = [x,y]
+        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+                self.map[i][j] = 30             
+        cv2.imshow("MAP ", self.map) 
+        
+           
+    #def goToReturnPoint(self):
     
-                 
+    
+           
     def execute(self):
 
         # TODO
