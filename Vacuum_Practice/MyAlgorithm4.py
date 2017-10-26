@@ -122,36 +122,45 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = [xPix, yPix]
             self.paintCell(self.currentCell)
         else:
-            north, east, west, south = self.calculateNeigh(self.currentCell)
-            nCell, eCell, wCell, sCell = self.checkNeigh(north, east, west, south)
+            neighbors = self.calculateNeigh(self.currentCell)
+            cells = self.checkNeigh(neighbors)
             self.checkReturnPoints()
-            
+            '''
             print 'NEW CELL'
-            print 'n', nCell
-            print 's', sCell
-            print 'e', eCell
-            print 'w', wCell
-            
-            if self.isCriticalPoint(nCell, eCell, wCell, sCell):
-                print ('CRITICAL POINT')
-            else:
-                
-                if self.goSouth == False:
-                    if nCell == 0:
-                        self.currentCell = north
-                        self.paintCell(self.currentCell)
-                    else:
-                        if eCell == 0:
-                            self.currentCell = east
-                            self.paintCell(self.currentCell)
-                            self.goSouth = True
-                                            
+            print 'n', cells[0]
+            print 'e', cells[1]
+            print 'w', cells[2]
+            print 's', cells[3]
+            '''
+            if self.isCriticalPoint(cells):
+                print ('CRITICAL POINT',  cells)
+                if len(self.returnPoints) > 0:
+                    self.checkMinDist()
+                    self.currentCell = self.nextCell
                 else:
-                    if sCell == 0:
-                        self.currentCell = south
-                        self.paintCell(self.currentCell)        
-                    else:
-                        self.goSouth = False
+                    print 'END THE SWEEP'
+            else:
+                self.zigzag(cells, neighbors)
+                
+                
+    def zigzag(self, cells, neighbors):
+        #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
+        #neighbors = [north, east, west, south] -> Positions in the map
+        if self.goSouth == False:
+            if cells[0] == 0:
+                self.currentCell = neighbors[0]
+                self.paintCell(self.currentCell)
+            else:
+                if cells[1] == 0:
+                    self.currentCell = neighbors[1]
+                    self.paintCell(self.currentCell)
+                    self.goSouth = True                                    
+        else:
+            if cells[3] == 0:
+                self.currentCell = neighbors[3]
+                self.paintCell(self.currentCell)        
+            else:
+                self.goSouth = False
             
             
 
@@ -187,8 +196,9 @@ class MyAlgorithm4(threading.Thread):
             eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]]
         else:
             eastCell = [None, None]
-                
-        return northCell, eastCell, westCell, southCell  
+        
+        neighbors = [northCell, eastCell, westCell, southCell]   
+        return neighbors
         
 
     def coordToPix(self, coordX, coordY):
@@ -224,22 +234,24 @@ class MyAlgorithm4(threading.Thread):
         return c
         
         
-    def checkNeigh(self, n, e, w, s):
-        northCell = self.checkCell(n)  
-        eastCell = self.checkCell(e)  
-        westCell = self.checkCell(w)
-        southCell = self.checkCell(s)
+    def checkNeigh(self, neighbors):
+        # neighbors = [north, east, west, south]
+        northCell = self.checkCell(neighbors[0])  
+        eastCell = self.checkCell(neighbors[1])  
+        westCell = self.checkCell(neighbors[2])
+        southCell = self.checkCell(neighbors[3])
 
         if northCell == 0:
-            self.savePoint(n)
+            self.savePoint(neighbors[0])
         if eastCell == 0:
-            self.savePoint(e)
+            self.savePoint(neighbors[1])
         if westCell == 0:
-            self.savePoint(w)
+            self.savePoint(neighbors[2])
         if southCell == 0:
-            self.savePoint(s)  
-             
-        return northCell, eastCell, westCell, southCell
+            self.savePoint(neighbors[3])  
+        
+        cells = [northCell, eastCell, westCell, southCell] 
+        return cells
   
              
     def savePoint(self, p):
@@ -263,8 +275,8 @@ class MyAlgorithm4(threading.Thread):
            
           
     def euclideanDist(self, p1, p2):
-        # p1 = (x1, y1)
-        # p2 = (x2, y2)
+        # p1 = [x1, y1]
+        # p2 = [x2, y2]
         d = math.sqrt(pow((p2[0]-p1[0]),2)+pow((p2[1]-p1[1]),2))     
         return d
         
@@ -279,23 +291,14 @@ class MyAlgorithm4(threading.Thread):
                 
             if d < self.minDist:
                 self.nextCell = i
-        print 'nextCell: ', self.nextCell
-        print 'minDist: ', self.minDist
-        #self.paintReturnCell(i)
-        
-        
-    def paintReturnCell(self, cell):
-        # cell = [x,y]
-        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                self.map[i][j] = 30             
-        cv2.imshow("MAP ", self.map) 
-        
+ 
            
     #def goToReturnPoint(self):
     
-    def isCriticalPoint(self, n, e, w, s):
-        if (n > 0) and (e > 0) and (w > 0) and (s > 0):
+    
+    def isCriticalPoint(self, cells):
+        #cells = [nCell, eCell, wCell, sCell]
+        if (cells[0] > 0) and (cells[1] > 0) and (cells[2] > 0) and (cells[3] > 0):
             return True
         else:
             return False
