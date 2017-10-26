@@ -153,7 +153,11 @@ class MyAlgorithm4(threading.Thread):
                 self.currentCell = neighbors[0]
                 self.paintCell(self.currentCell)
             else:
-                if cells[1] == 0:
+                if cells[3] == 0:
+                    self.currentCell = neighbors[3]
+                    self.paintCell(self.currentCell)
+                    self.goSouth = True 
+                elif cells[1] == 0:
                     self.currentCell = neighbors[1]
                     self.paintCell(self.currentCell)
                     self.goSouth = True 
@@ -161,12 +165,14 @@ class MyAlgorithm4(threading.Thread):
                     self.currentCell = neighbors[2]
                     self.paintCell(self.currentCell)
                     self.goSouth = True                                   
+        
         else:
             if cells[3] == 0:
                 self.currentCell = neighbors[3]
                 self.paintCell(self.currentCell)        
             else:
-                self.goSouth = False 
+                self.goSouth = False
+         
         print self.currentCell
             
 
@@ -300,13 +306,14 @@ class MyAlgorithm4(threading.Thread):
         for i in self.returnPoints:
             d = self.euclideanDist(self.currentCell, i)
 
-            if self.minDist ==None:
+            if self.minDist == None:
                 self.minDist = d
                 nextCell = i
                 
             if d < self.minDist:
                 nextCell = i
         #self.paintNextCell(nextCell)
+        self.minDist = None
         return nextCell
            
 
