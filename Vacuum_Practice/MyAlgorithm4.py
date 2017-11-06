@@ -22,23 +22,24 @@ class MyAlgorithm4(threading.Thread):
         self.laser = laser
         self.bumper = bumper
         
-        self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
-        self.map = cv2.resize(self.map, (500, 500))
-        
-        self.grid = np.ones([500, 500], float)
-        
         self.stop_event = threading.Event()
         self.kill_event = threading.Event()
         self.lock = threading.Lock()
         threading.Thread.__init__(self, args=self.stop_event)
         
+        self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.map = cv2.resize(self.map, (500, 500))
+        self.grid = np.ones([500, 500], float)
+        
+        self.SCALE = 50 #50 px = 1 m
         self.VACUUM_PX_SIZE = 16  
         self.VACUUM_PX_HALF = 8  
         self.VACUUM_SIZE = 0.32
         self.VIRTUAL_OBST = 128
-        self.SCALE = 50 #50 px = 1 m
         self.MIN_MAP = 24
         self.MAX_MAP = 476
+        self.MAX_DESV = 45
+        self.MIN_DESV =
 
         self.x = None
         self.y = None
@@ -46,9 +47,11 @@ class MyAlgorithm4(threading.Thread):
         
         self.goSouth = False
         
+        self.firstCell = []
         self.currentCell = []
         self.returnPoints = []
-
+        self.path = []
+        self.myPath = []
         
  
     def parse_laser_data(self,laser_data):
@@ -119,8 +122,8 @@ class MyAlgorithm4(threading.Thread):
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
             xPix, yPix = self.coordToPix(self.x, self.y)
-            self.currentCell = [xPix, yPix]
-            self.paintCell(self.currentCell)
+            self.firstCell = [xPix, yPix]
+            self.savePath(self.firstCell)
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
@@ -130,13 +133,12 @@ class MyAlgorithm4(threading.Thread):
                 print ('CRITICAL POINT')
                 if len(self.returnPoints) > 0:
                     print 'NEW ZIGZAG'
-                    self.currentCell = self.checkMinDist()
-                    self.paintCell(self.currentCell)
-                    print 'GO TO:', self.currentCell
+                    self.savePath(self.checkMinDist())
                 else:
-                    print 'END THE SWEEP'
+                    print 'START DRIVING'      
+                    self.driving()
             else:
-                print 'ZIGZAG: i am in cell: ', self.currentCell
+                print 'ZIGZAG: Vacuum is in cell: ', self.currentCell
                 print 'n', cells[0]
                 print 'e', cells[1]
                 print 'w', cells[2]
@@ -147,32 +149,25 @@ class MyAlgorithm4(threading.Thread):
     def zigzag(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
-        print 'I go to cell: '
+        print 'Vacuum goes to cell: '
         if self.goSouth == False:
-            if cells[0] == 0:
-                self.currentCell = neighbors[0]
-                self.paintCell(self.currentCell)
+            if cells[0] == 0: #north
+                self.savePath(neighbors[0])
             else:
-                if cells[3] == 0:
-                    self.currentCell = neighbors[3]
-                    self.paintCell(self.currentCell)
+                if cells[3] == 0: #south
+                    self.savePath(neighbors[3])
                     self.goSouth = True 
-                elif cells[1] == 0:
-                    self.currentCell = neighbors[1]
-                    self.paintCell(self.currentCell)
+                elif cells[1] == 0: #east
+                    self.savePath(neighbors[1])
                     self.goSouth = True 
-                elif cells[2] == 0:
-                    self.currentCell = neighbors[2]
-                    self.paintCell(self.currentCell)
-                    self.goSouth = True                                   
-        
+                elif cells[2] == 0: #west
+                    self.savePath(neighbors[2])
+                    self.goSouth = True                                          
         else:
-            if cells[3] == 0:
-                self.currentCell = neighbors[3]
-                self.paintCell(self.currentCell)        
+            if cells[3] == 0: #south
+                self.savePath(neighbors[3])       
             else:
-                self.goSouth = False
-         
+                self.goSouth = False     
         print self.currentCell
             
 
@@ -185,19 +180,10 @@ class MyAlgorithm4(threading.Thread):
                 self.map[i][j] = self.VIRTUAL_OBST             
         cv2.imshow("MAP ", self.map)
         
-        
-                 
-    def paintNextCell(self, cell):
-        # cell = [x,y]
-        for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-            for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                self.map[i][j] = 35             
-        cv2.imshow("MAP ", self.map)
-        
                     
     def calculateNeigh(self, cell):
         # cell = [x,y]
-
+        # Check that the cells are inside the map
         if cell[1] >= self.MIN_MAP:
             northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
         else:
@@ -230,8 +216,7 @@ class MyAlgorithm4(threading.Thread):
     
     
     def checkCell(self, cell): 
-        # cell: the central position of the cell
-        # cell = [x,y]
+        # cell = [x,y] : the central position of the cell
         obstacle = 0
         virtualObst = 0
         c = None
@@ -243,15 +228,13 @@ class MyAlgorithm4(threading.Thread):
                         obstacle = 1
                     elif self.map[i][j] == self.VIRTUAL_OBST:
                         # There is a virtual obstacle
-                        virtualObst = 1
-                              
+                        virtualObst = 1                              
             if obstacle == 1:
                 c = 1
             elif virtualObst == 1:
                 c = 2
             else:
-                c = 0
-            
+                c = 0           
         return c
         
         
@@ -285,7 +268,7 @@ class MyAlgorithm4(threading.Thread):
             
                   
     def checkReturnPoints(self):
-        print 'RETURN POINTS: ', self.returnPoints
+        #print 'RETURN POINTS: ', self.returnPoints
         x = None
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
@@ -305,14 +288,11 @@ class MyAlgorithm4(threading.Thread):
     def checkMinDist(self):
         for i in self.returnPoints:
             d = self.euclideanDist(self.currentCell, i)
-
             if self.minDist == None:
                 self.minDist = d
-                nextCell = i
-                
+                nextCell = i                
             if d < self.minDist:
                 nextCell = i
-        #self.paintNextCell(nextCell)
         self.minDist = None
         return nextCell
            
@@ -324,9 +304,43 @@ class MyAlgorithm4(threading.Thread):
         else:
             return False
     
-           
+ 
+    def savePath(self, cell):
+        self.currentCell = cell
+        self.paintCell(self.currentCell)
+        self.path.append(self.currentCell)
+        #print 'PATH: ', self.path
+        
+    
+    ######   DRIVING FUNCTIONS   ######   
+    
+    def driving(self):
+        for cell in self.path:
+            self.goToCell(cell)
+    
+    
+    def goToCell(self, cell):
+        yaw = self.pose3d.getYaw()
+        x = self.pose3d.getX()
+        y = self.pose3d.getY()
+        myPose = [x, y]
+        desviation = self.calculateDesv(myPose,cell)
+        print 'DESV: ', desviation
+        
+        
+    
+    def calculateDesv(self, myPose, cell):
+        # the desviation is the angle between the vacuum and the next cell
+        a = self.euclideanDist(myPose, cell)
+        b = abs(myPose[1] - cell[1])
+        desvRad = math.asin(b/a)
+        desv = math.degrees(desvRad)
+        return desv 
+    
+        
     def execute(self):
 
         # TODO
+        
         self.sweep()
 
