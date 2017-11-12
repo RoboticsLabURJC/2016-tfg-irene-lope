@@ -161,9 +161,11 @@ class MyAlgorithm4(threading.Thread):
             print 'Vacuum goes to cell: ', self.nextCell
             arrive = self.checkArriveCell(self.nextCell)
             if arrive == False:
-                self.goToCell()  
+                self.goNextCell()  
             else:
-                print 'HE LLEGADO'
+                print '      VACUUM IS IN NEXT CELL'
+                print '      POSE VACUUM:', self.xPix, self.yPix
+                print '      CELL:', self.nextCell
                 self.currentCell = self.nextCell
                 self.stopVacuum()
         
@@ -195,6 +197,7 @@ class MyAlgorithm4(threading.Thread):
                 self.direction = 'south'      
             else:
                 self.goSouth = False
+        print 'Go to', self.direction
                     
                     
                     
@@ -212,7 +215,7 @@ class MyAlgorithm4(threading.Thread):
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 self.map[i][j] = self.VIRTUAL_OBST             
-        cv2.imshow("MAP ", self.map)
+        #cv2.imshow("MAP ", self.map)
         
                     
     def calculateNeigh(self, cell):
@@ -343,7 +346,7 @@ class MyAlgorithm4(threading.Thread):
     
     ######   DRIVING FUNCTIONS   ######     
     
-    def goToCell(self):
+    def goNextCell(self):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()   
         self.xPix, self.yPix = self.coordToPix(self.x, self.y)
@@ -358,8 +361,8 @@ class MyAlgorithm4(threading.Thread):
         # cell = [x2, y2]
         a = self.euclideanDist(poseVacuum, cell)
         b = abs(cell[1] - poseVacuum[1])
-        print 'a:', a
-        print 'b:', b
+        #print 'a:', a
+        #print 'b:', b
         if a > 0:
             if self.direction == 'north' or self.direction == 'south':
                 desv = math.degrees(math.acos(b/a))
@@ -386,7 +389,7 @@ class MyAlgorithm4(threading.Thread):
             else:
                 self.motors.sendV(0.05)
                 self.motors.sendW(0)
-                print 'Go...(right)'
+                print 'Go straight...(right)'
         else: #left
             if desv >= self.MAX_DESV:
                 self.motors.sendV(0)
@@ -399,7 +402,7 @@ class MyAlgorithm4(threading.Thread):
             else:
                 self.motors.sendV(0.05)
                 self.motors.sendW(0)
-                print 'go...(left)'
+                print 'Go straight...(left)'
                 
                 
     def rightOrLeft(self, poseVacuum, cell):
@@ -433,15 +436,6 @@ class MyAlgorithm4(threading.Thread):
         y = False
         xdif = abs(cell[0] - self.xPix)
         ydif = abs(cell[1] - self.yPix)
-        
-        '''
-        print 'xCell', cell[0]
-        print 'yCell', cell[1]
-        print 'miposeX' , self.xPix
-        print 'miposeY',self.yPix
-        print 'xdif', xdif
-        print 'ydif', ydif
-        '''
         if xdif >= self.MIN_XY and xdif < self.MAX_XY:
             x = True
         if ydif >= self.MIN_XY and ydif < self.MAX_XY:
@@ -462,5 +456,6 @@ class MyAlgorithm4(threading.Thread):
 
         # TODO
         
-        self.sweep()
-        
+        #self.sweep()
+        self.motors.sendW(0)
+        self.motors.sendV(0.05)
