@@ -38,17 +38,24 @@ class MyAlgorithm4(threading.Thread):
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 45
-        self.MIN_DESV =
+        self.MAX_DESV = 25
+        self.MIN_DESV = 5
+        self.MAX_XY = 3
+        self.MIN_XY = 0
 
         self.x = None
         self.y = None
+        self.yaw = None
+        self.xPix = None
+        self.yPix = None
         self.minDist = None
+        self.direction =None
         
         self.goSouth = False
         
         self.firstCell = []
         self.currentCell = []
+        self.nextCell = []
         self.returnPoints = []
         self.path = []
         self.myPath = []
@@ -104,6 +111,7 @@ class MyAlgorithm4(threading.Thread):
         self.kill_event.set()
         
         
+        
     ######   VACUUM FUNCTIONS   #######
     
     def RTy(self, angle, tx, ty, tz):
@@ -115,15 +123,17 @@ class MyAlgorithm4(threading.Thread):
         RTy = self.RTy(pi, 5.8, 4.2, 0)
         return RTy
   
-        
+      
     def sweep(self):
         if self.x == None and self.y == None:
             # Is the first position
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
-            xPix, yPix = self.coordToPix(self.x, self.y)
-            self.firstCell = [xPix, yPix]
+            self.xPix, self.yPix = self.coordToPix(self.x, self.y)
+            self.firstCell = [self.xPix, self.yPix]
             self.savePath(self.firstCell)
+            self.currentCell = self.firstCell
+            self.nextCell = self.currentCell
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
@@ -135,43 +145,67 @@ class MyAlgorithm4(threading.Thread):
                     print 'NEW ZIGZAG'
                     self.savePath(self.checkMinDist())
                 else:
-                    print 'START DRIVING'      
-                    self.driving()
+                    print 'END SWEEP'
             else:
                 print 'ZIGZAG: Vacuum is in cell: ', self.currentCell
-                print 'n', cells[0]
-                print 'e', cells[1]
-                print 'w', cells[2]
-                print 's', cells[3]
-                self.zigzag(cells, neighbors)
+                self.driving(cells, neighbors)
+                #self.zigzag(cells,neighbors)
+         
                 
-                
+    def driving(self, cells, neighbors):
+        #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
+        #neighbors = [north, east, west, south] -> Positions in the map
+        if self.nextCell == self.currentCell:
+            self.zigzag(cells, neighbors)                  
+        else:
+            print 'Vacuum goes to cell: ', self.nextCell
+            arrive = self.checkArriveCell(self.nextCell)
+            if arrive == False:
+                self.goToCell()  
+            else:
+                print 'HE LLEGADO'
+                self.currentCell = self.nextCell
+                self.stopVacuum()
+        
+            
     def zigzag(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
-        print 'Vacuum goes to cell: '
+        print 'PLANNING ZIGZAG'
         if self.goSouth == False:
             if cells[0] == 0: #north
                 self.savePath(neighbors[0])
+                self.direction = 'north'
             else:
                 if cells[3] == 0: #south
                     self.savePath(neighbors[3])
                     self.goSouth = True 
+                    self.direction = 'south'
                 elif cells[1] == 0: #east
                     self.savePath(neighbors[1])
                     self.goSouth = True 
+                    self.direction = 'east'
                 elif cells[2] == 0: #west
                     self.savePath(neighbors[2])
-                    self.goSouth = True                                          
+                    self.goSouth = True 
+                    self.direction = 'west'                                         
         else:
             if cells[3] == 0: #south
-                self.savePath(neighbors[3])       
+                self.savePath(neighbors[3]) 
+                self.direction = 'south'      
             else:
-                self.goSouth = False     
-        print self.currentCell
-            
-
+                self.goSouth = False
+                    
+                    
+                    
     ######   MAP FUNCTIONS   ######
+    
+    def coordToPix(self, coordX, coordY):
+        final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
+        xPix = int(final_poses.flat[0])
+        yPix = int(final_poses.flat[1])
+        return xPix, yPix
+        
     
     def paintCell(self, cell):
         # cell = [x,y]
@@ -206,13 +240,6 @@ class MyAlgorithm4(threading.Thread):
         
         neighbors = [northCell, eastCell, westCell, southCell]   
         return neighbors
-        
-
-    def coordToPix(self, coordX, coordY):
-        final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
-        xPix = int(final_poses.flat[0])
-        yPix = int(final_poses.flat[1])
-        return xPix, yPix
     
     
     def checkCell(self, cell): 
@@ -271,7 +298,8 @@ class MyAlgorithm4(threading.Thread):
         #print 'RETURN POINTS: ', self.returnPoints
         x = None
         for i in range(len(self.returnPoints)): 
-            if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
+            #if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
+            if self.returnPoints[i] == self.currentCell:
                 print 'Remove: ', self.returnPoints[i]
                 x = i        
         if x != None:
@@ -306,41 +334,133 @@ class MyAlgorithm4(threading.Thread):
     
  
     def savePath(self, cell):
-        self.currentCell = cell
-        self.paintCell(self.currentCell)
-        self.path.append(self.currentCell)
-        #print 'PATH: ', self.path
+        self.nextCell = cell
+        self.paintCell(self.nextCell)
+        self.path.append(self.nextCell)
+        #self.currentCell = self.nextCell
+
         
     
-    ######   DRIVING FUNCTIONS   ######   
+    ######   DRIVING FUNCTIONS   ######     
     
-    def driving(self):
-        for cell in self.path:
-            self.goToCell(cell)
-    
-    
-    def goToCell(self, cell):
-        yaw = self.pose3d.getYaw()
-        x = self.pose3d.getX()
-        y = self.pose3d.getY()
-        myPose = [x, y]
-        desviation = self.calculateDesv(myPose,cell)
-        print 'DESV: ', desviation
+    def goToCell(self):
+        self.x = self.pose3d.getX()
+        self.y = self.pose3d.getY()   
+        self.xPix, self.yPix = self.coordToPix(self.x, self.y)
+        poseVacuum = [self.xPix, self.yPix]
+        desviation = self.calculateDesv(poseVacuum, self.nextCell)
+        position = self.rightOrLeft(poseVacuum, self.nextCell)
+        self.controlDesv(desviation, position)
         
         
-    
-    def calculateDesv(self, myPose, cell):
-        # the desviation is the angle between the vacuum and the next cell
-        a = self.euclideanDist(myPose, cell)
-        b = abs(myPose[1] - cell[1])
-        desvRad = math.asin(b/a)
-        desv = math.degrees(desvRad)
-        return desv 
-    
+    def calculateDesv(self, poseVacuum, cell):
+        # poseVacuum = [x1, y1]
+        # cell = [x2, y2]
+        a = self.euclideanDist(poseVacuum, cell)
+        b = abs(cell[1] - poseVacuum[1])
+        print 'a:', a
+        print 'b:', b
+        if a > 0:
+            if self.direction == 'north' or self.direction == 'south':
+                desv = math.degrees(math.acos(b/a))
+            else: #east o west
+                desv = math.degrees(math.asin(b/a))
+        else:
+            desv = 0       
+        print 'DESV:', desv
+        return desv
         
+    
+    def controlDesv(self, desv, position):
+        yaw = math.degrees(self.pose3d.getYaw()) + 180
+        print 'YAW: ', yaw
+        if position == 'right':
+            if desv >= self.MAX_DESV:
+                self.motors.sendV(0)
+                self.motors.sendW(-0.2)
+                print 'Turn right...'
+            elif self.MIN_DESV < desv and desv < self.MAX_DESV:
+                self.motors.sendV(0.05)
+                self.motors.sendW(-0.2)
+                print 'Go and turn right...'
+            else:
+                self.motors.sendV(0.05)
+                self.motors.sendW(0)
+                print 'Go...(right)'
+        else: #left
+            if desv >= self.MAX_DESV:
+                self.motors.sendV(0)
+                self.motors.sendW(0.2)
+                print 'Turn left...'
+            elif self.MIN_DESV < desv and desv < self.MAX_DESV:
+                self.motors.sendV(0.05)
+                self.motors.sendW(0.2)
+                print 'Go and turn left...'
+            else:
+                self.motors.sendV(0.05)
+                self.motors.sendW(0)
+                print 'go...(left)'
+                
+                
+    def rightOrLeft(self, poseVacuum, cell):
+        # poseVacuum = [x1, y1]
+        # cell = [x2, y2]
+        if self.direction == 'north':
+            if poseVacuum[0] < cell[0]:
+                position = 'right'
+            else:
+                position = 'left'
+        elif self.direction == 'east':
+            if poseVacuum[1] < cell[1]:
+                position = 'right'
+            else:
+                position = 'left'
+        elif self.direction == 'west':
+            if poseVacuum[0] > cell[0]:
+                position = 'right'
+            else:
+                position = 'left'
+        else: #south
+            if poseVacuum[1] > cell[1]:
+                position = 'right'
+            else:
+                position = 'left'
+        return position
+        
+                               
+    def checkArriveCell(self, cell):
+        x = False
+        y = False
+        xdif = abs(cell[0] - self.xPix)
+        ydif = abs(cell[1] - self.yPix)
+        
+        '''
+        print 'xCell', cell[0]
+        print 'yCell', cell[1]
+        print 'miposeX' , self.xPix
+        print 'miposeY',self.yPix
+        print 'xdif', xdif
+        print 'ydif', ydif
+        '''
+        if xdif >= self.MIN_XY and xdif < self.MAX_XY:
+            x = True
+        if ydif >= self.MIN_XY and ydif < self.MAX_XY:
+            y = True
+        if x == True and y == True:
+            arrive = True
+        else:
+            arrive = False
+        return arrive
+    
+    
+    def stopVacuum(self):
+        self.motors.sendV(0)
+        self.motors.sendW(0)
+        
+             
     def execute(self):
 
         # TODO
         
         self.sweep()
-
+        
