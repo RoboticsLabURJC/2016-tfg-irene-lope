@@ -134,6 +134,7 @@ class MyAlgorithm4(threading.Thread):
             self.savePath(self.firstCell)
             self.currentCell = self.firstCell
             self.nextCell = self.currentCell
+            self.paintCell(self.currentCell)
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
@@ -167,7 +168,10 @@ class MyAlgorithm4(threading.Thread):
                 print '      POSE VACUUM:', self.xPix, self.yPix
                 print '      CELL:', self.nextCell
                 self.currentCell = self.nextCell
+                self.paintCell(self.currentCell)
                 self.stopVacuum()
+                print 'STOP'
+                #time.sleep(1)
         
             
     def zigzag(self, cells, neighbors):
@@ -215,7 +219,7 @@ class MyAlgorithm4(threading.Thread):
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 self.map[i][j] = self.VIRTUAL_OBST             
-        #cv2.imshow("MAP ", self.map)
+        cv2.imshow("MAP ", self.map)
         
                     
     def calculateNeigh(self, cell):
@@ -253,10 +257,10 @@ class MyAlgorithm4(threading.Thread):
         if cell[0] != None and cell[1] != None:
             for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
                 for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                    if self.map[i][j] == 0:
+                    if self.map[i][j] == 0:#black
                         # There is an obstacle
                         obstacle = 1
-                    elif self.map[i][j] == self.VIRTUAL_OBST:
+                    elif self.map[i][j] == self.VIRTUAL_OBST:#grey
                         # There is a virtual obstacle
                         virtualObst = 1                              
             if obstacle == 1:
@@ -338,7 +342,7 @@ class MyAlgorithm4(threading.Thread):
  
     def savePath(self, cell):
         self.nextCell = cell
-        self.paintCell(self.nextCell)
+        #self.paintCell(self.nextCell)
         self.path.append(self.nextCell)
         #self.currentCell = self.nextCell
 
@@ -419,12 +423,12 @@ class MyAlgorithm4(threading.Thread):
             else:
                 position = 'left'
         elif self.direction == 'west':
-            if poseVacuum[0] > cell[0]:
+            if poseVacuum[1] > cell[1]:
                 position = 'right'
             else:
                 position = 'left'
         else: #south
-            if poseVacuum[1] > cell[1]:
+            if poseVacuum[0] > cell[0]:
                 position = 'right'
             else:
                 position = 'left'
@@ -456,6 +460,5 @@ class MyAlgorithm4(threading.Thread):
 
         # TODO
         
-        #self.sweep()
-        self.motors.sendW(0)
-        self.motors.sendV(0.05)
+        self.sweep()
+        
