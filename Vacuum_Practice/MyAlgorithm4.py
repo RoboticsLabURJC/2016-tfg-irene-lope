@@ -38,8 +38,8 @@ class MyAlgorithm4(threading.Thread):
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 25
-        self.MIN_DESV = 5
+        self.MAX_DESV = 10
+        self.MIN_DESV = 3
         self.MAX_XY = 3
         self.MIN_XY = 0
 
@@ -171,7 +171,6 @@ class MyAlgorithm4(threading.Thread):
                 self.paintCell(self.currentCell)
                 self.stopVacuum()
                 print 'STOP'
-                #time.sleep(1)
         
             
     def zigzag(self, cells, neighbors):
@@ -201,7 +200,7 @@ class MyAlgorithm4(threading.Thread):
                 self.direction = 'south'      
             else:
                 self.goSouth = False
-        print 'Go to', self.direction
+        print '-> -> -> Go to', self.direction
                     
                     
                     
@@ -305,7 +304,6 @@ class MyAlgorithm4(threading.Thread):
         #print 'RETURN POINTS: ', self.returnPoints
         x = None
         for i in range(len(self.returnPoints)): 
-            #if (self.returnPoints[i][0] == self.currentCell[0]) and (self.returnPoints[i][1] == self.currentCell[1]):
             if self.returnPoints[i] == self.currentCell:
                 print 'Remove: ', self.returnPoints[i]
                 x = i        
@@ -342,9 +340,7 @@ class MyAlgorithm4(threading.Thread):
  
     def savePath(self, cell):
         self.nextCell = cell
-        #self.paintCell(self.nextCell)
         self.path.append(self.nextCell)
-        #self.currentCell = self.nextCell
 
         
     
@@ -357,7 +353,7 @@ class MyAlgorithm4(threading.Thread):
         poseVacuum = [self.xPix, self.yPix]
         desviation = self.calculateDesv(poseVacuum, self.nextCell)
         position = self.rightOrLeft(poseVacuum, self.nextCell)
-        self.controlDesv(desviation, position)
+        self.controlDrive(desviation)
         
         
     def calculateDesv(self, poseVacuum, cell):
@@ -365,50 +361,65 @@ class MyAlgorithm4(threading.Thread):
         # cell = [x2, y2]
         a = self.euclideanDist(poseVacuum, cell)
         b = abs(cell[1] - poseVacuum[1])
-        #print 'a:', a
-        #print 'b:', b
+        yaw = math.degrees(self.pose3d.getYaw()) + 180
+        q = self.quadrant(poseVacuum, cell)
+        print 'q',q
+        print 'YAW: ', yaw
         if a > 0:
-            if self.direction == 'north' or self.direction == 'south':
-                desv = math.degrees(math.acos(b/a))
-            else: #east o west
-                desv = math.degrees(math.asin(b/a))
+            if q == 1:
+                alfa = math.degrees(math.asin(b/a))
+            elif q == 2:
+                alfa = math.degrees(math.acos(b/a)) + 90
+            elif q == 3:
+                alfa = math.degrees(math.asin(b/a)) + 180
+            else:
+                alfa = math.degrees(math.acos(b/a)) + 270
+            print 'alfa', alfa
+            desv = yaw - alfa
         else:
             desv = 0       
         print 'DESV:', desv
         return desv
         
     
-    def controlDesv(self, desv, position):
-        yaw = math.degrees(self.pose3d.getYaw()) + 180
-        print 'YAW: ', yaw
-        if position == 'right':
-            if desv >= self.MAX_DESV:
-                self.motors.sendV(0)
-                self.motors.sendW(-0.2)
-                print 'Turn right...'
-            elif self.MIN_DESV < desv and desv < self.MAX_DESV:
-                self.motors.sendV(0.05)
-                self.motors.sendW(-0.2)
-                print 'Go and turn right...'
-            else:
-                self.motors.sendV(0.05)
-                self.motors.sendW(0)
-                print 'Go straight...(right)'
+    def quadrant(self, poseVacuum, cell):
+        # poseVacuum = [x1, y1]
+        # cell = [x2, y2]
+        if cell[0] > poseVacuum[0] and cell[1] <= poseVacuum[1]:
+            q = 1
+        elif cell[0] <= poseVacuum[0] and cell[1] < poseVacuum[1]:
+            q = 2
+        elif cell[0] < poseVacuum[0] and cell[1] >= poseVacuum[1]:
+            q = 3
+        else:
+            q = 4
+        return q
+    
+    
+    def controlDrive(self, desv):
+        w = 0.1
+        if desv > 0: #right
+            self.controlDesv(desv, -w)
         else: #left
-            if desv >= self.MAX_DESV:
-                self.motors.sendV(0)
-                self.motors.sendW(0.2)
-                print 'Turn left...'
-            elif self.MIN_DESV < desv and desv < self.MAX_DESV:
-                self.motors.sendV(0.05)
-                self.motors.sendW(0.2)
-                print 'Go and turn left...'
-            else:
-                self.motors.sendV(0.05)
-                self.motors.sendW(0)
-                print 'Go straight...(left)'
+            self.controlDesv(desv, w)
                 
                 
+    def controlDesv(self, desv, w):
+        desv = abs(desv)    
+        if desv >= self.MAX_DESV:
+            self.motors.sendV(0)
+            self.motors.sendW(w)
+            print 'Turn ...', w
+        elif self.MIN_DESV < desv and desv < self.MAX_DESV:
+            self.motors.sendV(0.05)
+            self.motors.sendW(w)
+            print 'Go and turn ...', w
+        else:
+            self.motors.sendV(0.05)
+            self.motors.sendW(0)
+            print 'Go straight...', w
+                
+                       
     def rightOrLeft(self, poseVacuum, cell):
         # poseVacuum = [x1, y1]
         # cell = [x2, y2]
