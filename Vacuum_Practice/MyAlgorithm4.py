@@ -29,7 +29,6 @@ class MyAlgorithm4(threading.Thread):
         
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
-        self.grid = np.ones([500, 500], float)
         
         self.SCALE = 50 #50 px = 1 m
         self.VACUUM_PX_SIZE = 16  
@@ -38,9 +37,9 @@ class MyAlgorithm4(threading.Thread):
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 10
-        self.MIN_DESV = 3
-        self.MAX_XY = 3
+        self.MAX_DESV = 5
+        self.MIN_DESV = 2
+        self.MAX_XY = 2
         self.MIN_XY = 0
 
         self.x = None
@@ -52,13 +51,11 @@ class MyAlgorithm4(threading.Thread):
         self.direction =None
         
         self.goSouth = False
-        
-        self.firstCell = []
+
         self.currentCell = []
         self.nextCell = []
         self.returnPoints = []
         self.path = []
-        self.myPath = []
         
  
     def parse_laser_data(self,laser_data):
@@ -130,9 +127,8 @@ class MyAlgorithm4(threading.Thread):
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
             self.xPix, self.yPix = self.coordToPix(self.x, self.y)
-            self.firstCell = [self.xPix, self.yPix]
-            self.savePath(self.firstCell)
-            self.currentCell = self.firstCell
+            self.currentCell = [self.xPix, self.yPix]
+            self.savePath(self.currentCell)
             self.nextCell = self.currentCell
             self.paintCell(self.currentCell)
         else:
@@ -150,7 +146,6 @@ class MyAlgorithm4(threading.Thread):
             else:
                 print 'ZIGZAG: Vacuum is in cell: ', self.currentCell
                 self.driving(cells, neighbors)
-                #self.zigzag(cells,neighbors)
          
                 
     def driving(self, cells, neighbors):
@@ -177,6 +172,8 @@ class MyAlgorithm4(threading.Thread):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
         print 'PLANNING ZIGZAG'
+        print 'neighbors[north, east, west, south]', neighbors
+        print 'cells[n, e, w, s]', cells
         if self.goSouth == False:
             if cells[0] == 0: #north
                 self.savePath(neighbors[0])
@@ -234,12 +231,12 @@ class MyAlgorithm4(threading.Thread):
         else:
             southCell = [None, None]
             
-        if cell[1] >= self.MIN_MAP:
+        if cell[0] >= self.MIN_MAP:
             westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]]
         else:
             westCell = [None, None]
             
-        if cell[1] <= self.MAX_MAP:
+        if cell[0] <= self.MAX_MAP:
             eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]]
         else:
             eastCell = [None, None]
@@ -352,7 +349,6 @@ class MyAlgorithm4(threading.Thread):
         self.xPix, self.yPix = self.coordToPix(self.x, self.y)
         poseVacuum = [self.xPix, self.yPix]
         desviation = self.calculateDesv(poseVacuum, self.nextCell)
-        position = self.rightOrLeft(poseVacuum, self.nextCell)
         self.controlDrive(desviation)
         
         
@@ -363,8 +359,17 @@ class MyAlgorithm4(threading.Thread):
         b = abs(cell[1] - poseVacuum[1])
         yaw = math.degrees(self.pose3d.getYaw()) + 180
         q = self.quadrant(poseVacuum, cell)
-        print 'q',q
         print 'YAW: ', yaw
+        
+        if self.direction == 'east':
+            if q == 1:
+                if yaw > 355 and yaw <= 360:
+                    yaw = 0
+            elif q == 4:
+                if yaw < 5 and yaw >= 0:
+                    yaw = 360
+            print 'NEW YAW:', yaw
+            
         if a > 0:
             if q == 1:
                 alfa = math.degrees(math.asin(b/a))
@@ -397,7 +402,7 @@ class MyAlgorithm4(threading.Thread):
     
     
     def controlDrive(self, desv):
-        w = 0.1
+        w = 0.1 
         if desv > 0: #right
             self.controlDesv(desv, -w)
         else: #left
@@ -405,46 +410,21 @@ class MyAlgorithm4(threading.Thread):
                 
                 
     def controlDesv(self, desv, w):
-        desv = abs(desv)    
+        desv = abs(desv) 
+        v = 0.1   
         if desv >= self.MAX_DESV:
             self.motors.sendV(0)
             self.motors.sendW(w)
             print 'Turn ...', w
         elif self.MIN_DESV < desv and desv < self.MAX_DESV:
-            self.motors.sendV(0.05)
+            self.motors.sendV(v)
             self.motors.sendW(w)
             print 'Go and turn ...', w
         else:
-            self.motors.sendV(0.05)
+            self.motors.sendV(v)
             self.motors.sendW(0)
             print 'Go straight...', w
-                
-                       
-    def rightOrLeft(self, poseVacuum, cell):
-        # poseVacuum = [x1, y1]
-        # cell = [x2, y2]
-        if self.direction == 'north':
-            if poseVacuum[0] < cell[0]:
-                position = 'right'
-            else:
-                position = 'left'
-        elif self.direction == 'east':
-            if poseVacuum[1] < cell[1]:
-                position = 'right'
-            else:
-                position = 'left'
-        elif self.direction == 'west':
-            if poseVacuum[1] > cell[1]:
-                position = 'right'
-            else:
-                position = 'left'
-        else: #south
-            if poseVacuum[0] > cell[0]:
-                position = 'right'
-            else:
-                position = 'left'
-        return position
-        
+       
                                
     def checkArriveCell(self, cell):
         x = False
@@ -469,7 +449,6 @@ class MyAlgorithm4(threading.Thread):
              
     def execute(self):
 
-        # TODO
-        
+        # TODO        
         self.sweep()
-        
+               
