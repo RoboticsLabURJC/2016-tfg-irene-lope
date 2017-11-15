@@ -140,34 +140,33 @@ class MyAlgorithm4(threading.Thread):
                 print ('CRITICAL POINT')
                 if len(self.returnPoints) > 0:
                     print 'NEW ZIGZAG'
-                    self.savePath(self.checkMinDist())
+                    self.nextCell = self.checkMinDist()
+                    # goToReturnPoint()
+                    self.savePath(self.nextCell)
                 else:
                     print 'END SWEEP'
             else:
-                print 'ZIGZAG: Vacuum is in cell: ', self.currentCell
                 self.driving(cells, neighbors)
          
                 
     def driving(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
-        print 'CURRENT CELL', self.currentCell
-        print 'NEXT CELL', self.nextCell
+        print '  CURRENT CELL', self.currentCell
+        print '  NEXT CELL', self.nextCell
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
         else:
-            print 'Vacuum goes to cell: ', self.nextCell
             arrive = self.checkArriveCell(self.nextCell)
             if arrive == False:
                 self.goNextCell()  
             else:
-                print '      VACUUM IS IN NEXT CELL'
-                print '      POSE VACUUM:', self.xPix, self.yPix
-                print '      CELL:', self.nextCell
+                print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
                 self.paintCell(self.currentCell)
+                print '    NEW CURRENT CELL', self.currentCell
                 self.stopVacuum()
-                print 'STOP'
+                print '    STOP'
         
             
     def zigzag(self, cells, neighbors):
@@ -339,7 +338,7 @@ class MyAlgorithm4(threading.Thread):
  
     def savePath(self, cell):
         self.nextCell = cell
-        self.path.append(self.nextCell)
+        self.path.append(cell)
 
         
     
@@ -362,16 +361,6 @@ class MyAlgorithm4(threading.Thread):
         yaw = math.degrees(self.pose3d.getYaw()) + 180
         q = self.quadrant(poseVacuum, cell)
         print 'YAW: ', yaw
-        
-        if self.direction == 'east':
-            if q == 1:
-                if yaw > 355 and yaw <= 360:
-                    yaw = 0
-                    print 'NEW YAW:', yaw
-            elif q == 4:
-                if yaw < 5 and yaw >= 0:
-                    yaw = 360
-                    print 'NEW YAW:', yaw
             
         if a > 0:
             if q == 1:
@@ -384,11 +373,23 @@ class MyAlgorithm4(threading.Thread):
                 alfa = math.degrees(math.acos(b/a)) + 270
             print 'alfa', alfa
             
-            if self.direction == 'east':
-                if yaw > 265 and yaw <= 360:
-                    if alfa == 0:
-                        alfa = 360
-                        print 'new alfa', alfa
+            if alfa >= 0 and alfa <= 95:
+                if yaw > 355 and yaw <= 360:
+                    yaw = 0
+                    print 'NEW YAW:', yaw
+            elif alfa >= 265 and alfa <= 360:
+                if yaw < 5 and yaw >= 0:
+                    yaw = 360
+                    print 'NEW YAW:', yaw
+                    
+            if yaw > 265 and yaw <= 360:
+                if alfa < 5 and alfa >= 0:
+                    alfa = 360
+                    print 'new alfa', alfa
+            if yaw <= 95 and yaw >= 0:
+                if alfa <= 360 and alfa >= 355:
+                    alfa = 0
+                    print 'new alfa', alfa
             desv = yaw - alfa
         else:
             desv = 0       
@@ -414,15 +415,13 @@ class MyAlgorithm4(threading.Thread):
         w = 0.1 
         if desv > 0: #right
             self.controlDesv(desv, -w)
-            print 'desv > 0: right', w
         else: #left
             self.controlDesv(desv, w)
-            print 'desv <= 0: left', w
                 
                 
     def controlDesv(self, desv, w):
         desv = abs(desv) 
-        v = 0.1   
+        v = 0.15  
         if desv >= self.MAX_DESV:
             self.motors.sendV(0)
             self.motors.sendW(w)
