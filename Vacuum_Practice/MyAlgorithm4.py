@@ -151,6 +151,8 @@ class MyAlgorithm4(threading.Thread):
     def driving(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
+        print 'CURRENT CELL', self.currentCell
+        print 'NEXT CELL', self.nextCell
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
         else:
@@ -194,7 +196,7 @@ class MyAlgorithm4(threading.Thread):
         else:
             if cells[3] == 0: #south
                 self.savePath(neighbors[3]) 
-                self.direction = 'south'      
+                self.direction = 'south1'      
             else:
                 self.goSouth = False
         print '-> -> -> Go to', self.direction
@@ -276,19 +278,19 @@ class MyAlgorithm4(threading.Thread):
         southCell = self.checkCell(neighbors[3])
 
         if northCell == 0:
-            self.savePoint(neighbors[0])
+            self.saveReturnPoint(neighbors[0])
         if eastCell == 0:
-            self.savePoint(neighbors[1])
+            self.saveReturnPoint(neighbors[1])
         if westCell == 0:
-            self.savePoint(neighbors[2])
+            self.saveReturnPoint(neighbors[2])
         if southCell == 0:
-            self.savePoint(neighbors[3])  
+            self.saveReturnPoint(neighbors[3])  
         
         cells = [northCell, eastCell, westCell, southCell] 
         return cells
   
              
-    def savePoint(self, p):
+    def saveReturnPoint(self, p):
         x = 0
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == p[0]) and (self.returnPoints[i][1] == p[1]):
@@ -365,10 +367,11 @@ class MyAlgorithm4(threading.Thread):
             if q == 1:
                 if yaw > 355 and yaw <= 360:
                     yaw = 0
+                    print 'NEW YAW:', yaw
             elif q == 4:
                 if yaw < 5 and yaw >= 0:
                     yaw = 360
-            print 'NEW YAW:', yaw
+                    print 'NEW YAW:', yaw
             
         if a > 0:
             if q == 1:
@@ -380,6 +383,12 @@ class MyAlgorithm4(threading.Thread):
             else:
                 alfa = math.degrees(math.acos(b/a)) + 270
             print 'alfa', alfa
+            
+            if self.direction == 'east':
+                if yaw > 265 and yaw <= 360:
+                    if alfa == 0:
+                        alfa = 360
+                        print 'new alfa', alfa
             desv = yaw - alfa
         else:
             desv = 0       
@@ -405,8 +414,10 @@ class MyAlgorithm4(threading.Thread):
         w = 0.1 
         if desv > 0: #right
             self.controlDesv(desv, -w)
+            print 'desv > 0: right', w
         else: #left
             self.controlDesv(desv, w)
+            print 'desv <= 0: left', w
                 
                 
     def controlDesv(self, desv, w):
@@ -415,15 +426,15 @@ class MyAlgorithm4(threading.Thread):
         if desv >= self.MAX_DESV:
             self.motors.sendV(0)
             self.motors.sendW(w)
-            print 'Turn ...', w
+            #print 'Turn ...', w
         elif self.MIN_DESV < desv and desv < self.MAX_DESV:
             self.motors.sendV(v)
             self.motors.sendW(w)
-            print 'Go and turn ...', w
+            #print 'Go and turn ...', w
         else:
             self.motors.sendV(v)
             self.motors.sendW(0)
-            print 'Go straight...', w
+            #print 'Go straight...', w
        
                                
     def checkArriveCell(self, cell):
