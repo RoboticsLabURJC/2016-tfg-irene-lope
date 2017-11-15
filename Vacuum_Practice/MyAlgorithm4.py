@@ -37,9 +37,9 @@ class MyAlgorithm4(threading.Thread):
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 8
-        self.MIN_DESV = 3
-        self.MAX_XY = 1
+        self.MAX_DESV = 5
+        self.MIN_DESV = 2
+        self.MAX_XY = 2
         self.MIN_XY = 0
 
         self.x = None
