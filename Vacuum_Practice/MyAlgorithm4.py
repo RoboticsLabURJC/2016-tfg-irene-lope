@@ -343,7 +343,7 @@ class MyAlgorithm4(threading.Thread):
         
     
     ######   DRIVING FUNCTIONS   ######     
-    
+           
     def goNextCell(self):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()   
@@ -456,9 +456,101 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendV(0)
         self.motors.sendW(0)
         
-             
+        
+    def absolutas2relativas(x, y, rx, ry, rt):
+        # Convert to relatives
+        dx = x - rx
+        dy = y - ry
+
+        # Rotate with current angle
+        x = dx*math.cos(-rt) - dy*math.sin(-rt)
+        y = dx*math.sin(-rt) + dy*math.cos(-rt)
+
+        return x,y
+              
+              
     def execute(self):
 
         # TODO        
-        self.sweep()
-               
+        #self.sweep()
+        
+        poseVacuum = [49,469]
+        
+        coord1 = [33, 453]
+        coord2 = [49, 453]
+        coord3 = [65, 453] 
+        coord4 = [33, 469]
+        coord5 = [49, 469]
+        coord6 = [65, 469]
+        coord7 = [33, 485]
+        coord8 = [49, 485]
+        coord9 = [65, 485]
+        
+        yaw = math.radians(-90)
+        
+        dx = coord1[0]-poseVacuum[0]
+        dy = coord1[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y)) 
+        print '    ANGLE1', angle
+        
+        dx = coord2[0]-poseVacuum[0]
+        dy = coord2[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y)) 
+        print '    ANGLE2', angle
+        
+        dx = coord3[0]-poseVacuum[0]
+        dy = coord3[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y)) 
+        print '    ANGLE3', angle
+        
+        dx = coord4[0]-poseVacuum[0]
+        dy = coord4[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y))
+        print '    ANGLE4', angle
+        
+        dx = coord5[0]-poseVacuum[0]
+        dy = coord5[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y))
+        print '    ANGLE5', angle
+        
+        dx = coord6[0]-poseVacuum[0]
+        dy = coord6[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y))
+        print '    ANGLE6', angle
+        
+        dx = coord7[0]-poseVacuum[0]
+        dy = coord7[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y))
+        print '    ANGLE7', angle
+        
+        dx = coord8[0]-poseVacuum[0]
+        dy = coord8[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y))
+        print '    ANGLE8', angle
+        
+        dx = coord9[0]-poseVacuum[0]
+        dy = coord9[1]-poseVacuum[1]
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        angle = math.degrees(math.atan2(x,y))
+        print '    ANGLE9', angle
+        
+        
+        yaw = math.degrees(self.pose3d.getYaw())
+        print yaw
