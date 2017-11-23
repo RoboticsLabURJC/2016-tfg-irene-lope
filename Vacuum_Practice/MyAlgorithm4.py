@@ -31,17 +31,17 @@ class MyAlgorithm4(threading.Thread):
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
         
-        self.SCALE = 50.0 #50 px = 1 m
+        self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 16  
         self.VACUUM_PX_HALF = 8  
         self.VACUUM_SIZE = 0.32
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 5
-        self.MIN_DESV = 2
-        self.MAX_XY = 2
-        self.MIN_XY = 0
+        self.MAX_DESV = 7
+        self.MIN_DESV = 3
+        self.DIST_MAX = 0.05 #5 cm
+        self.DIST_MIN = 0
 
         self.x = None
         self.y = None
@@ -117,7 +117,7 @@ class MyAlgorithm4(threading.Thread):
             # Is the first position
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
-            self.xPix, self.yPix = self.coordToPix(self.x, self.y)
+            self.xPix, self.yPix = self.coord2pix(self.x, self.y)
             self.currentCell = [self.xPix, self.yPix]
             self.savePath(self.currentCell)
             self.nextCell = self.currentCell
@@ -143,8 +143,8 @@ class MyAlgorithm4(threading.Thread):
     def driving(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
-        print '  CURRENT CELL', self.currentCell
-        print '  NEXT CELL', self.nextCell
+        #print '  CURRENT CELL', self.currentCell
+        #print '  NEXT CELL', self.nextCell
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
         else:
@@ -156,8 +156,6 @@ class MyAlgorithm4(threading.Thread):
                 self.currentCell = self.nextCell
                 self.paintCell(self.currentCell)
                 print '    NEW CURRENT CELL', self.currentCell
-                self.stopVacuum()
-                print '    STOP'
         
             
     def zigzag(self, cells, neighbors):
@@ -205,7 +203,7 @@ class MyAlgorithm4(threading.Thread):
         return RTy
         
     
-    def coordToPix(self, coordX, coordY):
+    def coord2pix(self, coordX, coordY):
         RTVacuum = self.RTVacuum()
         origPoses = np.matrix([[coordX], [coordY], [1], [1]])
         finalPoses = RTVacuum * origPoses * self.SCALE
@@ -214,7 +212,7 @@ class MyAlgorithm4(threading.Thread):
         return xPix, yPix
         
     
-    def pixToCoord(self, xPix, yPix):
+    def pix2coord(self, xPix, yPix):
         RTVacuum = self.RTVacuum()
         RTinv = inv(RTVacuum)
         origPoses = np.matrix([[xPix/(self.SCALE)], [yPix/(self.SCALE)], [1], [1]]) 
@@ -358,78 +356,45 @@ class MyAlgorithm4(threading.Thread):
     ######   DRIVING FUNCTIONS   ######     
            
     def goNextCell(self):
-        self.x = self.pose3d.getX()
-        self.y = self.pose3d.getY()   
-        self.xPix, self.yPix = self.coordToPix(self.x, self.y)
-        poseVacuum = [self.xPix, self.yPix]
+        self.x = round(self.pose3d.getX(),1)
+        self.y = round(self.pose3d.getY(),1)
+        self.yaw = self.pose3d.getYaw()
+        poseVacuum = [self.x, self.y]
         desviation = self.calculateDesv(poseVacuum, self.nextCell)
         self.controlDrive(desviation)
-        
-        
+         
+            
     def calculateDesv(self, poseVacuum, cell):
-        # poseVacuum = [x1, y1]
-        # cell = [x2, y2]
-        a = self.euclideanDist(poseVacuum, cell)
-        b = abs(cell[1] - poseVacuum[1])
-        yaw = math.degrees(self.pose3d.getYaw()) + 180
-        q = self.quadrant(poseVacuum, cell)
-        print 'YAW: ', yaw
-            
-        if a > 0:
-            if q == 1:
-                alfa = math.degrees(math.asin(b/a))
-            elif q == 2:
-                alfa = math.degrees(math.acos(b/a)) + 90
-            elif q == 3:
-                alfa = math.degrees(math.asin(b/a)) + 180
-            else:
-                alfa = math.degrees(math.acos(b/a)) + 270
-            print 'alfa', alfa
-            
-            if alfa >= 0 and alfa <= 95:
-                if yaw > 355 and yaw <= 360:
-                    yaw = 0
-                    print 'NEW YAW:', yaw
-            elif alfa >= 265 and alfa <= 360:
-                if yaw < 5 and yaw >= 0:
-                    yaw = 360
-                    print 'NEW YAW:', yaw
-                    
-            if yaw > 265 and yaw <= 360:
-                if alfa < 5 and alfa >= 0:
-                    alfa = 360
-                    print 'new alfa', alfa
-            if yaw <= 95 and yaw >= 0:
-                if alfa <= 360 and alfa >= 355:
-                    alfa = 0
-                    print 'new alfa', alfa
-            desv = yaw - alfa
-        else:
-            desv = 0       
+        # poseVacuum = [x1, y1] coord
+        # cell = [x2, y2] pix
+        xc, yc = self.pix2coord(cell[0], cell[1])
+        cell = [round(xc,1), round(yc,1)]
+        x, y = self.abs2rel(cell, poseVacuum, self.yaw)
+        #print '    TARGET COORD:', cell
+        #print '    VACUUM COORD:', poseVacuum
+        desv = math.degrees(math.atan2(y,x))
         print 'DESV:', desv
         return desv
+
+
+    def abs2rel(self,target, poseVacuum, yaw):
+        # target: [xt, yt]
+        # poseVacuum: [xv, yv]
+        # yaw: orientation vacuum
+        dx = target[0] - poseVacuum[0]
+        dy = target[1] - poseVacuum[1]
+        # Rotate with current angle
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
+        return x,y
+ 
         
-    
-    def quadrant(self, poseVacuum, cell):
-        # poseVacuum = [x1, y1]
-        # cell = [x2, y2]
-        if cell[0] > poseVacuum[0] and cell[1] <= poseVacuum[1]:
-            q = 1
-        elif cell[0] <= poseVacuum[0] and cell[1] < poseVacuum[1]:
-            q = 2
-        elif cell[0] < poseVacuum[0] and cell[1] >= poseVacuum[1]:
-            q = 3
-        else:
-            q = 4
-        return q
-    
-    
     def controlDrive(self, desv):
         w = 0.1 
-        if desv > 0: #right
-            self.controlDesv(desv, -w)
-        else: #left
+        if desv > 0: #LEFT
             self.controlDesv(desv, w)
+        else: #RIGHT
+            self.controlDesv(desv, -w)
                 
                 
     def controlDesv(self, desv, w):
@@ -438,25 +403,26 @@ class MyAlgorithm4(threading.Thread):
         if desv >= self.MAX_DESV:
             self.motors.sendV(0)
             self.motors.sendW(w)
-            #print 'Turn ...', w
+            print 'Turn ...', w
         elif self.MIN_DESV < desv and desv < self.MAX_DESV:
             self.motors.sendV(v)
             self.motors.sendW(w)
-            #print 'Go and turn ...', w
+            print 'Go and turn ...', w
         else:
             self.motors.sendV(v)
             self.motors.sendW(0)
-            #print 'Go straight...', w
+            print 'Go straight...', w
        
                                
     def checkArriveCell(self, cell):
         x = False
         y = False
-        xdif = abs(cell[0] - self.xPix)
-        ydif = abs(cell[1] - self.yPix)
-        if xdif >= self.MIN_XY and xdif < self.MAX_XY:
+        xc, yc = self.pix2coord(cell[0], cell[1])
+        xdif = abs(xc - self.x)
+        ydif = abs(yc - self.y)
+        if xdif >= self.DIST_MIN and xdif < self.DIST_MAX:
             x = True
-        if ydif >= self.MIN_XY and ydif < self.MAX_XY:
+        if ydif >= self.DIST_MIN and ydif < self.DIST_MAX:
             y = True
         if x == True and y == True:
             arrive = True
@@ -470,72 +436,11 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendW(0)
         
         
-    def abs2rel(self,target, poseVacuum, yaw):
-        # target: [xt, yt]
-        # poseVacuum: [xv, yv]
-        # yaw: orientation vacuum
-        dx = target[0] - poseVacuum[0]
-        dy = target[1] - poseVacuum[1]
-        # Rotate with current angle
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        return x,y
+    
               
               
     def execute(self):
 
         # TODO        
         self.sweep()
-        '''
-        poseVacuum = self.pixToCoord(49,469)
        
-        coord1 = self.pixToCoord(33, 453)
-        coord2 = self.pixToCoord(49, 453)
-        coord3 = self.pixToCoord(65, 453) 
-        coord4 = self.pixToCoord(33, 469)
-        coord5 = self.pixToCoord(49, 469)
-        coord6 = self.pixToCoord(65, 469)
-        coord7 = self.pixToCoord(33, 485)
-        coord8 = self.pixToCoord(49, 485)
-        coord9 = self.pixToCoord(65, 485)
-        
-        #yaw = math.radians()
-        yaw = 0
-        print 'yaw', yaw
-        
-        x,y=self.abs2rel(coord1, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x)) 
-        print '    ANGLE1', angle
-        
-        x,y=self.abs2rel(coord2, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x))
-        print '    ANGLE2', angle
-        
-        x,y=self.abs2rel(coord3, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x))
-        print '    ANGLE3', angle
-        
-        x,y=self.abs2rel(coord4, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x)) 
-        print '    ANGLE4', angle
-        
-        x,y=self.abs2rel(coord5, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x)) 
-        print '    ANGLE5', angle
-        
-        x,y=self.abs2rel(coord6, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x)) 
-        print '    ANGLE6', angle
-        
-        x,y=self.abs2rel(coord7, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x)) 
-        print '    ANGLE7', angle
-        
-        x,y=self.abs2rel(coord8, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x)) 
-        print '    ANGLE8', angle
-        
-        x,y=self.abs2rel(coord9, poseVacuum, yaw)
-        angle = math.degrees(math.atan2(y,x))
-        print '    ANGLE9', angle
-        '''
