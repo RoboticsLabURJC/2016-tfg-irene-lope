@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from numpy.linalg import inv
 import threading
 import time
 from datetime import datetime
@@ -30,7 +31,7 @@ class MyAlgorithm4(threading.Thread):
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
         
-        self.SCALE = 50 #50 px = 1 m
+        self.SCALE = 50.0 #50 px = 1 m
         self.VACUUM_PX_SIZE = 16  
         self.VACUUM_PX_HALF = 8  
         self.VACUUM_SIZE = 0.32
@@ -110,16 +111,6 @@ class MyAlgorithm4(threading.Thread):
         
         
     ######   VACUUM FUNCTIONS   #######
-    
-    def RTy(self, angle, tx, ty, tz):
-        RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
-        return RT
-        
-
-    def RTVacuum(self):
-        RTy = self.RTy(pi, 5.8, 4.2, 0)
-        return RTy
-  
       
     def sweep(self):
         if self.x == None and self.y == None:
@@ -204,12 +195,34 @@ class MyAlgorithm4(threading.Thread):
                     
     ######   MAP FUNCTIONS   ######
     
+    def RTy(self, angle, tx, ty, tz):
+        RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
+        return RT
+        
+
+    def RTVacuum(self):
+        RTy = self.RTy(pi, 5.8, 4.2, 0)
+        return RTy
+        
+    
     def coordToPix(self, coordX, coordY):
-        final_poses = self.RTVacuum() * np.matrix([[coordX], [coordY], [1], [1]]) * self.SCALE
-        xPix = int(final_poses.flat[0])
-        yPix = int(final_poses.flat[1])
+        RTVacuum = self.RTVacuum()
+        origPoses = np.matrix([[coordX], [coordY], [1], [1]])
+        finalPoses = RTVacuum * origPoses * self.SCALE
+        xPix = int(finalPoses.flat[0])
+        yPix = int(finalPoses.flat[1])
         return xPix, yPix
         
+    
+    def pixToCoord(self, xPix, yPix):
+        RTVacuum = self.RTVacuum()
+        RTinv = inv(RTVacuum)
+        origPoses = np.matrix([[xPix/(self.SCALE)], [yPix/(self.SCALE)], [1], [1]]) 
+        finalPoses = RTinv * origPoses
+        x = finalPoses.flat[0]
+        y = finalPoses.flat[1]
+        return x, y
+    
     
     def paintCell(self, cell):
         # cell = [x,y]
@@ -457,100 +470,72 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendW(0)
         
         
-    def absolutas2relativas(x, y, rx, ry, rt):
-        # Convert to relatives
-        dx = x - rx
-        dy = y - ry
-
+    def abs2rel(self,target, poseVacuum, yaw):
+        # target: [xt, yt]
+        # poseVacuum: [xv, yv]
+        # yaw: orientation vacuum
+        dx = target[0] - poseVacuum[0]
+        dy = target[1] - poseVacuum[1]
         # Rotate with current angle
-        x = dx*math.cos(-rt) - dy*math.sin(-rt)
-        y = dx*math.sin(-rt) + dy*math.cos(-rt)
-
+        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
+        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
         return x,y
               
               
     def execute(self):
 
         # TODO        
-        #self.sweep()
+        self.sweep()
+        '''
+        poseVacuum = self.pixToCoord(49,469)
+       
+        coord1 = self.pixToCoord(33, 453)
+        coord2 = self.pixToCoord(49, 453)
+        coord3 = self.pixToCoord(65, 453) 
+        coord4 = self.pixToCoord(33, 469)
+        coord5 = self.pixToCoord(49, 469)
+        coord6 = self.pixToCoord(65, 469)
+        coord7 = self.pixToCoord(33, 485)
+        coord8 = self.pixToCoord(49, 485)
+        coord9 = self.pixToCoord(65, 485)
         
-        poseVacuum = [49,469]
+        #yaw = math.radians()
+        yaw = 0
+        print 'yaw', yaw
         
-        coord1 = [33, 453]
-        coord2 = [49, 453]
-        coord3 = [65, 453] 
-        coord4 = [33, 469]
-        coord5 = [49, 469]
-        coord6 = [65, 469]
-        coord7 = [33, 485]
-        coord8 = [49, 485]
-        coord9 = [65, 485]
-        
-        yaw = math.radians(-90)
-        
-        dx = coord1[0]-poseVacuum[0]
-        dy = coord1[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y)) 
+        x,y=self.abs2rel(coord1, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x)) 
         print '    ANGLE1', angle
         
-        dx = coord2[0]-poseVacuum[0]
-        dy = coord2[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y)) 
+        x,y=self.abs2rel(coord2, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x))
         print '    ANGLE2', angle
         
-        dx = coord3[0]-poseVacuum[0]
-        dy = coord3[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y)) 
+        x,y=self.abs2rel(coord3, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x))
         print '    ANGLE3', angle
         
-        dx = coord4[0]-poseVacuum[0]
-        dy = coord4[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y))
+        x,y=self.abs2rel(coord4, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x)) 
         print '    ANGLE4', angle
         
-        dx = coord5[0]-poseVacuum[0]
-        dy = coord5[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y))
+        x,y=self.abs2rel(coord5, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x)) 
         print '    ANGLE5', angle
         
-        dx = coord6[0]-poseVacuum[0]
-        dy = coord6[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y))
+        x,y=self.abs2rel(coord6, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x)) 
         print '    ANGLE6', angle
         
-        dx = coord7[0]-poseVacuum[0]
-        dy = coord7[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y))
+        x,y=self.abs2rel(coord7, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x)) 
         print '    ANGLE7', angle
         
-        dx = coord8[0]-poseVacuum[0]
-        dy = coord8[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y))
+        x,y=self.abs2rel(coord8, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x)) 
         print '    ANGLE8', angle
         
-        dx = coord9[0]-poseVacuum[0]
-        dy = coord9[1]-poseVacuum[1]
-        x = dx*math.cos(-yaw) - dy*math.sin(-yaw)
-        y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
-        angle = math.degrees(math.atan2(x,y))
+        x,y=self.abs2rel(coord9, poseVacuum, yaw)
+        angle = math.degrees(math.atan2(y,x))
         print '    ANGLE9', angle
-        
-        
-        yaw = math.degrees(self.pose3d.getYaw())
-        print yaw
+        '''
