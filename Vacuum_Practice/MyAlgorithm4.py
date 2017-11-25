@@ -390,7 +390,7 @@ class MyAlgorithm4(threading.Thread):
  
         
     def controlDrive(self, desv):
-        w = 0.1 
+        w = 0.12 
         if desv > 0: #LEFT
             self.controlDesv(desv, w)
         else: #RIGHT
