@@ -164,30 +164,25 @@ class MyAlgorithm4(threading.Thread):
         print 'cells[n, e, w, s]', cells
         if self.goSouth == False:
             if cells[0] == 0: #north
-                #self.savePath(neighbors[0])
                 self.nextCell = neighbors[0] 
                 self.direction = 'north'
             else:
                 if cells[3] == 0: #south
-                    #self.savePath(neighbors[3])
                     self.nextCell = neighbors[3] 
                     self.goSouth = True 
                     self.direction = 'south'
                 elif cells[1] == 0: #east
-                    #self.savePath(neighbors[1])
                     self.nextCell = neighbors[1] 
                     self.goSouth = True 
                     self.direction = 'east'
                 elif cells[2] == 0: #west
-                    #self.savePath(neighbors[2])
                     self.nextCell = neighbors[2] 
                     self.goSouth = True 
                     self.direction = 'west'                                         
         else:
             if cells[3] == 0: #south
-                #self.savePath(neighbors[3])
                 self.nextCell = neighbors[3] 
-                self.direction = 'south1'      
+                self.direction = 'south'      
             else:
                 self.goSouth = False
         print '-> -> -> Go to', self.direction
@@ -390,7 +385,7 @@ class MyAlgorithm4(threading.Thread):
  
         
     def controlDrive(self, desv):
-        w = 0.12 
+        w = 0.1 
         if desv > 0: #LEFT
             self.controlDesv(desv, w)
         else: #RIGHT
