@@ -133,7 +133,6 @@ class MyAlgorithm4(threading.Thread):
                     print 'NEW ZIGZAG'
                     self.nextCell = self.checkMinDist()
                     # goToReturnPoint()
-                    self.savePath(self.nextCell)
                 else:
                     print 'END SWEEP'
             else:
@@ -143,8 +142,6 @@ class MyAlgorithm4(threading.Thread):
     def driving(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
-        #print '  CURRENT CELL', self.currentCell
-        #print '  NEXT CELL', self.nextCell
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
         else:
@@ -154,6 +151,7 @@ class MyAlgorithm4(threading.Thread):
             else:
                 print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
+                self.savePath(self.currentCell)
                 self.paintCell(self.currentCell)
                 print '    NEW CURRENT CELL', self.currentCell
         
@@ -166,24 +164,29 @@ class MyAlgorithm4(threading.Thread):
         print 'cells[n, e, w, s]', cells
         if self.goSouth == False:
             if cells[0] == 0: #north
-                self.savePath(neighbors[0])
+                #self.savePath(neighbors[0])
+                self.nextCell = neighbors[0] 
                 self.direction = 'north'
             else:
                 if cells[3] == 0: #south
-                    self.savePath(neighbors[3])
+                    #self.savePath(neighbors[3])
+                    self.nextCell = neighbors[3] 
                     self.goSouth = True 
                     self.direction = 'south'
                 elif cells[1] == 0: #east
-                    self.savePath(neighbors[1])
+                    #self.savePath(neighbors[1])
+                    self.nextCell = neighbors[1] 
                     self.goSouth = True 
                     self.direction = 'east'
                 elif cells[2] == 0: #west
-                    self.savePath(neighbors[2])
+                    #self.savePath(neighbors[2])
+                    self.nextCell = neighbors[2] 
                     self.goSouth = True 
                     self.direction = 'west'                                         
         else:
             if cells[3] == 0: #south
-                self.savePath(neighbors[3]) 
+                #self.savePath(neighbors[3])
+                self.nextCell = neighbors[3] 
                 self.direction = 'south1'      
             else:
                 self.goSouth = False
@@ -227,7 +230,7 @@ class MyAlgorithm4(threading.Thread):
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 self.map[i][j] = self.VIRTUAL_OBST             
-        cv2.imshow("MAP ", self.map)
+        #cv2.imshow("MAP ", self.map)
         
                     
     def calculateNeigh(self, cell):
@@ -348,7 +351,6 @@ class MyAlgorithm4(threading.Thread):
     
  
     def savePath(self, cell):
-        self.nextCell = cell
         self.path.append(cell)
 
         
@@ -370,8 +372,6 @@ class MyAlgorithm4(threading.Thread):
         xc, yc = self.pix2coord(cell[0], cell[1])
         cell = [round(xc,1), round(yc,1)]
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
-        #print '    TARGET COORD:', cell
-        #print '    VACUUM COORD:', poseVacuum
         desv = math.degrees(math.atan2(y,x))
         print 'DESV:', desv
         return desv
