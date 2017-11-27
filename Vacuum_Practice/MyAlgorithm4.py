@@ -30,6 +30,8 @@ class MyAlgorithm4(threading.Thread):
         
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
+        self.map1 = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.map1 = cv2.resize(self.map1, (500, 500))
         
         self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 16  
@@ -38,9 +40,9 @@ class MyAlgorithm4(threading.Thread):
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 7
-        self.MIN_DESV = 3
-        self.DIST_MAX = 0.05 #5 cm
+        self.MAX_DESV = 12
+        self.MIN_DESV = 2
+        self.DIST_MAX = 0.045 #5 cm
         self.DIST_MIN = 0
 
         self.x = None
@@ -52,11 +54,13 @@ class MyAlgorithm4(threading.Thread):
         self.direction =None
         
         self.goSouth = False
+        self.goingReturnPoint = False
 
         self.currentCell = []
         self.nextCell = []
         self.returnPoints = []
         self.path = []
+        self.returnPoint = []
         
  
     def parse_laser_data(self,laser_data):
@@ -125,19 +129,31 @@ class MyAlgorithm4(threading.Thread):
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
-            self.checkReturnPoints()
-
-            if self.isCriticalPoint(cells):
-                print ('CRITICAL POINT')
-                if len(self.returnPoints) > 0:
-                    print 'NEW ZIGZAG'
-                    self.nextCell = self.checkMinDist()
-                    # goToReturnPoint()
+            self.checkReturnPoints() 
+            
+            if self.goingReturnPoint == False:
+                if self.isCriticalPoint(cells):
+                    print ('CRITICAL POINT')
+                    if len(self.returnPoints) > 0:
+                        print 'NEW ZIGZAG'
+                        self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
+                        self.goingReturnPoint = True
+                        self.stopVacuum()
+                    else:
+                        print 'END SWEEP'
                 else:
-                    print 'END SWEEP'
+                    self.driving(cells, neighbors)
             else:
-                self.driving(cells, neighbors)
-         
+                arrive = self.checkArriveCell(self.returnPoint)
+                if arrive == False:
+                    self.goToReturnPoint() 
+                else:
+                    print '    VACUUM ARRIVED TO THE RETURN POINT'
+                    self.currentCell = self.returnPoint
+                    self.savePath(self.currentCell)
+                    self.paintCell(self.currentCell)
+                    print '    NEW CURRENT CELL', self.currentCell
+        
                 
     def driving(self, cells, neighbors):
         #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
@@ -227,7 +243,40 @@ class MyAlgorithm4(threading.Thread):
                 self.map[i][j] = self.VIRTUAL_OBST             
         #cv2.imshow("MAP ", self.map)
         
-                    
+        
+    def paint(self):
+        # cell = [x,y]
+            
+        if len(self.path) > 0:
+            for cell in self.path:
+                for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+                    for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+                        self.map1[i][j] = self.VIRTUAL_OBST
+                        
+        if len(self.returnPoints) > 0:
+            for cell in self.returnPoints:
+                for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+                    for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+                        self.map1[i][j] = 85  
+        
+        if self.currentCell != []:
+            for i in range((self.currentCell[1] - self.VACUUM_PX_HALF), (self.currentCell[1] + self.VACUUM_PX_HALF)):
+                for j in range((self.currentCell[0] - self.VACUUM_PX_HALF), (self.currentCell[0] + self.VACUUM_PX_HALF)):
+                    self.map1[i][j] = 150         
+            
+        if self.nextCell != []:
+            for i in range((self.nextCell[1] - self.VACUUM_PX_HALF), (self.nextCell[1] + self.VACUUM_PX_HALF)):
+                for j in range((self.nextCell[0] - self.VACUUM_PX_HALF), (self.nextCell[0] + self.VACUUM_PX_HALF)):
+                    self.map1[i][j] = 180    
+            
+        if self.returnPoint != []:
+            for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+                for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+                    self.map1[i][j] = 30 
+                                                              
+        cv2.imshow("MAP1 ", self.map1)  
+        
+                      
     def calculateNeigh(self, cell):
         # cell = [x,y]
         # Check that the cells are inside the map
@@ -323,17 +372,17 @@ class MyAlgorithm4(threading.Thread):
         # p2 = [x2, y2]
         d = math.sqrt(pow((p2[0]-p1[0]),2)+pow((p2[1]-p1[1]),2))     
         return d
-        
-        
-    def checkMinDist(self):
-        for i in self.returnPoints:
-            d = self.euclideanDist(self.currentCell, i)
-            if self.minDist == None:
-                self.minDist = d
-                nextCell = i                
-            if d < self.minDist:
+
+
+    def checkMinDist(self, points, cell):
+        # points: array with the points to compare
+        # cell: the point to compare
+        minDist = None
+        for i in points:
+            d = self.euclideanDist(cell, i)
+            if minDist == None or d < minDist:
                 nextCell = i
-        self.minDist = None
+                minDist = d
         return nextCell
            
 
@@ -353,6 +402,8 @@ class MyAlgorithm4(threading.Thread):
     ######   DRIVING FUNCTIONS   ######     
            
     def goNextCell(self):
+        print '  CURRENT CELL:' , self.currentCell
+        print '  NEXT CELL:' , self.nextCell
         self.x = round(self.pose3d.getX(),1)
         self.y = round(self.pose3d.getY(),1)
         self.yaw = self.pose3d.getYaw()
@@ -394,7 +445,7 @@ class MyAlgorithm4(threading.Thread):
                 
     def controlDesv(self, desv, w):
         desv = abs(desv) 
-        v = 0.15  
+        v = 0.1  
         if desv >= self.MAX_DESV:
             self.motors.sendV(0)
             self.motors.sendW(w)
@@ -431,11 +482,35 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendW(0)
         
         
-    
+    def goToReturnPoint(self):
+        myCells = []
+        neighbors = self.calculateNeigh(self.currentCell)
+        for n in neighbors:
+            if n == self.returnPoint:
+                self.nextCell = self.returnPoint     
+            elif self.nextCell != self.returnPoint:
+                cell = self.checkCell(n)
+                if cell == 2: #Virtual obstacle
+                    myCells.append(n)
+                    
+        print ('MY CELLS:', myCells) 
+        print ('RETURN POINT: ', self.returnPoint)        
+        # Check the closest cell to the new cell
+        if self.nextCell != self.returnPoint:
+            self.nextCell = self.checkMinDist(myCells, self.returnPoint)
+        
+        arrive = self.checkArriveCell(self.nextCell)
+        if arrive == False:
+            self.goNextCell()  
+        else:
+            print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
+            self.currentCell = self.nextCell     
               
               
     def execute(self):
 
         # TODO        
         self.sweep()
-       
+        self.paint()
+        
+        
