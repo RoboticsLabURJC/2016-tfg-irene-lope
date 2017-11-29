@@ -33,17 +33,13 @@ class MyAlgorithm4(threading.Thread):
         self.map1 = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map1 = cv2.resize(self.map1, (500, 500))
         
-        self.SCALE = 50.00 #50 px = 1 m
-        self.VACUUM_PX_SIZE = 16  
-        self.VACUUM_PX_HALF = 8  
-        self.VACUUM_SIZE = 0.32
+        self.SCALE = 50.0 #50 px = 1 m
+        self.VACUUM_PX_SIZE = 18  
+        self.VACUUM_PX_HALF = 9  
+        self.VACUUM_SIZE = 0.34
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
         self.MAX_MAP = 476
-        self.MAX_DESV = 12
-        self.MIN_DESV = 2
-        self.DIST_MAX = 0.045 #5 cm
-        self.DIST_MIN = 0
 
         self.x = None
         self.y = None
@@ -130,13 +126,14 @@ class MyAlgorithm4(threading.Thread):
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
             self.checkReturnPoints() 
-            
+            print '        GOING TO RETURN POINT:' , self.goingReturnPoint
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
                     print ('CRITICAL POINT')
                     if len(self.returnPoints) > 0:
                         print 'NEW ZIGZAG'
                         self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
+                        print '   RET POINT:', self.returnPoint
                         self.goingReturnPoint = True
                         self.stopVacuum()
                     else:
@@ -148,6 +145,7 @@ class MyAlgorithm4(threading.Thread):
                 if arrive == False:
                     self.goToReturnPoint() 
                 else:
+                    self.goingReturnPoint = False
                     print '    VACUUM ARRIVED TO THE RETURN POINT'
                     self.currentCell = self.returnPoint
                     self.savePath(self.currentCell)
@@ -259,21 +257,21 @@ class MyAlgorithm4(threading.Thread):
                     for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                         self.map1[i][j] = 85  
         
-        if self.currentCell != []:
-            for i in range((self.currentCell[1] - self.VACUUM_PX_HALF), (self.currentCell[1] + self.VACUUM_PX_HALF)):
-                for j in range((self.currentCell[0] - self.VACUUM_PX_HALF), (self.currentCell[0] + self.VACUUM_PX_HALF)):
-                    self.map1[i][j] = 150         
-            
         if self.nextCell != []:
             for i in range((self.nextCell[1] - self.VACUUM_PX_HALF), (self.nextCell[1] + self.VACUUM_PX_HALF)):
                 for j in range((self.nextCell[0] - self.VACUUM_PX_HALF), (self.nextCell[0] + self.VACUUM_PX_HALF)):
                     self.map1[i][j] = 180    
             
         if self.returnPoint != []:
-            for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-                for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+            for i in range((self.returnPoint[1] - self.VACUUM_PX_HALF), (self.returnPoint[1] + self.VACUUM_PX_HALF)):
+                for j in range((self.returnPoint[0] - self.VACUUM_PX_HALF), (self.returnPoint[0] + self.VACUUM_PX_HALF)):
                     self.map1[i][j] = 30 
-                                                              
+        
+        if self.currentCell != []:
+            for i in range((self.currentCell[1] - self.VACUUM_PX_HALF), (self.currentCell[1] + self.VACUUM_PX_HALF)):
+                for j in range((self.currentCell[0] - self.VACUUM_PX_HALF), (self.currentCell[0] + self.VACUUM_PX_HALF)):
+                    self.map1[i][j] = 150         
+                                                                  
         cv2.imshow("MAP1 ", self.map1)  
         
                       
@@ -423,7 +421,7 @@ class MyAlgorithm4(threading.Thread):
         return desv
 
 
-    def abs2rel(self,target, poseVacuum, yaw):
+    def abs2rel(self, target, poseVacuum, yaw):
         # target: [xt, yt]
         # poseVacuum: [xv, yv]
         # yaw: orientation vacuum
@@ -434,46 +432,72 @@ class MyAlgorithm4(threading.Thread):
         y = dx*math.sin(-yaw) + dy*math.cos(-yaw)
         return x,y
  
-        
+    
     def controlDrive(self, desv):
-        w = 0.1 
+        '''
+        w1 = 0.09
+        w2 = 0.13
+        w3 = 0.18
+        '''
+        w1 = 0.1
+        w2 = 0.1
+        w3 = 0.1
         if desv > 0: #LEFT
-            self.controlDesv(desv, w)
+            self.controlDesv(desv, w1, w2, w3)
         else: #RIGHT
-            self.controlDesv(desv, -w)
+            self.controlDesv(desv, -w1, -w2, -w3)
                 
-                
-    def controlDesv(self, desv, w):
-        desv = abs(desv) 
-        v = 0.1  
-        if desv >= self.MAX_DESV:
+    
+    def controlDesv(self, desv, w1, w2, w3):
+        desv = abs(desv)
+        th2 = 2
+        th3 = 10
+        ''' 
+        th1 = 3
+        th2 = 10
+        th3 = 20
+        
+        v1 = 0.05
+        v2 = 0.08
+        v3 = 0.12
+
+        '''
+        v1 = 0.1 
+        v2 = 0.1
+        v3 = 0.1      
+        if desv >= th3:
             self.motors.sendV(0)
-            self.motors.sendW(w)
-            print 'Turn ...', w
-        elif self.MIN_DESV < desv and desv < self.MAX_DESV:
-            self.motors.sendV(v)
-            self.motors.sendW(w)
-            print 'Go and turn ...', w
-        else:
-            self.motors.sendV(v)
-            self.motors.sendW(0)
-            print 'Go straight...', w
+            self.motors.sendW(w3)
+            print 'Turn ...', w3
+        elif th2 < desv and desv < th3:
+            self.motors.sendV(v1)
+            self.motors.sendW(w2)
+            print 'Go and turn ...', w2
        
-                               
+        else:
+            self.motors.sendV(v3)
+            self.motors.sendW(0)
+            print 'Go straight...' 
+               
+                                     
     def checkArriveCell(self, cell):
+        distMax = 0.055 #5 cm
+        distMin = 0
         x = False
         y = False
         xc, yc = self.pix2coord(cell[0], cell[1])
         xdif = abs(xc - self.x)
         ydif = abs(yc - self.y)
-        if xdif >= self.DIST_MIN and xdif < self.DIST_MAX:
+        if xdif >= distMin and xdif < distMax:
             x = True
-        if ydif >= self.DIST_MIN and ydif < self.DIST_MAX:
+        if ydif >= distMin and ydif < distMax:
             y = True
         if x == True and y == True:
             arrive = True
         else:
             arrive = False
+        print '            xdif', xdif
+        print '            ydif', ydif
         return arrive
     
     
@@ -512,5 +536,7 @@ class MyAlgorithm4(threading.Thread):
         # TODO        
         self.sweep()
         self.paint()
+        
+        
         
         
