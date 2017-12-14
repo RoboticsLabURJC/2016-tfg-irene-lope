@@ -520,7 +520,6 @@ class MyAlgorithm4(threading.Thread):
         # TODO        
         self.sweep()
         self.paint()
-        
-        
+
         
         
