@@ -34,8 +34,8 @@ class MyAlgorithm4(threading.Thread):
         self.map1 = cv2.resize(self.map1, (500, 500))
         
         self.SCALE = 50.0 #50 px = 1 m
-        self.VACUUM_PX_SIZE = 18  
-        self.VACUUM_PX_HALF = 9  
+        self.VACUUM_PX_SIZE = 20  
+        self.VACUUM_PX_HALF = 10 
         self.VACUUM_SIZE = 0.34
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 24
@@ -434,52 +434,36 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        '''
-        w1 = 0.09
-        w2 = 0.13
-        w3 = 0.18
-        '''
         w1 = 0.1
-        w2 = 0.1
-        w3 = 0.1
-        if desv > 0: #LEFT
-            self.controlDesv(desv, w1, w2, w3)
-        else: #RIGHT
-            self.controlDesv(desv, -w1, -w2, -w3)
-                
-    
-    def controlDesv(self, desv, w1, w2, w3):
-        desv = abs(desv)
-        th2 = 2
-        th3 = 10
-        ''' 
-        th1 = 3
-        th2 = 10
-        th3 = 20
-        
-        v1 = 0.05
-        v2 = 0.08
-        v3 = 0.12
+        w2 = 0.12
 
-        '''
-        v1 = 0.1 
-        v2 = 0.1
-        v3 = 0.1      
-        if desv >= th3:
-            self.motors.sendV(0)
-            self.motors.sendW(w3)
-            print 'Turn ...', w3
-        elif th2 < desv and desv < th3:
-            self.motors.sendV(v1)
-            self.motors.sendW(w2)
-            print 'Go and turn ...', w2
+        if desv > 0: #LEFT
+            self.controlDesv(desv, w1, w2)
+        else: #RIGHT
+            self.controlDesv(desv, -w1, -w2)
        
+       
+    def controlDesv(self, desv, w1, w2): 
+        desv = abs(desv) 
+        th1 = 2
+        th2 = 10 
+        v1 = 0.1
+        v2 = 0.12
+   
+        if desv >= th2:
+            self.motors.sendV(0)
+            self.motors.sendW(w2)
+            print 'Turn ...', w2
+        elif desv < th2 and desv >= th1:
+            self.motors.sendV(v1)
+            self.motors.sendW(w1)
+            print 'Go and turn ...', w1
         else:
-            self.motors.sendV(v3)
+            self.motors.sendV(v2)
             self.motors.sendW(0)
             print 'Go straight...' 
-               
-                                     
+                        
+                             
     def checkArriveCell(self, cell):
         distMax = 0.055 #5 cm
         distMin = 0
