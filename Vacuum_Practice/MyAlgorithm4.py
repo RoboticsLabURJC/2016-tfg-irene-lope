@@ -125,6 +125,7 @@ class MyAlgorithm4(threading.Thread):
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
+            self.isReturnPoint(cells)
             self.checkReturnPoints() 
             print '        GOING TO RETURN POINT:' , self.goingReturnPoint
             if self.goingReturnPoint == False:
@@ -298,9 +299,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[1] >= self.MIN_MAP:
             n0 = [cell[0], cell[1] - self.VACUUM_PX_HALF] #center
             n1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] - dif] #left
-            self.paintHalfCell(n1, 10, self.map1)        
+            #self.paintHalfCell(n1, 10, self.map1)        
             n2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] - dif] #right
-            self.paintHalfCell(n2, 30, self.map1)
+            #self.paintHalfCell(n2, 30, self.map1)
             northCell = [n0, n1, n2]
         else:
             northCell = [[None, None], [None, None], [None, None]]
@@ -308,9 +309,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[1] <= self.MAX_MAP:
             s0 = [cell[0], cell[1] + self.VACUUM_PX_HALF] #center
             s1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] + dif] #left
-            self.paintHalfCell(s1, 50, self.map1)
+            #self.paintHalfCell(s1, 50, self.map1)
             s2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] + dif] #right
-            self.paintHalfCell(s2, 70, self.map1)
+            #self.paintHalfCell(s2, 70, self.map1)
             southCell = [s0, s1, s2]
         else:
             southCell = [[None, None], [None, None], [None, None]]
@@ -318,9 +319,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[0] >= self.MIN_MAP:
             w0 = [cell[0] - self.VACUUM_PX_HALF, cell[1]] #center
             w1 = [cell[0] - dif, cell[1] - self.VACUUM_PX_HALF/2] #up
-            self.paintHalfCell(w1, 110, self.map1)
+            #self.paintHalfCell(w1, 110, self.map1)
             w2 = [cell[0] - dif, cell[1] + self.VACUUM_PX_HALF/2] #down
-            self.paintHalfCell(w2, 130, self.map1)
+            #self.paintHalfCell(w2, 130, self.map1)
             westCell = [w0, w1, w2]
         else:
             westCell = [[None, None], [None, None], [None, None]]
@@ -328,9 +329,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[0] <= self.MAX_MAP:
             e0 = [cell[0] + self.VACUUM_PX_HALF, cell[1]] #center
             e1 = [cell[0] + dif, cell[1] - self.VACUUM_PX_HALF/2] #up
-            self.paintHalfCell(e1, 150, self.map1)
+            #self.paintHalfCell(e1, 150, self.map1)
             e2 = [cell[0] + dif, cell[1] + self.VACUUM_PX_HALF/2] #down
-            self.paintHalfCell(e2, 190, self.map1)
+            #self.paintHalfCell(e2, 190, self.map1)
             eastCell = [e0, e1, e2]
         else:
             eastCell = [[None, None], [None, None], [None, None]]
@@ -387,39 +388,66 @@ class MyAlgorithm4(threading.Thread):
         southCell2 = self.checkCell(south[2]) 
         southCell =[southCell1, southCell2]
         
-        if northCell1 == 0 and northCell2 == 0:
-            self.saveReturnPoint(north[0])
-        if eastCell1 == 0 and eastCell2 == 0:
-            self.saveReturnPoint(east[0])
-        if westCell1 == 0 and westCell2 == 0:
-            self.saveReturnPoint(west[0])
-        if southCell1 == 0 and southCell2 == 0:
-            self.saveReturnPoint(south[0])  
-        
         cells = [northCell, eastCell, westCell, southCell] 
         return cells
         
+        
+    def isReturnPoint(self, cells):
+        #If there is a free neighbor, save the current cell
+        nCell = cells[0]
+        eCell = cells[1]
+        wCell = cells[2]
+        sCell = cells[3]
+        if nCell[0] == 0 and nCell[1] == 0:
+            self.saveReturnPoint(self.currentCell)
+        if eCell[0] == 0 and eCell[1] == 0:
+            self.saveReturnPoint(self.currentCell)
+        if wCell[0] == 0 and wCell[1] == 0:
+            self.saveReturnPoint(self.currentCell)
+        if sCell[0] == 0 and sCell[1] == 0:
+            self.saveReturnPoint(self.currentCell) 
+             
              
     def saveReturnPoint(self, p):
-        x = 0
+        saved = False
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == p[0]) and (self.returnPoints[i][1] == p[1]):
-                x = 1
-        if x == 0:
+                saved = True
+        if saved == 'False':
+            # This point wasn't saved before
             self.returnPoints.append(p)
+            print '                               Save return point', p
             
                   
     def checkReturnPoints(self):
-        #print 'RETURN POINTS: ', self.returnPoints
-        x = None
+        cont = 0
+        index = []
         for i in range(len(self.returnPoints)): 
-            if self.returnPoints[i] == self.currentCell:
-                print 'Remove: ', self.returnPoints[i]
-                x = i        
-        if x != None:
-            self.returnPoints.pop(x)
-           
-          
+            neighbors = self.calculateNeigh(self.returnPoints[i])
+            cells = self.checkNeigh(neighbors)       
+            nCell = cells[0]
+            eCell = cells[1]
+            wCell = cells[2]
+            sCell = cells[3]
+            if nCell[0] == 0 and nCell[1] == 0:
+                cont += 1
+            if eCell[0] == 0 and eCell[1] == 0:
+                cont += 1
+            if wCell[0] == 0 and wCell[1] == 0:
+                cont += 1
+            if wCell[0] == 0 and wCell[1] == 0:
+                cont += 1
+            print '                                 cont', cont
+            if cont == 0:
+                # There are no free neighbors, save the index
+                index.append(i)
+            cont = 0
+                            
+        for i in index:
+            print '                               Remove: ', self.returnPoints[i] 
+            self.returnPoints.pop(i)
+                 
+             
     def euclideanDist(self, p1, p2):
         # p1 = [x1, y1]
         # p2 = [x2, y2]
