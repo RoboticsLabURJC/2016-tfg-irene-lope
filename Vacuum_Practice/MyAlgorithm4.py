@@ -577,7 +577,8 @@ class MyAlgorithm4(threading.Thread):
               
     def execute(self):
 
-        # TODO        
+        # TODO 
+               
         self.sweep()
         self.paintMap()
         self.showMaps()
