@@ -274,12 +274,12 @@ class MyAlgorithm4(threading.Thread):
         if self.nextCell != []:
             self.paintCell(self.nextCell, 180, self.map1)  
             
-        if self.returnPoint != []:
-            self.paintCell(self.returnPoint, 30, self.map1)
+        
         
         if self.currentCell != []:
             self.paintCell(self.currentCell, 150, self.map1)     
-   
+        if self.returnPoint != []:
+            self.paintCell(self.returnPoint, 30, self.map1)
    
     def showMaps(self, n=2): 
         if n == 0:                                                         
