@@ -254,6 +254,12 @@ class MyAlgorithm4(threading.Thread):
                 img[i][j] = color             
         
         
+    def paintHalfCell(self, cell, color, img):
+        for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
+            for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
+                img[i][j] = color
+                      
+                        
     def paintMap(self):
         # cell = [x,y]
             
@@ -273,16 +279,17 @@ class MyAlgorithm4(threading.Thread):
         
         if self.currentCell != []:
             self.paintCell(self.currentCell, 150, self.map1)     
-                                                                  
-        cv2.imshow("MAP1 ", self.map1) 
-        cv2.imshow("MAP ", self.map)    
-        
-        
-    def paintHalfCell(self, cell, color):
-        for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
-            for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
-                self.map1[i][j] = color
-                      
+   
+   
+    def showMaps(self, n=3): 
+        if n == 1:                                                         
+            cv2.imshow("MAP ", self.map) 
+        elif n == 2:
+            cv2.imshow("MAP1 ", self.map1)  
+        else:  
+            cv2.imshow("MAP ", self.map) 
+            cv2.imshow("MAP1 ", self.map1)  
+            
                       
     def calculateNeigh(self, cell):
         # cell = [x,y]
@@ -291,9 +298,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[1] >= self.MIN_MAP:
             n0 = [cell[0], cell[1] - self.VACUUM_PX_HALF] #center
             n1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] - dif] #left
-            self.paintHalfCell(n1, 10)        
+            self.paintHalfCell(n1, 10, self.map1)        
             n2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] - dif] #right
-            self.paintHalfCell(n2, 30)
+            self.paintHalfCell(n2, 30, self.map1)
             northCell = [n0, n1, n2]
         else:
             northCell = [[None, None], [None, None], [None, None]]
@@ -301,9 +308,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[1] <= self.MAX_MAP:
             s0 = [cell[0], cell[1] + self.VACUUM_PX_HALF] #center
             s1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] + dif] #left
-            self.paintHalfCell(s1, 50)
+            self.paintHalfCell(s1, 50, self.map1)
             s2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] + dif] #right
-            self.paintHalfCell(s2, 70)
+            self.paintHalfCell(s2, 70, self.map1)
             southCell = [s0, s1, s2]
         else:
             southCell = [[None, None], [None, None], [None, None]]
@@ -311,9 +318,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[0] >= self.MIN_MAP:
             w0 = [cell[0] - self.VACUUM_PX_HALF, cell[1]] #center
             w1 = [cell[0] - dif, cell[1] - self.VACUUM_PX_HALF/2] #up
-            self.paintHalfCell(w1, 110)
+            self.paintHalfCell(w1, 110, self.map1)
             w2 = [cell[0] - dif, cell[1] + self.VACUUM_PX_HALF/2] #down
-            self.paintHalfCell(w2, 130)
+            self.paintHalfCell(w2, 130, self.map1)
             westCell = [w0, w1, w2]
         else:
             westCell = [[None, None], [None, None], [None, None]]
@@ -321,9 +328,9 @@ class MyAlgorithm4(threading.Thread):
         if cell[0] <= self.MAX_MAP:
             e0 = [cell[0] + self.VACUUM_PX_HALF, cell[1]] #center
             e1 = [cell[0] + dif, cell[1] - self.VACUUM_PX_HALF/2] #up
-            self.paintHalfCell(e1, 150)
+            self.paintHalfCell(e1, 150, self.map1)
             e2 = [cell[0] + dif, cell[1] + self.VACUUM_PX_HALF/2] #down
-            self.paintHalfCell(e2, 190)
+            self.paintHalfCell(e2, 190, self.map1)
             eastCell = [e0, e1, e2]
         else:
             eastCell = [[None, None], [None, None], [None, None]]
@@ -573,6 +580,6 @@ class MyAlgorithm4(threading.Thread):
         # TODO        
         self.sweep()
         self.paintMap()
-
+        self.showMaps()
         
         
