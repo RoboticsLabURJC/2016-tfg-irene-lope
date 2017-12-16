@@ -281,10 +281,10 @@ class MyAlgorithm4(threading.Thread):
             self.paintCell(self.currentCell, 150, self.map1)     
    
    
-    def showMaps(self, n=3): 
-        if n == 1:                                                         
+    def showMaps(self, n=2): 
+        if n == 0:                                                         
             cv2.imshow("MAP ", self.map) 
-        elif n == 2:
+        elif n == 1:
             cv2.imshow("MAP1 ", self.map1)  
         else:  
             cv2.imshow("MAP ", self.map) 
@@ -352,13 +352,15 @@ class MyAlgorithm4(threading.Thread):
                         obstacle = 1
                     elif self.map[i][j] == self.VIRTUAL_OBST:#grey
                         # There is a virtual obstacle
-                        virtualObst = 1                              
+                        virtualObst = 1   
+                                              
             if obstacle == 1:
                 c = 1
             elif virtualObst == 1:
                 c = 2
             else:
-                c = 0           
+                c = 0 
+                          
         return c
         
         
@@ -366,23 +368,23 @@ class MyAlgorithm4(threading.Thread):
         # neighbors = [north, east, west, south]
         
         north = neighbors[0]
-        northCell1 = self.checkCell(north[0]) 
-        northCell2 = self.checkCell(north[1])
+        northCell1 = self.checkCell(north[1]) 
+        northCell2 = self.checkCell(north[2])
         northCell = [northCell1, northCell2] 
         
         east = neighbors[1]
-        eastCell1 = self.checkCell(east[0]) 
-        eastCell2 = self.checkCell(east[1]) 
+        eastCell1 = self.checkCell(east[1]) 
+        eastCell2 = self.checkCell(east[2]) 
         eastCell =[eastCell1, eastCell2]
         
         west = neighbors[2]
-        westCell1 = self.checkCell(west[0]) 
-        westCell2 = self.checkCell(west[1]) 
+        westCell1 = self.checkCell(west[1]) 
+        westCell2 = self.checkCell(west[2]) 
         westCell =[westCell1, westCell2]
         
         south = neighbors[3]
-        southCell1 = self.checkCell(south[0]) 
-        southCell2 = self.checkCell(south[1]) 
+        southCell1 = self.checkCell(south[1]) 
+        southCell2 = self.checkCell(south[2]) 
         southCell =[southCell1, southCell2]
         
         if northCell1 == 0 and northCell2 == 0:
@@ -582,5 +584,4 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps()
-        
         
