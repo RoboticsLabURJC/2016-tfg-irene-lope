@@ -280,6 +280,7 @@ class MyAlgorithm4(threading.Thread):
         if self.returnPoint != []:
             self.paintCell(self.returnPoint, 30, self.map1)
    
+   
     def showMaps(self, n=2): 
         if n == 0:                                                         
             cv2.imshow("MAP ", self.map) 
