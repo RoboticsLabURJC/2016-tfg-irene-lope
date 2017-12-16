@@ -38,8 +38,8 @@ class MyAlgorithm4(threading.Thread):
         self.VACUUM_PX_HALF = 10 
         self.VACUUM_SIZE = 0.34
         self.VIRTUAL_OBST = 128
-        self.MIN_MAP = 24
-        self.MAX_MAP = 476
+        self.MIN_MAP = 20
+        self.MAX_MAP = 480
 
         self.x = None
         self.y = None
@@ -121,7 +121,7 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = [self.xPix, self.yPix]
             self.savePath(self.currentCell)
             self.nextCell = self.currentCell
-            self.paintCell(self.currentCell)
+            self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
@@ -149,12 +149,12 @@ class MyAlgorithm4(threading.Thread):
                     print '    VACUUM ARRIVED TO THE RETURN POINT'
                     self.currentCell = self.returnPoint
                     self.savePath(self.currentCell)
-                    self.paintCell(self.currentCell)
+                    self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
                     print '    NEW CURRENT CELL', self.currentCell
         
                 
     def driving(self, cells, neighbors):
-        #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
+        #cells = [[nCell1, nCell2], [eCell1, eCell2], [wCell1, wCell], [sCell1, sCell2]] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
@@ -166,36 +166,49 @@ class MyAlgorithm4(threading.Thread):
                 print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
                 self.savePath(self.currentCell)
-                self.paintCell(self.currentCell)
+                self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
                 print '    NEW CURRENT CELL', self.currentCell
         
             
     def zigzag(self, cells, neighbors):
-        #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
-        #neighbors = [north, east, west, south] -> Positions in the map
+        #cells = [nCell[1,2], eCell[1,2], wCell[1,2], sCell[1,2]] -> Can be: 0,1,2
+        #neighbors = [north[0,1,2], east[0,1,2], west[0,1,2], south[0,1,2]] -> Positions in the map
+        nCell = cells[0]
+        eCell = cells[1]
+        wCell = cells[2]
+        sCell = cells[3]
+        north = neighbors[0]
+        east = neighbors[1]
+        west = neighbors[2]
+        south = neighbors[3]
+        
         print 'PLANNING ZIGZAG'
-        print 'neighbors[north, east, west, south]', neighbors
-        print 'cells[n, e, w, s]', cells
+        print 'current cell:', self.currentCell
+        print 'neighbors[north[0], east[0], west[0], south[0]]:', north[0], east[0], west[0], south[0]
+        print 'neighbors[north[1], east[1], west[1], south[1]]:', north[1], east[1], west[1], south[1]
+        print 'neighbors[north[2], east[2], west[2], south[2]]:', north[2], east[2], west[2], south[2]
+        print 'cells[n[0,1], e[0,1], w[0,1], s[0,1]]:', nCell, eCell, wCell, sCell
+        
         if self.goSouth == False:
-            if cells[0] == 0: #north
-                self.nextCell = neighbors[0] 
+            if nCell[0] == 0 and nCell[1] == 0: #north
+                self.nextCell = north[0]
                 self.direction = 'north'
             else:
-                if cells[3] == 0: #south
-                    self.nextCell = neighbors[3] 
+                if sCell[0] == 0 and sCell[1] == 0: #south
+                    self.nextCell = south[0]
                     self.goSouth = True 
                     self.direction = 'south'
-                elif cells[1] == 0: #east
-                    self.nextCell = neighbors[1] 
+                elif eCell[0] == 0 and eCell[1] == 0: #east
+                    self.nextCell = east[0]
                     self.goSouth = True 
                     self.direction = 'east'
-                elif cells[2] == 0: #west
-                    self.nextCell = neighbors[2] 
+                elif wCell[0] == 0 and wCell[1] == 0: #west
+                    self.nextCell = west[0]
                     self.goSouth = True 
                     self.direction = 'west'                                         
         else:
-            if cells[3] == 0: #south
-                self.nextCell = neighbors[3] 
+            if sCell[0] == 0 and sCell[1] == 0: #south
+                self.nextCell = south[0]
                 self.direction = 'south'      
             else:
                 self.goSouth = False
@@ -234,69 +247,86 @@ class MyAlgorithm4(threading.Thread):
         return x, y
     
     
-    def paintCell(self, cell):
+    def paintCell(self, cell, color, img):
         # cell = [x,y]
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                self.map[i][j] = self.VIRTUAL_OBST             
-        #cv2.imshow("MAP ", self.map)
+                img[i][j] = color             
         
         
-    def paint(self):
+    def paintMap(self):
         # cell = [x,y]
             
         if len(self.path) > 0:
             for cell in self.path:
-                for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-                    for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                        self.map1[i][j] = self.VIRTUAL_OBST
+                self.paintCell(cell, self.VIRTUAL_OBST, self.map1)
                         
         if len(self.returnPoints) > 0:
             for cell in self.returnPoints:
-                for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-                    for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
-                        self.map1[i][j] = 85  
+                self.paintCell(cell, 85, self.map1)  
         
         if self.nextCell != []:
-            for i in range((self.nextCell[1] - self.VACUUM_PX_HALF), (self.nextCell[1] + self.VACUUM_PX_HALF)):
-                for j in range((self.nextCell[0] - self.VACUUM_PX_HALF), (self.nextCell[0] + self.VACUUM_PX_HALF)):
-                    self.map1[i][j] = 180    
+            self.paintCell(self.nextCell, 180, self.map1)  
             
         if self.returnPoint != []:
-            for i in range((self.returnPoint[1] - self.VACUUM_PX_HALF), (self.returnPoint[1] + self.VACUUM_PX_HALF)):
-                for j in range((self.returnPoint[0] - self.VACUUM_PX_HALF), (self.returnPoint[0] + self.VACUUM_PX_HALF)):
-                    self.map1[i][j] = 30 
+            self.paintCell(self.returnPoint, 30, self.map1)
         
         if self.currentCell != []:
-            for i in range((self.currentCell[1] - self.VACUUM_PX_HALF), (self.currentCell[1] + self.VACUUM_PX_HALF)):
-                for j in range((self.currentCell[0] - self.VACUUM_PX_HALF), (self.currentCell[0] + self.VACUUM_PX_HALF)):
-                    self.map1[i][j] = 150         
+            self.paintCell(self.currentCell, 150, self.map1)     
                                                                   
-        cv2.imshow("MAP1 ", self.map1)  
+        cv2.imshow("MAP1 ", self.map1) 
+        cv2.imshow("MAP ", self.map)    
         
+        
+    def paintHalfCell(self, cell, color):
+        for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
+            for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
+                self.map1[i][j] = color
+                      
                       
     def calculateNeigh(self, cell):
         # cell = [x,y]
         # Check that the cells are inside the map
+        dif = 15 #15px
         if cell[1] >= self.MIN_MAP:
-            northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
+            n0 = [cell[0], cell[1] - self.VACUUM_PX_HALF] #center
+            n1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] - dif] #left
+            self.paintHalfCell(n1, 10)        
+            n2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] - dif] #right
+            self.paintHalfCell(n2, 30)
+            northCell = [n0, n1, n2]
         else:
-            northCell = [None, None]
+            northCell = [[None, None], [None, None], [None, None]]
             
         if cell[1] <= self.MAX_MAP:
-            southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
+            s0 = [cell[0], cell[1] + self.VACUUM_PX_HALF] #center
+            s1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] + dif] #left
+            self.paintHalfCell(s1, 50)
+            s2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] + dif] #right
+            self.paintHalfCell(s2, 70)
+            southCell = [s0, s1, s2]
         else:
-            southCell = [None, None]
+            southCell = [[None, None], [None, None], [None, None]]
             
         if cell[0] >= self.MIN_MAP:
-            westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]]
+            w0 = [cell[0] - self.VACUUM_PX_HALF, cell[1]] #center
+            w1 = [cell[0] - dif, cell[1] - self.VACUUM_PX_HALF/2] #up
+            self.paintHalfCell(w1, 110)
+            w2 = [cell[0] - dif, cell[1] + self.VACUUM_PX_HALF/2] #down
+            self.paintHalfCell(w2, 130)
+            westCell = [w0, w1, w2]
         else:
-            westCell = [None, None]
+            westCell = [[None, None], [None, None], [None, None]]
             
         if cell[0] <= self.MAX_MAP:
-            eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]]
+            e0 = [cell[0] + self.VACUUM_PX_HALF, cell[1]] #center
+            e1 = [cell[0] + dif, cell[1] - self.VACUUM_PX_HALF/2] #up
+            self.paintHalfCell(e1, 150)
+            e2 = [cell[0] + dif, cell[1] + self.VACUUM_PX_HALF/2] #down
+            self.paintHalfCell(e2, 190)
+            eastCell = [e0, e1, e2]
         else:
-            eastCell = [None, None]
+            eastCell = [[None, None], [None, None], [None, None]]
         
         neighbors = [northCell, eastCell, westCell, southCell]   
         return neighbors
@@ -308,8 +338,8 @@ class MyAlgorithm4(threading.Thread):
         virtualObst = 0
         c = None
         if cell[0] != None and cell[1] != None:
-            for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
-                for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
+            for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
+                for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
                     if self.map[i][j] == 0:#black
                         # There is an obstacle
                         obstacle = 1
@@ -327,23 +357,39 @@ class MyAlgorithm4(threading.Thread):
         
     def checkNeigh(self, neighbors):
         # neighbors = [north, east, west, south]
-        northCell = self.checkCell(neighbors[0])  
-        eastCell = self.checkCell(neighbors[1])  
-        westCell = self.checkCell(neighbors[2])
-        southCell = self.checkCell(neighbors[3])
-
-        if northCell == 0:
-            self.saveReturnPoint(neighbors[0])
-        if eastCell == 0:
-            self.saveReturnPoint(neighbors[1])
-        if westCell == 0:
-            self.saveReturnPoint(neighbors[2])
-        if southCell == 0:
-            self.saveReturnPoint(neighbors[3])  
+        
+        north = neighbors[0]
+        northCell1 = self.checkCell(north[0]) 
+        northCell2 = self.checkCell(north[1])
+        northCell = [northCell1, northCell2] 
+        
+        east = neighbors[1]
+        eastCell1 = self.checkCell(east[0]) 
+        eastCell2 = self.checkCell(east[1]) 
+        eastCell =[eastCell1, eastCell2]
+        
+        west = neighbors[2]
+        westCell1 = self.checkCell(west[0]) 
+        westCell2 = self.checkCell(west[1]) 
+        westCell =[westCell1, westCell2]
+        
+        south = neighbors[3]
+        southCell1 = self.checkCell(south[0]) 
+        southCell2 = self.checkCell(south[1]) 
+        southCell =[southCell1, southCell2]
+        
+        if northCell1 == 0 and northCell2 == 0:
+            self.saveReturnPoint(north[0])
+        if eastCell1 == 0 and eastCell2 == 0:
+            self.saveReturnPoint(east[0])
+        if westCell1 == 0 and westCell2 == 0:
+            self.saveReturnPoint(west[0])
+        if southCell1 == 0 and southCell2 == 0:
+            self.saveReturnPoint(south[0])  
         
         cells = [northCell, eastCell, westCell, southCell] 
         return cells
-  
+        
              
     def saveReturnPoint(self, p):
         x = 0
@@ -385,12 +431,19 @@ class MyAlgorithm4(threading.Thread):
            
 
     def isCriticalPoint(self, cells):
-        #cells = [nCell, eCell, wCell, sCell]
-        if (cells[0] > 0) and (cells[1] > 0) and (cells[2] > 0) and (cells[3] > 0):
-            return True
-        else:
-            return False
-    
+        #cells = [nCell[0,1], eCell[0,1], wCell[0,1], sCell[0,1]]
+        nCell= cells[0]
+        eCell= cells[1]
+        wCell= cells[2]
+        sCell= cells[3]
+        critical = False
+        if (nCell[0] > 0) and (nCell[1] > 0):
+            if (eCell[0] > 0) and (eCell[1] > 0):
+                if (wCell[0] > 0) and (wCell[1] > 0):
+                    if (sCell[0] > 0) and (sCell[1] > 0):
+                        critical = True                        
+        return critical
+ 
  
     def savePath(self, cell):
         self.path.append(cell)
@@ -519,7 +572,7 @@ class MyAlgorithm4(threading.Thread):
 
         # TODO        
         self.sweep()
-        self.paint()
+        self.paintMap()
 
         
         
