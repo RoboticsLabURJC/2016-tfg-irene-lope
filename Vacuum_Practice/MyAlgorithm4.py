@@ -182,7 +182,18 @@ class MyAlgorithm4(threading.Thread):
         east = neighbors[1]
         west = neighbors[2]
         south = neighbors[3]
-        
+        print 'PLANNING ZIGZAG'
+        print 'CURRENT CELL:', self.currentCell
+        print '    NEIGHBORS:'
+        print '    north:', north
+        print '    east:', east
+        print '    west:', west
+        print '    south:', south
+        print '      CELLS:'
+        print '      nCell:', nCell
+        print '      eCell:', eCell
+        print '      wCell:', wCell
+        print '      sCell:', sCell  
         if self.goSouth == False:
             if nCell[0] == 0 and nCell[1] == 0: #north
                 self.nextCell = north[0]
@@ -249,8 +260,7 @@ class MyAlgorithm4(threading.Thread):
         
 
     def paintMap(self):
-        # cell = [x,y]
-            
+        # cell = [x,y]            
         if len(self.path) > 0:
             for cell in self.path:
                 self.paintCell(cell, self.VIRTUAL_OBST, self.map1)
@@ -468,9 +478,14 @@ class MyAlgorithm4(threading.Thread):
     ######   DRIVING FUNCTIONS   ######     
            
     def goNextCell(self):
+        print '\n...Going to the next cell...\n'
         self.x = round(self.pose3d.getX(),1)
         self.y = round(self.pose3d.getY(),1)
         self.yaw = self.pose3d.getYaw()
+        xCell, yCell = self.pix2coord(self.nextCell[0], self.nextCell[1])
+        print 'MY POSE:   POSE NEXT CELL:'
+        print '  x:', self.x, '    xcell:', xCell
+        print '  y:', self.y, '    ycell:', yCell
         poseVacuum = [self.x, self.y]
         desviation = self.calculateDesv(poseVacuum, self.nextCell)
         self.controlDrive(desviation)
@@ -483,7 +498,7 @@ class MyAlgorithm4(threading.Thread):
         cell = [round(xc,1), round(yc,1)]
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
-        #print 'DESV:', desv
+        print '\n      DESV:', desv
         return desv
 
 
