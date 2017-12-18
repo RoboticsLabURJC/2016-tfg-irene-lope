@@ -484,18 +484,17 @@ class MyAlgorithm4(threading.Thread):
         self.yaw = self.pose3d.getYaw()
         xCell, yCell = self.pix2coord(self.nextCell[0], self.nextCell[1])
         print 'MY POSE:   POSE NEXT CELL:'
-        print '  x:', self.x, '    xcell:', xCell
-        print '  y:', self.y, '    ycell:', yCell
+        print '  x:', self.x, '    xcell:', round(xCell,1)
+        print '  y:', self.y, '    ycell:', round(yCell,1)
         poseVacuum = [self.x, self.y]
-        desviation = self.calculateDesv(poseVacuum, self.nextCell)
+        poseCell = [round(xCell,1), round(yCell,1)]
+        desviation = self.calculateDesv(poseVacuum, poseCell)
         self.controlDrive(desviation)
          
             
     def calculateDesv(self, poseVacuum, cell):
         # poseVacuum = [x1, y1] coord
-        # cell = [x2, y2] pix
-        xc, yc = self.pix2coord(cell[0], cell[1])
-        cell = [round(xc,1), round(yc,1)]
+        # cell = [x2, y2] coord
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
         print '\n      DESV:', desv
