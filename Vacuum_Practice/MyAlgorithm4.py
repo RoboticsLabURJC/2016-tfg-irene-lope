@@ -483,11 +483,13 @@ class MyAlgorithm4(threading.Thread):
         self.y = round(self.pose3d.getY(),1)
         self.yaw = self.pose3d.getYaw()
         xCell, yCell = self.pix2coord(self.nextCell[0], self.nextCell[1])
+        round(xCell,1)
+        round(yCell,1)
         print 'MY POSE:   POSE NEXT CELL:'
-        print '  x:', self.x, '    xcell:', round(xCell,1)
-        print '  y:', self.y, '    ycell:', round(yCell,1)
+        print '  x:', self.x, '    xcell:', xCell)
+        print '  y:', self.y, '    ycell:', yCell)
         poseVacuum = [self.x, self.y]
-        poseCell = [round(xCell,1), round(yCell,1)]
+        poseCell = [xCell, yCell]
         desviation = self.calculateDesv(poseVacuum, poseCell)
         self.controlDrive(desviation)
          
