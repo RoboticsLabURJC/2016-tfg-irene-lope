@@ -147,11 +147,11 @@ class MyAlgorithm4(threading.Thread):
                     self.goToReturnPoint() 
                 else:
                     self.goingReturnPoint = False
-                    #print '    VACUUM ARRIVED TO THE RETURN POINT'
+                    print '    VACUUM ARRIVED TO THE RETURN POINT'
                     self.currentCell = self.returnPoint
                     self.savePath(self.currentCell)
                     self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
-                    #print '    NEW CURRENT CELL', self.currentCell
+                    print '    NEW CURRENT CELL', self.currentCell
         
                 
     def driving(self, cells, neighbors):
@@ -164,11 +164,13 @@ class MyAlgorithm4(threading.Thread):
             if arrive == False:
                 self.goNextCell()  
             else:
-                #print '    VACUUM ARRIVED'
+                print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
                 self.savePath(self.currentCell)
                 self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
-                #print '    NEW CURRENT CELL', self.currentCell
+                print '    NEW CURRENT CELL', self.currentCell
+                self.stopVacuum()
+                #time.sleep(0.5)
         
             
     def zigzag(self, cells, neighbors):
@@ -182,18 +184,20 @@ class MyAlgorithm4(threading.Thread):
         east = neighbors[1]
         west = neighbors[2]
         south = neighbors[3]
-        print 'PLANNING ZIGZAG'
-        print 'CURRENT CELL:', self.currentCell
-        print '    NEIGHBORS:'
+        
+        print '\n...Planing zigzag...\n'
+        print '  CURRENT CELL:', self.currentCell
+        print '  NEIGHBORS:'
         print '    north:', north
         print '    east:', east
         print '    west:', west
         print '    south:', south
-        print '      CELLS:'
-        print '      nCell:', nCell
-        print '      eCell:', eCell
-        print '      wCell:', wCell
-        print '      sCell:', sCell  
+        print '  CELLS:'
+        print '    nCell:', nCell
+        print '    eCell:', eCell
+        print '    wCell:', wCell
+        print '    sCell:', sCell
+        
         if self.goSouth == False:
             if nCell[0] == 0 and nCell[1] == 0: #north
                 self.nextCell = north[0]
@@ -258,9 +262,10 @@ class MyAlgorithm4(threading.Thread):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 img[i][j] = color             
         
-
+                        
     def paintMap(self):
-        # cell = [x,y]            
+        # cell = [x,y]
+            
         if len(self.path) > 0:
             for cell in self.path:
                 self.paintCell(cell, self.VIRTUAL_OBST, self.map1)
@@ -277,8 +282,27 @@ class MyAlgorithm4(threading.Thread):
               
         if self.returnPoint != []:
             self.paintCell(self.returnPoint, 30, self.map1)
-   
-   
+            
+        if self.nextCell != []:
+            self.paintPoint(self.nextCell, 10, self.map1)
+        
+        if self.x != None and self.y != None:
+            x,y = self.coord2pix(self.x,self.y)
+            pose = [x, y]
+            self.paintPoint(pose, 220, self.map1)
+        
+    
+    def paintPoint(self, point, color, img):
+        img[point[1]][point[0]] = color
+        img[point[1]-1][point[0]] = color
+        img[point[1]+1][point[0]] = color
+        img[point[1]][point[0]-1] = color
+        img[point[1]][point[0]+1] = color
+        img[point[1]-1][point[0]-1] = color
+        img[point[1]-1][point[0]+1] = color
+        img[point[1]+1][point[0]+1] = color
+        img[point[1]+1][point[0]-1] = color
+    
     def showMaps(self, n=2): 
         if n == 0:                                                         
             cv2.imshow("MAP ", self.map) 
@@ -295,7 +319,7 @@ class MyAlgorithm4(threading.Thread):
         dif = 15 #15px
         if cell[1] >= self.MIN_MAP:
             n0 = [cell[0], cell[1] - self.VACUUM_PX_HALF] #center
-            n1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] - dif] #left        
+            n1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] - dif] #left       
             n2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] - dif] #right
             northCell = [n0, n1, n2]
         else:
@@ -398,17 +422,17 @@ class MyAlgorithm4(threading.Thread):
              
              
     def saveReturnPoint(self, p):
-        x = 0
+        saved = False
         for i in range(len(self.returnPoints)): 
             if (self.returnPoints[i][0] == p[0]) and (self.returnPoints[i][1] == p[1]):
-                x = 1
-        if x == 0:
+                saved = True
+        if saved == False:
+            # This point wasn't saved before
             self.returnPoints.append(p)
-            #print '                               Save return point', p
+            print '                               Save return point', p
             
                   
     def checkReturnPoints(self):
-        #print '                               Return points', self.returnPoints
         cont = 0
         index = []
         for i in range(len(self.returnPoints)): 
@@ -426,15 +450,16 @@ class MyAlgorithm4(threading.Thread):
                 cont += 1
             if wCell[0] == 0 and wCell[1] == 0:
                 cont += 1
+            
             if cont == 0:
-                # There are no free neighbors
+                # There are no free neighbors, save the index
                 index.append(i)
-            cont = 0                        
+            cont = 0
+                            
         for i in index:
-            #print '                               Remove: ', self.returnPoints[i] 
+            print '                               Remove: ', self.returnPoints[i] 
             self.returnPoints.pop(i)
-            
-            
+                 
              
     def euclideanDist(self, p1, p2):
         # p1 = [x1, y1]
@@ -478,27 +503,24 @@ class MyAlgorithm4(threading.Thread):
     ######   DRIVING FUNCTIONS   ######     
            
     def goNextCell(self):
-        print '\n...Going to the next cell...\n'
         self.x = round(self.pose3d.getX(),1)
         self.y = round(self.pose3d.getY(),1)
         self.yaw = self.pose3d.getYaw()
-        xCell, yCell = self.pix2coord(self.nextCell[0], self.nextCell[1])
-        xCell = round(xCell,1)
-        yCell = round(yCell,1)
-        print 'MY POSE:   POSE NEXT CELL:'
-        print '  x:', self.x, '    xcell:', xCell
-        print '  y:', self.y, '    ycell:', yCell
         poseVacuum = [self.x, self.y]
-        poseCell = [xCell, yCell]
-        desviation = self.calculateDesv(poseVacuum, poseCell)
+        desviation = self.calculateDesv(poseVacuum, self.nextCell)
         self.controlDrive(desviation)
          
             
     def calculateDesv(self, poseVacuum, cell):
         # poseVacuum = [x1, y1] coord
-        # cell = [x2, y2] coord
+        # cell = [x2, y2] pix
+        xc, yc = self.pix2coord(cell[0], cell[1])
+        cell = [round(xc,1), round(yc,1)]
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
+        print '\nMY POSE:   NEXT CELL:'
+        print '  x:', self.x, '    xc:', cell[0]
+        print '  y:', self.y, '    yc:', cell[1]
         print '\n      DESV:', desv
         return desv
 
@@ -517,7 +539,8 @@ class MyAlgorithm4(threading.Thread):
     
     def controlDrive(self, desv):
         w1 = 0.1
-        w2 = 0.1
+        w2 = 0.12
+
         if desv > 0: #LEFT
             self.controlDesv(desv, w1, w2)
         else: #RIGHT
@@ -526,23 +549,23 @@ class MyAlgorithm4(threading.Thread):
        
     def controlDesv(self, desv, w1, w2): 
         desv = abs(desv) 
-        th1 = 2
-        th2 = 10 
+        th1 = 1.5
+        th2 = 12 
         v1 = 0.1
-        v2 = 0.1
+        v2 = 0.12
    
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(w2)
-            #print 'Turn ...', w2
+            #print '...Turn ...', w2
         elif desv < th2 and desv >= th1:
             self.motors.sendV(v1)
             self.motors.sendW(w1)
-            #print 'Go and turn ...', w1
+            #print '...Go and turn ...', w1
         else:
             self.motors.sendV(v2)
             self.motors.sendW(0)
-            #print 'Go straight...' 
+            #print '...Go straight...' 
                         
                              
     def checkArriveCell(self, cell):
@@ -561,6 +584,8 @@ class MyAlgorithm4(threading.Thread):
             arrive = True
         else:
             arrive = False
+        print '            xdif', xdif
+        print '            ydif', ydif
         return arrive
     
     
@@ -579,7 +604,9 @@ class MyAlgorithm4(threading.Thread):
                 cell = self.checkCell(n)
                 if cell == 2: #Virtual obstacle
                     myCells.append(n)
-                       
+                    
+        print ('MY CELLS:', myCells) 
+        print ('RETURN POINT: ', self.returnPoint)        
         # Check the closest cell to the new cell
         if self.nextCell != self.returnPoint:
             self.nextCell = self.checkMinDist(myCells, self.returnPoint)
@@ -588,6 +615,7 @@ class MyAlgorithm4(threading.Thread):
         if arrive == False:
             self.goNextCell()  
         else:
+            print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
             self.currentCell = self.nextCell     
               
               
@@ -597,5 +625,5 @@ class MyAlgorithm4(threading.Thread):
                
         self.sweep()
         self.paintMap()
-        self.showMaps()
+        self.showMaps(1)
         
