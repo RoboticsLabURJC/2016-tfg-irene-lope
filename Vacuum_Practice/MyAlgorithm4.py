@@ -130,11 +130,10 @@ class MyAlgorithm4(threading.Thread):
             #print '        GOING TO RETURN POINT:' , self.goingReturnPoint
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
-                    print ('CRITICAL POINT')
+                    print ('\n   !!! CRITICAL POINT !!! \n')
                     if len(self.returnPoints) > 0:
-                        print 'NEW ZIGZAG'
                         self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
-                        print '   RET POINT:', self.returnPoint
+                        print '   RETURN POINT:', self.returnPoint
                         self.goingReturnPoint = True
                         self.stopVacuum()
                     else:
@@ -144,6 +143,7 @@ class MyAlgorithm4(threading.Thread):
             else:
                 arrive = self.checkArriveCell(self.returnPoint)
                 if arrive == False:
+                    print '...Going to a return cell...'
                     self.goToReturnPoint() 
                 else:
                     self.goingReturnPoint = False
@@ -286,11 +286,14 @@ class MyAlgorithm4(threading.Thread):
         if self.nextCell != []:
             self.paintPoint(self.nextCell, 10, self.map1)
         
+        if self.returnPoint != []:
+            self.paintPoint(self.returnPoint, 100, self.map1)
+        
         if self.x != None and self.y != None:
             x,y = self.coord2pix(self.x,self.y)
             pose = [x, y]
             self.paintPoint(pose, 220, self.map1)
-        
+
     
     def paintPoint(self, point, color, img):
         img[point[1]][point[0]] = color
@@ -302,6 +305,7 @@ class MyAlgorithm4(threading.Thread):
         img[point[1]-1][point[0]+1] = color
         img[point[1]+1][point[0]+1] = color
         img[point[1]+1][point[0]-1] = color
+        
     
     def showMaps(self, n=2): 
         if n == 0:                                                         
@@ -569,7 +573,7 @@ class MyAlgorithm4(threading.Thread):
                         
                              
     def checkArriveCell(self, cell):
-        distMax = 0.055 #5 cm
+        distMax = 0.05 #5 cm
         distMin = 0
         x = False
         y = False
@@ -593,31 +597,38 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendV(0)
         self.motors.sendW(0)
         
-        
+    
     def goToReturnPoint(self):
+        neighbors = self.calculateNeigh(self.currentCell)    
         myCells = []
-        neighbors = self.calculateNeigh(self.currentCell)
+        
+        north = neighbors[0]
+        east = neighbors[1]
+        west = neighbors[2]
+        south = neighbors[3]
+        
+        print '\nNEIGHBORS RETURN:'
+        print '    north:', north
+        print '    east:', east
+        print '    west:', west
+        print '    south:', south
+        
         for n in neighbors:
-            if n == self.returnPoint:
-                self.nextCell = self.returnPoint     
-            elif self.nextCell != self.returnPoint:
-                cell = self.checkCell(n)
-                if cell == 2: #Virtual obstacle
-                    myCells.append(n)
-                    
-        print ('MY CELLS:', myCells) 
-        print ('RETURN POINT: ', self.returnPoint)        
-        # Check the closest cell to the new cell
-        if self.nextCell != self.returnPoint:
-            self.nextCell = self.checkMinDist(myCells, self.returnPoint)
+            n1 = self.checkCell(n[1])
+            n2 = self.checkCell(n[2])
+            if n1 == 2 and n2 == 2: #Virtual Obstacle
+                myCells.append(n[0])
+    
+        # Check the closest cell to the return point
+        self.nextCell = self.checkMinDist(myCells, self.returnPoint)
         
         arrive = self.checkArriveCell(self.nextCell)
         if arrive == False:
             self.goNextCell()  
         else:
             print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
-            self.currentCell = self.nextCell     
-              
+            self.currentCell = self.nextCell
+            
               
     def execute(self):
 
