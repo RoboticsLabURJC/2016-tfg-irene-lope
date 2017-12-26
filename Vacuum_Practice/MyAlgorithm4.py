@@ -33,7 +33,7 @@ class MyAlgorithm4(threading.Thread):
         self.map1 = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map1 = cv2.resize(self.map1, (500, 500))
         
-        self.SCALE = 50.0 #50 px = 1 m
+        self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 20  
         self.VACUUM_PX_HALF = 10 
         self.VACUUM_SIZE = 0.34
@@ -47,7 +47,6 @@ class MyAlgorithm4(threading.Thread):
         self.xPix = None
         self.yPix = None
         self.minDist = None
-        self.direction =None
         
         self.goSouth = False
         self.goingReturnPoint = False
@@ -201,27 +200,21 @@ class MyAlgorithm4(threading.Thread):
         if self.goSouth == False:
             if nCell[0] == 0 and nCell[1] == 0: #north
                 self.nextCell = north[0]
-                self.direction = 'north'
             else:
                 if sCell[0] == 0 and sCell[1] == 0: #south
                     self.nextCell = south[0]
                     self.goSouth = True 
-                    self.direction = 'south'
                 elif eCell[0] == 0 and eCell[1] == 0: #east
                     self.nextCell = east[0]
                     self.goSouth = True 
-                    self.direction = 'east'
                 elif wCell[0] == 0 and wCell[1] == 0: #west
                     self.nextCell = west[0]
-                    self.goSouth = True 
-                    self.direction = 'west'                                         
+                    self.goSouth = True                                          
         else:
             if sCell[0] == 0 and sCell[1] == 0: #south
-                self.nextCell = south[0]
-                self.direction = 'south'      
+                self.nextCell = south[0]      
             else:
                 self.goSouth = False
-        #print '-> -> -> Go to', self.direction
                     
                     
                     
@@ -241,8 +234,8 @@ class MyAlgorithm4(threading.Thread):
         RTVacuum = self.RTVacuum()
         origPoses = np.matrix([[coordX], [coordY], [1], [1]])
         finalPoses = RTVacuum * origPoses * self.SCALE
-        xPix = int(finalPoses.flat[0])
-        yPix = int(finalPoses.flat[1])
+        xPix = finalPoses.flat[0]
+        yPix = finalPoses.flat[1]
         return xPix, yPix
         
     
@@ -258,6 +251,7 @@ class MyAlgorithm4(threading.Thread):
     
     def paintCell(self, cell, color, img):
         # cell = [x,y]
+        cell = [int(cell[0]), int(cell[1])]
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 img[i][j] = color             
@@ -296,6 +290,7 @@ class MyAlgorithm4(threading.Thread):
 
     
     def paintPoint(self, point, color, img):
+        point = [int(point[0]),int(point[1])]
         img[point[1]][point[0]] = color
         img[point[1]-1][point[0]] = color
         img[point[1]+1][point[0]] = color
@@ -363,6 +358,7 @@ class MyAlgorithm4(threading.Thread):
         virtualObst = 0
         c = None
         if cell[0] != None and cell[1] != None:
+            cell = [int(cell[0]), int(cell[1])]
             for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
                 for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
                     if self.map[i][j] == 0:#black
@@ -507,8 +503,8 @@ class MyAlgorithm4(threading.Thread):
     ######   DRIVING FUNCTIONS   ######     
            
     def goNextCell(self):
-        self.x = round(self.pose3d.getX(),1)
-        self.y = round(self.pose3d.getY(),1)
+        self.x = self.pose3d.getX()
+        self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
         poseVacuum = [self.x, self.y]
         desviation = self.calculateDesv(poseVacuum, self.nextCell)
@@ -519,7 +515,7 @@ class MyAlgorithm4(threading.Thread):
         # poseVacuum = [x1, y1] coord
         # cell = [x2, y2] pix
         xc, yc = self.pix2coord(cell[0], cell[1])
-        cell = [round(xc,1), round(yc,1)]
+        cell = [xc, yc]
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
         print '\nMY POSE:   NEXT CELL:'
@@ -637,4 +633,8 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(1)
+        
+        
+        
+        
         
