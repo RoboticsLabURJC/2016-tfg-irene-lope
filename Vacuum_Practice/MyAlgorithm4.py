@@ -626,12 +626,37 @@ class MyAlgorithm4(threading.Thread):
             print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
             self.currentCell = self.nextCell
             
+            
+    def ecLine(self, A, B):
+        # P = A + s(B - A)
+        s = self.step(A,B)
+        xa = A[0]
+        ya = A[1]
+        xb = B[0]
+        yb = B[1]
+        xp = xa + s*(xb - xa)
+        yp = ya + s*(yb - ya)
+        return [xp, yp]
+        
+        
+    def step(self, A, B):
+        distMax = self.euclideanDist(A, B)
+        step = 0.05 / distMax # 5cm
+        return step
+    
                
     def execute(self):
 
         # TODO 
-               
+        '''       
         self.sweep()
         self.paintMap()
         self.showMaps(1)
+        '''
         
+        A = [0,0]
+        B = [3,3]
+        P1 = self.ecLine(A,B)
+        print '\nP1:', P1
+        dist = self.euclideanDist(A, P1)
+        print 'DIST:' , dist
