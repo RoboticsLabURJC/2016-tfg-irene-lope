@@ -517,8 +517,8 @@ class MyAlgorithm4(threading.Thread):
          
             
     def calculateDesv(self, poseVacuum, cell):
-        # poseVacuum = [x1, y1] gazebo
-        # cell = [x2, y2] gazebo
+        # poseVacuum = [x1, y1] coord gazebo
+        # cell = [x2, y2] coord gazebo
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
         print '\nMY POSE:   NEXT CELL:'
@@ -560,15 +560,12 @@ class MyAlgorithm4(threading.Thread):
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(w2)
-            #print '...Turn ...', w2
         elif desv < th2 and desv >= th1:
             self.motors.sendV(v1)
             self.motors.sendW(w1)
-            #print '...Go and turn ...', w1
         else:
             self.motors.sendV(v2)
             self.motors.sendW(0)
-            #print '...Go straight...' 
                         
                              
     def checkArriveCell(self, cell):
@@ -645,9 +642,9 @@ class MyAlgorithm4(threading.Thread):
       
     
     def visibility(self):
-        A = [100,100]
+        A = [100,200]
         B = [200,200]
-        self.paintPoint(A, 50, self.mapE)
+        self.paintPoint(A, 70, self.mapE)
         self.paintPoint(B, 200, self.mapE)
         A = self.pix2coord(A[0], A[1])
         B = self.pix2coord(B[0], B[1])
@@ -660,15 +657,30 @@ class MyAlgorithm4(threading.Thread):
             else:
                 P = self.pointOfLine(self.nextPoint, B)
                 pPix = self.coord2pix(P[0],P[1])
+                obst = self.isObstacle(pPix)
                 self.paintPoint(pPix, 120, self.mapE)
                 cv2.imshow('MapE', self.mapE)
-                dist = self.euclideanDist(P, B)
-                if dist < 0.05: # 5 cm
-                    self.nextPoint = B
+                if obst == True:
+                    self.endLine = True
+                    print 'END LINE'
                 else:
-                    self.nextPoint = P
+                    dist = self.euclideanDist(P, B)
+                    if dist < 0.05: # 5 cm
+                        self.nextPoint = B
+                    else:
+                        self.nextPoint = P
+        
            
-           
+    def isObstacle(self, P):
+        # P [xp, yp] pix map
+        if self.mapE[P[1]][P[0]] == 0:
+            # Obstacle
+            obst = True
+        else:
+            obst = False
+        return obst
+        
+              
     def execute(self):
 
         # TODO 
