@@ -32,7 +32,7 @@ class MyAlgorithm4(threading.Thread):
         self.map = cv2.resize(self.map, (500, 500))
         self.map1 = cv2.resize(self.map, (500, 500))
         kernel = np.ones((10,10), np.uint8)
-        self.mapD = cv2.erode(self.map, kernel, iterations=1)
+        self.mapE = cv2.erode(self.map, kernel, iterations=1)
         
         self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 20  
@@ -51,12 +51,14 @@ class MyAlgorithm4(threading.Thread):
         
         self.goSouth = False
         self.goingReturnPoint = False
+        self.endLine = False
 
         self.currentCell = []
         self.nextCell = []
         self.returnPoints = []
         self.path = []
         self.returnPoint = []
+        self.nextPoint = []
         
  
     def parse_laser_data(self,laser_data):
@@ -627,15 +629,12 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = self.nextCell
             
             
-    def ecLine(self, A, B):
+    def pointOfLine(self, A, B):
+        # A and B : coord gazebo
         # P = A + s(B - A)
         s = self.step(A,B)
-        xa = A[0]
-        ya = A[1]
-        xb = B[0]
-        yb = B[1]
-        xp = xa + s*(xb - xa)
-        yp = ya + s*(yb - ya)
+        xp = A[0] + s*(B[0] - A[0])
+        yp = A[1] + s*(B[1] - A[1]) 
         return [xp, yp]
         
         
@@ -643,8 +642,33 @@ class MyAlgorithm4(threading.Thread):
         distMax = self.euclideanDist(A, B)
         step = 0.05 / distMax # 5cm
         return step
+      
     
-               
+    def visibility(self):
+        A = [100,100]
+        B = [200,200]
+        self.paintPoint(A, 50, self.mapE)
+        self.paintPoint(B, 200, self.mapE)
+        A = self.pix2coord(A[0], A[1])
+        B = self.pix2coord(B[0], B[1])
+        if self.nextPoint == []:
+            self.nextPoint = A
+        if self.endLine == False:
+            if self.nextPoint == B:
+                self.endLine = True
+                print 'END LINE'
+            else:
+                P = self.pointOfLine(self.nextPoint, B)
+                pPix = self.coord2pix(P[0],P[1])
+                self.paintPoint(pPix, 120, self.mapE)
+                cv2.imshow('MapE', self.mapE)
+                dist = self.euclideanDist(P, B)
+                if dist < 0.05: # 5 cm
+                    self.nextPoint = B
+                else:
+                    self.nextPoint = P
+           
+           
     def execute(self):
 
         # TODO 
@@ -653,10 +677,5 @@ class MyAlgorithm4(threading.Thread):
         self.paintMap()
         self.showMaps(1)
         '''
+        self.visibility()
         
-        A = [0,0]
-        B = [3,3]
-        P1 = self.ecLine(A,B)
-        print '\nP1:', P1
-        dist = self.euclideanDist(A, P1)
-        print 'DIST:' , dist
