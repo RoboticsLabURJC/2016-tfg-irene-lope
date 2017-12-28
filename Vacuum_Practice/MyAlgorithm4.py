@@ -641,8 +641,9 @@ class MyAlgorithm4(threading.Thread):
         return step
       
     
-    def visibility(self):
-        A = [100,200]
+    def visibility(self, A=[], B=[]):
+        visibility = True
+        A = [50,150]
         B = [200,200]
         self.paintPoint(A, 70, self.mapE)
         self.paintPoint(B, 200, self.mapE)
@@ -662,6 +663,7 @@ class MyAlgorithm4(threading.Thread):
                 cv2.imshow('MapE', self.mapE)
                 if obst == True:
                     self.endLine = True
+                    visibility = False
                     print 'END LINE'
                 else:
                     dist = self.euclideanDist(P, B)
@@ -669,10 +671,11 @@ class MyAlgorithm4(threading.Thread):
                         self.nextPoint = B
                     else:
                         self.nextPoint = P
-        
+        return visibility
            
     def isObstacle(self, P):
         # P [xp, yp] pix map
+        P = [int(P[0]), int(P[1])]
         if self.mapE[P[1]][P[0]] == 0:
             # Obstacle
             obst = True
