@@ -30,8 +30,9 @@ class MyAlgorithm4(threading.Thread):
         
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
-        self.map1 = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
-        self.map1 = cv2.resize(self.map1, (500, 500))
+        self.map1 = cv2.resize(self.map, (500, 500))
+        kernel = np.ones((10,10), np.uint8)
+        self.mapD = cv2.erode(self.map, kernel, iterations=1)
         
         self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 20  
@@ -507,15 +508,15 @@ class MyAlgorithm4(threading.Thread):
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
         poseVacuum = [self.x, self.y]
-        desviation = self.calculateDesv(poseVacuum, self.nextCell)
+        xc, yc = self.pix2coord(self.nextCell[0], self.nextCell[1])
+        nextCell = [xc,yc]
+        desviation = self.calculateDesv(poseVacuum, nextCell)
         self.controlDrive(desviation)
          
             
     def calculateDesv(self, poseVacuum, cell):
-        # poseVacuum = [x1, y1] coord
-        # cell = [x2, y2] pix
-        xc, yc = self.pix2coord(cell[0], cell[1])
-        cell = [xc, yc]
+        # poseVacuum = [x1, y1] gazebo
+        # cell = [x2, y2] gazebo
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
         print '\nMY POSE:   NEXT CELL:'
@@ -538,8 +539,8 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        w1 = 0.1
-        w2 = 0.12
+        w1 = 0.07
+        w2 = 0.1
 
         if desv > 0: #LEFT
             self.controlDesv(desv, w1, w2)
@@ -549,10 +550,10 @@ class MyAlgorithm4(threading.Thread):
        
     def controlDesv(self, desv, w1, w2): 
         desv = abs(desv) 
-        th1 = 1.5
-        th2 = 12 
+        th1 = 5
+        th2 = 20
         v1 = 0.1
-        v2 = 0.12
+        v2 = 0.1
    
         if desv >= th2:
             self.motors.sendV(0)
@@ -625,7 +626,7 @@ class MyAlgorithm4(threading.Thread):
             print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
             self.currentCell = self.nextCell
             
-              
+               
     def execute(self):
 
         # TODO 
@@ -633,8 +634,4 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(1)
-        
-        
-        
-        
         
