@@ -174,7 +174,6 @@ class MyAlgorithm4(threading.Thread):
                 self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
                 print '    NEW CURRENT CELL', self.currentCell
                 self.stopVacuum()
-                #time.sleep(0.5)
         
             
     def zigzag(self, cells, neighbors):
@@ -307,14 +306,17 @@ class MyAlgorithm4(threading.Thread):
         img[point[1]+1][point[0]-1] = color
         
     
-    def showMaps(self, n=2): 
+    def showMaps(self, n=3): 
         if n == 0:                                                         
             cv2.imshow("MAP ", self.map) 
         elif n == 1:
-            cv2.imshow("MAP1 ", self.map1)  
+            cv2.imshow("MAP1 ", self.map1)
+        elif n == 2:
+            cv2.imshow('MapECopy', self.mapECopy)  
         else:  
             cv2.imshow("MAP ", self.map) 
             cv2.imshow("MAP1 ", self.map1)  
+            cv2.imshow('MapECopy', self.mapECopy)
             
                       
     def calculateNeigh(self, cell):
@@ -685,7 +687,6 @@ class MyAlgorithm4(threading.Thread):
                 pPix = self.coord2pix(P[0],P[1])
                 obst = self.isObstacle(pPix)
                 self.paintPoint(pPix, 120, self.mapECopy)
-                cv2.imshow('MapECopy', self.mapECopy)
                 if obst == True:
                     self.endLine = True
                     visibility = False
@@ -717,5 +718,6 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(1)
+        self.showMaps(2)
 
         
