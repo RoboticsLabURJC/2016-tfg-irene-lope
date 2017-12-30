@@ -555,7 +555,7 @@ class MyAlgorithm4(threading.Thread):
         desv = abs(desv) 
         th1 = 3
         th2 = 10
-        v1 = 0.1
+        v1 = 0.07
         v2 = 0.1
         if desv >= th2:
             self.motors.sendV(0)
