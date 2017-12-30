@@ -33,6 +33,7 @@ class MyAlgorithm4(threading.Thread):
         self.map1 = cv2.resize(self.map, (500, 500))
         kernel = np.ones((10,10), np.uint8)
         self.mapE = cv2.erode(self.map, kernel, iterations=1)
+        self.mapECopy = self.mapE
         
         self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 20  
@@ -52,6 +53,7 @@ class MyAlgorithm4(threading.Thread):
         self.goSouth = False
         self.goingReturnPoint = False
         self.endLine = False
+        self.endSearch = False
 
         self.currentCell = []
         self.nextCell = []
@@ -509,9 +511,9 @@ class MyAlgorithm4(threading.Thread):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
-        poseVacuum = [self.x, self.y]
+        poseVacuum = [round(self.x,2), round(self.y,2)]
         xc, yc = self.pix2coord(self.nextCell[0], self.nextCell[1])
-        nextCell = [xc,yc]
+        nextCell = [round(xc,2),round(yc,2)]
         desviation = self.calculateDesv(poseVacuum, nextCell)
         self.controlDrive(desviation)
          
@@ -522,8 +524,8 @@ class MyAlgorithm4(threading.Thread):
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
         print '\nMY POSE:   NEXT CELL:'
-        print '  x:', self.x, '    xc:', cell[0]
-        print '  y:', self.y, '    yc:', cell[1]
+        print '  x:', poseVacuum[0], '    xc:', cell[0]
+        print '  y:', poseVacuum[1], '    yc:', cell[1]
         print '\n      DESV:', desv
         return desv
 
@@ -541,9 +543,8 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        w1 = 0.07
+        w1 = 0.1
         w2 = 0.1
-
         if desv > 0: #LEFT
             self.controlDesv(desv, w1, w2)
         else: #RIGHT
@@ -552,11 +553,10 @@ class MyAlgorithm4(threading.Thread):
        
     def controlDesv(self, desv, w1, w2): 
         desv = abs(desv) 
-        th1 = 5
-        th2 = 20
+        th1 = 3
+        th2 = 10
         v1 = 0.1
         v2 = 0.1
-   
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(w2)
@@ -594,6 +594,7 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendW(0)
         
     
+    '''
     def goToReturnPoint(self):
         neighbors = self.calculateNeigh(self.currentCell)    
         myCells = []
@@ -624,6 +625,32 @@ class MyAlgorithm4(threading.Thread):
         else:
             print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
             self.currentCell = self.nextCell
+            self.savePath(self.currentCell)
+            
+    '''
+    
+    def goToReturnPoint(self):        
+        
+        if self.endSearch == False:    
+            for i in range(len(self.path)-1, -1, -1):
+                cell = self.path[i]
+                visCellRet = self.visibility(cell, self.returnPoint)
+                visCellVac = self.visibility(cell, self.currentCell)
+                if visCellRet == True and visCellVac == True:
+                    self.nextCell = cell
+                    self.endSearch = True
+                elif visCellVac == True:
+                    self.nextCell = cell
+        
+        arrive = self.checkArriveCell(self.nextCell)
+        if arrive == False:
+            self.goNextCell()  
+        else:
+            print ('    VACUUM ARRIVED TO THE NEXT CELL')
+            self.currentCell = self.nextCell
+            self.savePath(self.currentCell)
+            self.endSearch = False
+            
             
             
     def pointOfLine(self, A, B):
@@ -641,12 +668,10 @@ class MyAlgorithm4(threading.Thread):
         return step
       
     
-    def visibility(self, A=[], B=[]):
+    def visibility(self, A, B):
         visibility = True
-        A = [50,150]
-        B = [200,200]
-        self.paintPoint(A, 70, self.mapE)
-        self.paintPoint(B, 200, self.mapE)
+        self.paintPoint(A, 70, self.mapECopy)
+        self.paintPoint(B, 200, self.mapECopy)
         A = self.pix2coord(A[0], A[1])
         B = self.pix2coord(B[0], B[1])
         if self.nextPoint == []:
@@ -654,17 +679,17 @@ class MyAlgorithm4(threading.Thread):
         if self.endLine == False:
             if self.nextPoint == B:
                 self.endLine = True
-                print 'END LINE'
+                print 'LINE END'
             else:
                 P = self.pointOfLine(self.nextPoint, B)
                 pPix = self.coord2pix(P[0],P[1])
                 obst = self.isObstacle(pPix)
-                self.paintPoint(pPix, 120, self.mapE)
-                cv2.imshow('MapE', self.mapE)
+                self.paintPoint(pPix, 120, self.mapECopy)
+                cv2.imshow('MapECopy', self.mapECopy)
                 if obst == True:
                     self.endLine = True
                     visibility = False
-                    print 'END LINE'
+                    print 'LINE END'
                 else:
                     dist = self.euclideanDist(P, B)
                     if dist < 0.05: # 5 cm
@@ -672,6 +697,7 @@ class MyAlgorithm4(threading.Thread):
                     else:
                         self.nextPoint = P
         return visibility
+           
            
     def isObstacle(self, P):
         # P [xp, yp] pix map
@@ -687,10 +713,9 @@ class MyAlgorithm4(threading.Thread):
     def execute(self):
 
         # TODO 
-        '''       
+               
         self.sweep()
         self.paintMap()
         self.showMaps(1)
-        '''
-        self.visibility()
+
         
