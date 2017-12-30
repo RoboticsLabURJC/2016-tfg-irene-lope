@@ -511,9 +511,9 @@ class MyAlgorithm4(threading.Thread):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
-        poseVacuum = [round(self.x,2), round(self.y,2)]
+        poseVacuum = [round(self.x,1), round(self.y,1)]
         xc, yc = self.pix2coord(self.nextCell[0], self.nextCell[1])
-        nextCell = [round(xc,2),round(yc,2)]
+        nextCell = [round(xc,1),round(yc,1)]
         desviation = self.calculateDesv(poseVacuum, nextCell)
         self.controlDrive(desviation)
          
@@ -554,8 +554,8 @@ class MyAlgorithm4(threading.Thread):
     def controlDesv(self, desv, w1, w2): 
         desv = abs(desv) 
         th1 = 3
-        th2 = 10
-        v1 = 0.07
+        th2 = 12
+        v1 = 0.08
         v2 = 0.1
         if desv >= th2:
             self.motors.sendV(0)
