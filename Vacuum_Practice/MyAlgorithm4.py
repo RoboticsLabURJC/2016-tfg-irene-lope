@@ -54,6 +54,8 @@ class MyAlgorithm4(threading.Thread):
         self.goingReturnPoint = False
         self.endLine = False
         self.endSearch = False
+        self.endLine1 = False
+        self.endLine2 = False
 
         self.currentCell = []
         self.nextCell = []
@@ -596,43 +598,7 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendW(0)
         
     
-    '''
-    def goToReturnPoint(self):
-        neighbors = self.calculateNeigh(self.currentCell)    
-        myCells = []
-        
-        north = neighbors[0]
-        east = neighbors[1]
-        west = neighbors[2]
-        south = neighbors[3]
-        
-        print '\nNEIGHBORS RETURN:'
-        print '    north:', north
-        print '    east:', east
-        print '    west:', west
-        print '    south:', south
-        
-        for n in neighbors:
-            n1 = self.checkCell(n[1])
-            n2 = self.checkCell(n[2])
-            if n1 == 2 and n2 == 2: #Virtual Obstacle
-                myCells.append(n[0])
-    
-        # Check the closest cell to the return point
-        self.nextCell = self.checkMinDist(myCells, self.returnPoint)
-        
-        arrive = self.checkArriveCell(self.nextCell)
-        if arrive == False:
-            self.goNextCell()  
-        else:
-            print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
-            self.currentCell = self.nextCell
-            self.savePath(self.currentCell)
-            
-    '''
-    
     def goToReturnPoint(self):        
-        
         if self.endSearch == False:    
             for i in range(len(self.path)-1, -1, -1):
                 cell = self.path[i]
@@ -652,8 +618,7 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = self.nextCell
             self.savePath(self.currentCell)
             self.endSearch = False
-            
-            
+                    
             
     def pointOfLine(self, A, B):
         # A and B : coord gazebo
@@ -670,36 +635,48 @@ class MyAlgorithm4(threading.Thread):
         return step
       
     
+    def numSteps(self, A, B):
+        distMax = self.euclideanDist(A, B)
+        numSteps =  distMax / 0.05  # 5cm
+        d = numSteps - int(numSteps)
+        if d > 0:
+            numSteps = numSteps + 1
+        return int(numSteps)
+    
+    
     def visibility(self, A, B):
         visibility = True
         self.paintPoint(A, 70, self.mapECopy)
         self.paintPoint(B, 200, self.mapECopy)
         A = self.pix2coord(A[0], A[1])
         B = self.pix2coord(B[0], B[1])
+        numSteps = self.numSteps(A,B)
         if self.nextPoint == []:
             self.nextPoint = A
-        if self.endLine == False:
-            if self.nextPoint == B:
-                self.endLine = True
-                print 'LINE END'
-            else:
-                P = self.pointOfLine(self.nextPoint, B)
-                pPix = self.coord2pix(P[0],P[1])
-                obst = self.isObstacle(pPix)
-                self.paintPoint(pPix, 120, self.mapECopy)
-                if obst == True:
+        for i in numSteps:
+            if self.endLine == False:
+                if self.nextPoint == B:
                     self.endLine = True
-                    visibility = False
-                    print 'LINE END'
+                    print 'LINE ENDS'
                 else:
-                    dist = self.euclideanDist(P, B)
-                    if dist < 0.05: # 5 cm
-                        self.nextPoint = B
+                    P = self.pointOfLine(self.nextPoint, B)
+                    pPix = self.coord2pix(P[0],P[1])
+                    obst = self.isObstacle(pPix)
+                    self.paintPoint(pPix, 120, self.mapECopy)
+                    if obst == True:
+                        self.endLine = True
+                        visibility = False
+                        print 'LINE ENDS'
+                        break
                     else:
-                        self.nextPoint = P
+                        dist = self.euclideanDist(P, B)
+                        if dist < 0.05: # 5 cm
+                            self.nextPoint = B
+                        else:
+                            self.nextPoint = P
         return visibility
-           
-           
+    
+    
     def isObstacle(self, P):
         # P [xp, yp] pix map
         P = [int(P[0]), int(P[1])]
@@ -710,14 +687,31 @@ class MyAlgorithm4(threading.Thread):
             obst = False
         return obst
         
-              
+    
+    def pruebas(self):
+        '''
+        P1 = [100, 200]
+        P2 = [400, 150]
+        P3 = [75, 350]
+        
+        vis2 = self.visibility(P1, P3)  
+        '''
+        A = [50, 100]
+        B = [100, 100]
+        A = self.pix2coord(A[0], A[1])
+        B = self.pix2coord(B[0], B[1])
+        numSteps = self.numSteps(A,B)    
+        print '\nNumStepts\n', numSteps
+        for i in range(0, numSteps):
+            print i
+            
+            
     def execute(self):
 
         # TODO 
-               
-        self.sweep()
-        self.paintMap()
-        self.showMaps(1)
+        self.pruebas()      
+        #self.sweep()
+        #self.paintMap()
+        #self.showMaps(1)
         self.showMaps(2)
-
         
