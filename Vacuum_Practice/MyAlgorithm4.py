@@ -30,10 +30,10 @@ class MyAlgorithm4(threading.Thread):
         
         self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map = cv2.resize(self.map, (500, 500))
-        self.map1 = cv2.resize(self.map, (500, 500))
+        self.map1 = self.map.copy()
         kernel = np.ones((10,10), np.uint8)
         self.mapE = cv2.erode(self.map, kernel, iterations=1)
-        self.mapECopy = self.mapE
+        self.mapECopy = self.mapE.copy()
         
         self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 20  
@@ -42,6 +42,7 @@ class MyAlgorithm4(threading.Thread):
         self.VIRTUAL_OBST = 128
         self.MIN_MAP = 20
         self.MAX_MAP = 480
+        self.STEP = 0.15 # 15 cm 
 
         self.x = None
         self.y = None
@@ -52,17 +53,13 @@ class MyAlgorithm4(threading.Thread):
         
         self.goSouth = False
         self.goingReturnPoint = False
-        self.endLine = False
         self.endSearch = False
-        self.endLine1 = False
-        self.endLine2 = False
 
         self.currentCell = []
         self.nextCell = []
         self.returnPoints = []
         self.path = []
         self.returnPoint = []
-        self.nextPoint = []
         
  
     def parse_laser_data(self,laser_data):
@@ -123,6 +120,7 @@ class MyAlgorithm4(threading.Thread):
             # Is the first position
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
+            print self.x ,self.y 
             self.xPix, self.yPix = self.coord2pix(self.x, self.y)
             self.currentCell = [self.xPix, self.yPix]
             self.savePath(self.currentCell)
@@ -573,7 +571,7 @@ class MyAlgorithm4(threading.Thread):
                         
                              
     def checkArriveCell(self, cell):
-        distMax = 0.05 #5 cm
+        distMax = 0.08 #5 cm
         distMin = 0
         x = False
         y = False
@@ -598,7 +596,43 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendW(0)
         
     
+    '''
+    def goToReturnPoint(self):
+        neighbors = self.calculateNeigh(self.currentCell)    
+        myCells = []
+        
+        north = neighbors[0]
+        east = neighbors[1]
+        west = neighbors[2]
+        south = neighbors[3]
+        
+        print '\nNEIGHBORS RETURN:'
+        print '    north:', north
+        print '    east:', east
+        print '    west:', west
+        print '    south:', south
+        
+        for n in neighbors:
+            n1 = self.checkCell(n[1])
+            n2 = self.checkCell(n[2])
+            if n1 == 2 and n2 == 2: #Virtual Obstacle
+                myCells.append(n[0])
+    
+        # Check the closest cell to the return point
+        self.nextCell = self.checkMinDist(myCells, self.returnPoint)
+        
+        arrive = self.checkArriveCell(self.nextCell)
+        if arrive == False:
+            self.goNextCell()  
+        else:
+            print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
+            self.currentCell = self.nextCell
+            self.savePath(self.currentCell)
+            
+    '''
+    
     def goToReturnPoint(self):        
+        
         if self.endSearch == False:    
             for i in range(len(self.path)-1, -1, -1):
                 cell = self.path[i]
@@ -618,12 +652,13 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = self.nextCell
             self.savePath(self.currentCell)
             self.endSearch = False
-                    
+            
+            
             
     def pointOfLine(self, A, B):
         # A and B : coord gazebo
         # P = A + s(B - A)
-        s = self.step(A,B)
+        s = self.step(A, B)
         xp = A[0] + s*(B[0] - A[0])
         yp = A[1] + s*(B[1] - A[1]) 
         return [xp, yp]
@@ -631,52 +666,43 @@ class MyAlgorithm4(threading.Thread):
         
     def step(self, A, B):
         distMax = self.euclideanDist(A, B)
-        step = 0.05 / distMax # 5cm
+        step = self.STEP / distMax # 15cm
         return step
+        
       
-    
     def numSteps(self, A, B):
         distMax = self.euclideanDist(A, B)
-        numSteps =  distMax / 0.05  # 5cm
+        numSteps =  distMax / self.STEP         
         d = numSteps - int(numSteps)
         if d > 0:
             numSteps = numSteps + 1
         return int(numSteps)
-    
+
     
     def visibility(self, A, B):
         visibility = True
+        nextPoint = []
         self.paintPoint(A, 70, self.mapECopy)
         self.paintPoint(B, 200, self.mapECopy)
         A = self.pix2coord(A[0], A[1])
         B = self.pix2coord(B[0], B[1])
         numSteps = self.numSteps(A,B)
-        if self.nextPoint == []:
-            self.nextPoint = A
-        for i in numSteps:
-            if self.endLine == False:
-                if self.nextPoint == B:
-                    self.endLine = True
-                    print 'LINE ENDS'
-                else:
-                    P = self.pointOfLine(self.nextPoint, B)
-                    pPix = self.coord2pix(P[0],P[1])
-                    obst = self.isObstacle(pPix)
-                    self.paintPoint(pPix, 120, self.mapECopy)
-                    if obst == True:
-                        self.endLine = True
-                        visibility = False
-                        print 'LINE ENDS'
-                        break
-                    else:
-                        dist = self.euclideanDist(P, B)
-                        if dist < 0.05: # 5 cm
-                            self.nextPoint = B
-                        else:
-                            self.nextPoint = P
+        if nextPoint == []:
+            nextPoint = A
+        for i in range(0, numSteps):
+            P = self.pointOfLine(nextPoint, B)
+            pPix = self.coord2pix(P[0],P[1])
+            obst = self.isObstacle(pPix)
+            self.paintPoint(pPix, 120, self.mapECopy) 
+            if obst == True:
+                visibility = False
+                print 'LINE ENDS BREAK'
+                break
+            else:
+                nextPoint = P
         return visibility
-    
-    
+        
+        
     def isObstacle(self, P):
         # P [xp, yp] pix map
         P = [int(P[0]), int(P[1])]
@@ -687,31 +713,14 @@ class MyAlgorithm4(threading.Thread):
             obst = False
         return obst
         
-    
-    def pruebas(self):
-        '''
-        P1 = [100, 200]
-        P2 = [400, 150]
-        P3 = [75, 350]
-        
-        vis2 = self.visibility(P1, P3)  
-        '''
-        A = [50, 100]
-        B = [100, 100]
-        A = self.pix2coord(A[0], A[1])
-        B = self.pix2coord(B[0], B[1])
-        numSteps = self.numSteps(A,B)    
-        print '\nNumStepts\n', numSteps
-        for i in range(0, numSteps):
-            print i
-            
-            
+              
     def execute(self):
 
         # TODO 
-        self.pruebas()      
-        #self.sweep()
-        #self.paintMap()
-        #self.showMaps(1)
+               
+        self.sweep()
+        self.paintMap()
+        self.showMaps(1)
         self.showMaps(2)
-        
+
+
