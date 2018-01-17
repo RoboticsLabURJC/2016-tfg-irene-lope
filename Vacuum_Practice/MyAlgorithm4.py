@@ -134,7 +134,7 @@ class MyAlgorithm4(threading.Thread):
             #print '        GOING TO RETURN POINT:' , self.goingReturnPoint
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
-                    print ('\n   !!! CRITICAL POINT !!! \n')
+                    print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
                     if len(self.returnPoints) > 0:
                         self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
                         print '   RETURN POINT:', self.returnPoint
@@ -373,15 +373,13 @@ class MyAlgorithm4(threading.Thread):
                         obstacle = 1
                     elif self.map[i][j] == self.VIRTUAL_OBST:#grey
                         # There is a virtual obstacle
-                        virtualObst = 1   
-                                              
+                        virtualObst = 1                                                
             if obstacle == 1:
                 c = 1
             elif virtualObst == 1:
                 c = 2
             else:
-                c = 0 
-                          
+                c = 0                           
         return c
         
         
@@ -629,7 +627,7 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = self.nextCell
             self.savePath(self.currentCell)
             
-    '''
+   
     
     def goToReturnPoint(self):        
         
@@ -654,7 +652,25 @@ class MyAlgorithm4(threading.Thread):
             self.endSearch = False
             
             
-            
+    ''' 
+    
+       
+    def goToReturnPoint(self):
+        visPoseRet = self.visibility(self.returnPoint, self.currentCell)    
+        if visPoseRet == True:
+            self.nextCell = self.returnPoint
+        else:
+            for i in range(len(self.path)-1, -1, -1):
+                cell = self.path[i]
+                visCellRet = self.visibility(
+        arrive = self.checkArriveCell(self.nextCell)
+        if arrive == False:
+            self.goNextCell()  
+        else:
+            print ('    VACUUM ARRIVED TO THE NEXT CELL')
+            self.currentCell = self.nextCell
+        
+        
     def pointOfLine(self, A, B):
         # A and B : coord gazebo
         # P = A + s(B - A)
@@ -722,5 +738,4 @@ class MyAlgorithm4(threading.Thread):
         self.paintMap()
         self.showMaps(1)
         self.showMaps(2)
-
 
