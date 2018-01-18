@@ -153,11 +153,11 @@ class MyAlgorithm4(threading.Thread):
                 else:
                     self.goingReturnPoint = False
                     print '    VACUUM ARRIVED TO THE RETURN POINT'
+                    self.returnPath = []
                     self.currentCell = self.returnPoint
                     self.savePath(self.currentCell)
                     self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
                     print '    NEW CURRENT CELL', self.currentCell
-                    print '\n         RETURN PATH:\n', self.returnPath, '\n'
         
                 
     def driving(self, cells, neighbors):
