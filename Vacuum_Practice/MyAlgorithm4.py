@@ -559,7 +559,7 @@ class MyAlgorithm4(threading.Thread):
     def controlDesv(self, desv, w1, w2): 
         desv = abs(desv) 
         th1 = 3
-        th2 = 12
+        th2 = 10
         v1 = 0.08
         v2 = 0.1
         if desv >= th2:
