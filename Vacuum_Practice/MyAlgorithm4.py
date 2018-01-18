@@ -157,6 +157,7 @@ class MyAlgorithm4(threading.Thread):
                     self.savePath(self.currentCell)
                     self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
                     print '    NEW CURRENT CELL', self.currentCell
+                    print '\n         RETURN PATH:\n', self.returnPath, '\n'
         
                 
     def driving(self, cells, neighbors):
@@ -422,24 +423,25 @@ class MyAlgorithm4(threading.Thread):
         wCell = cells[2]
         sCell = cells[3]
         if nCell[0] == 0 and nCell[1] == 0:
-            self.saveReturnPoint(self.currentCell)
+            self.saveReturnPoint(self.currentCell, self.returnPoints)
         if eCell[0] == 0 and eCell[1] == 0:
-            self.saveReturnPoint(self.currentCell)
+            self.saveReturnPoint(self.currentCell, self.returnPoints)
         if wCell[0] == 0 and wCell[1] == 0:
-            self.saveReturnPoint(self.currentCell)
+            self.saveReturnPoint(self.currentCell, self.returnPoints)
         if sCell[0] == 0 and sCell[1] == 0:
-            self.saveReturnPoint(self.currentCell) 
+            self.saveReturnPoint(self.currentCell, self.returnPoints) 
              
              
-    def saveReturnPoint(self, p):
+    def saveReturnPoint(self, p, l):
+        # p: the point 
+        # l: the list where save the point
         saved = False
-        for i in range(len(self.returnPoints)): 
-            if (self.returnPoints[i][0] == p[0]) and (self.returnPoints[i][1] == p[1]):
+        for i in range(len(l)): 
+            if (l[i][0] == p[0]) and (l[i][1] == p[1]):
                 saved = True
         if saved == False:
             # This point wasn't saved before
-            self.returnPoints.append(p)
-            #print '                               Save return point', p
+            l.append(p)
             
                   
     def checkReturnPoints(self):
@@ -598,94 +600,42 @@ class MyAlgorithm4(threading.Thread):
         self.motors.sendV(0)
         self.motors.sendW(0)
         
-    
-    '''
-    def goToReturnPoint(self):
-        neighbors = self.calculateNeigh(self.currentCell)    
-        myCells = []
-        
-        north = neighbors[0]
-        east = neighbors[1]
-        west = neighbors[2]
-        south = neighbors[3]
-        
-        print '\nNEIGHBORS RETURN:'
-        print '    north:', north
-        print '    east:', east
-        print '    west:', west
-        print '    south:', south
-        
-        for n in neighbors:
-            n1 = self.checkCell(n[1])
-            n2 = self.checkCell(n[2])
-            if n1 == 2 and n2 == 2: #Virtual Obstacle
-                myCells.append(n[0])
-    
-        # Check the closest cell to the return point
-        self.nextCell = self.checkMinDist(myCells, self.returnPoint)
-        
-        arrive = self.checkArriveCell(self.nextCell)
-        if arrive == False:
-            self.goNextCell()  
-        else:
-            print ('    VACUUM ARRIVED TO THE NEXT NEIGHBOR')
-            self.currentCell = self.nextCell
-            self.savePath(self.currentCell)
-            
    
-    
-    def goToReturnPoint(self):        
-        
-        if self.endSearch == False:    
-            for i in range(len(self.path)-1, -1, -1):
-                cell = self.path[i]
-                visCellRet = self.visibility(cell, self.returnPoint)
-                visCellVac = self.visibility(cell, self.currentCell)
-                if visCellRet == True and visCellVac == True:
-                    self.nextCell = cell
-                    self.endSearch = True
-                elif visCellVac == True:
-                    self.nextCell = cell
-        
-        arrive = self.checkArriveCell(self.nextCell)
-        if arrive == False:
-            self.goNextCell()  
-        else:
-            print ('    VACUUM ARRIVED TO THE NEXT CELL')
-            self.currentCell = self.nextCell
-            self.savePath(self.currentCell)
-            self.endSearch = False
-            
-            
-    ''' 
-    
-       
     def goToReturnPoint(self):
-        self.returnPath.append(self.returnPoint)
-        visPoseRet = self.visibility(self.currentCell, self.returnPoint)    
+        self.saveReturnPoint(self.returnPoint, self.returnPath)
+        visPoseRet = self.visibility(self.currentCell, self.returnPoint) 
+        print 'VISIBILIDAD RETURN Y POSE', visPoseRet  
         if visPoseRet == False:
             self.searchReturnPath(self.returnPoint)
-                            
+        
+        print 'return point:', self.returnPoint                    
         print '\n         RETURN PATH:\n', self.returnPath, '\n'
         
-        
-        '''        
-        arrive = self.checkArriveCell(self.nextCell)
-        if arrive == False:
-            self.goToCell(self.nextCell)  
-        else:
-            print ('    VACUUM ARRIVED TO THE NEXT CELL')
-            self.currentCell = self.nextCell
-        '''
-        
+        length = len(self.returnPath)
+        print 'length', length
+        if length > 0:
+            print self.returnPath[length-1]
+            self.nextCell = self.returnPath[length-1]
+            arrive = self.checkArriveCell(self.nextCell)
+            if arrive == False:
+                self.goToCell(self.nextCell)  
+            else:
+                print ('    VACUUM ARRIVED TO THE NEXT CELL')
+                self.currentCell = self.nextCell
+                self.returnPath.pop(length-1)
+                print '\nNEW RETURN PATH:\n', self.returnPath, '\n'
+             
+        #self.stop()  
+             
         
     def searchReturnPath(self, cell):
         for i in range(len(self.path)-1, -1, -1):
             newCell = self.path[i]
-            vis = self.visibility(cell, newCell)
-            if vis == True:
-                self.returnPath.append(newCell)
-                break
+            if cell != newCell:
+                vis = self.visibility(cell, newCell)
+                if vis == True:
+                    self.saveReturnPoint(newCell, self.returnPath)
+                    break
         if vis == True:
             vis1 = self.visibility(self.currentCell, newCell)
             if vis1 == False:
