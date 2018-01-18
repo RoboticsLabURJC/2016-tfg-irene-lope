@@ -158,6 +158,7 @@ class MyAlgorithm4(threading.Thread):
                     self.savePath(self.currentCell)
                     self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
                     print '    NEW CURRENT CELL', self.currentCell
+                    self.stopVacuum()
         
                 
     def driving(self, cells, neighbors):
@@ -257,15 +258,15 @@ class MyAlgorithm4(threading.Thread):
     
     def paintCell(self, cell, color, img):
         # cell = [x,y]
+        # color = 0, 255
+        # img : map
         cell = [int(cell[0]), int(cell[1])]
         for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
             for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                 img[i][j] = color             
         
                         
-    def paintMap(self):
-        # cell = [x,y]
-            
+    def paintMap(self):    
         if len(self.path) > 0:
             for cell in self.path:
                 self.paintCell(cell, self.VIRTUAL_OBST, self.map1)
@@ -446,7 +447,6 @@ class MyAlgorithm4(threading.Thread):
                   
     def checkReturnPoints(self):
         cont = 0
-        index = []
         for i in range(len(self.returnPoints)): 
             neighbors = self.calculateNeigh(self.returnPoints[i])
             cells = self.checkNeigh(neighbors)       
@@ -464,14 +464,12 @@ class MyAlgorithm4(threading.Thread):
                 cont += 1
             
             if cont == 0:
-                # There are no free neighbors, save the index
-                index.append(i)
+                # There are no free neighbors
+                self.returnPoints.pop(i)
+                self.checkReturnPoints()
+                break
             cont = 0
-                            
-        for i in index:
-            #print '                               Remove: ', self.returnPoints[i] 
-            self.returnPoints.pop(i)
-                 
+         
              
     def euclideanDist(self, p1, p2):
         # p1 = [x1, y1]
@@ -624,6 +622,7 @@ class MyAlgorithm4(threading.Thread):
                 self.currentCell = self.nextCell
                 self.returnPath.pop(length-1)
                 print '\nNEW RETURN PATH:\n', self.returnPath, '\n'
+                self.stopVacuum()
              
         #self.stop()  
              
@@ -708,5 +707,4 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(1)
-        self.showMaps(2)
 
