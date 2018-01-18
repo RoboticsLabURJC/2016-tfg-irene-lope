@@ -60,6 +60,7 @@ class MyAlgorithm4(threading.Thread):
         self.returnPoints = []
         self.path = []
         self.returnPoint = []
+        self.returnPath = []
         
  
     def parse_laser_data(self,laser_data):
@@ -166,7 +167,7 @@ class MyAlgorithm4(threading.Thread):
         else:
             arrive = self.checkArriveCell(self.nextCell)
             if arrive == False:
-                self.goNextCell()  
+                self.goToCell(self.nextCell)  
             else:
                 print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
@@ -286,6 +287,10 @@ class MyAlgorithm4(threading.Thread):
         
         if self.returnPoint != []:
             self.paintPoint(self.returnPoint, 100, self.map1)
+        
+        if len(self.returnPath) > 0:
+            for cell in self.returnPath:
+                self.paintPoint(cell, 70, self.map1)
         
         if self.x != None and self.y != None:
             x,y = self.coord2pix(self.x,self.y)
@@ -434,7 +439,7 @@ class MyAlgorithm4(threading.Thread):
         if saved == False:
             # This point wasn't saved before
             self.returnPoints.append(p)
-            print '                               Save return point', p
+            #print '                               Save return point', p
             
                   
     def checkReturnPoints(self):
@@ -462,7 +467,7 @@ class MyAlgorithm4(threading.Thread):
             cont = 0
                             
         for i in index:
-            print '                               Remove: ', self.returnPoints[i] 
+            #print '                               Remove: ', self.returnPoints[i] 
             self.returnPoints.pop(i)
                  
              
@@ -507,12 +512,12 @@ class MyAlgorithm4(threading.Thread):
     
     ######   DRIVING FUNCTIONS   ######     
            
-    def goNextCell(self):
+    def goToCell(self, cell):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
         poseVacuum = [round(self.x,1), round(self.y,1)]
-        xc, yc = self.pix2coord(self.nextCell[0], self.nextCell[1])
+        xc, yc = self.pix2coord(cell[0], cell[1])
         nextCell = [round(xc,1),round(yc,1)]
         desviation = self.calculateDesv(poseVacuum, nextCell)
         self.controlDrive(desviation)
@@ -656,21 +661,37 @@ class MyAlgorithm4(threading.Thread):
     
        
     def goToReturnPoint(self):
-        visPoseRet = self.visibility(self.returnPoint, self.currentCell)    
-        if visPoseRet == True:
-            self.nextCell = self.returnPoint
-        else:
-            for i in range(len(self.path)-1, -1, -1):
-                cell = self.path[i]
-                visCellRet = self.visibility(
+        self.returnPath.append(self.returnPoint)
+        visPoseRet = self.visibility(self.currentCell, self.returnPoint)    
+        if visPoseRet == False:
+            self.searchReturnPath(self.returnPoint)
+                            
+        print '\n         RETURN PATH:\n', self.returnPath, '\n'
+        
+        
+        '''        
         arrive = self.checkArriveCell(self.nextCell)
         if arrive == False:
-            self.goNextCell()  
+            self.goToCell(self.nextCell)  
         else:
             print ('    VACUUM ARRIVED TO THE NEXT CELL')
             self.currentCell = self.nextCell
+        '''
         
         
+    def searchReturnPath(self, cell):
+        for i in range(len(self.path)-1, -1, -1):
+            newCell = self.path[i]
+            vis = self.visibility(cell, newCell)
+            if vis == True:
+                self.returnPath.append(newCell)
+                break
+        if vis == True:
+            vis1 = self.visibility(self.currentCell, newCell)
+            if vis1 == False:
+                self.searchReturnPath(newCell)           
+                
+                 
     def pointOfLine(self, A, B):
         # A and B : coord gazebo
         # P = A + s(B - A)
