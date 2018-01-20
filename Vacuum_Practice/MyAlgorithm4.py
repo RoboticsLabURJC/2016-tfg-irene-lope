@@ -39,7 +39,7 @@ class MyAlgorithm4(threading.Thread):
         self.VACUUM_PX_SIZE = 20  
         self.VACUUM_PX_HALF = 10 
         self.VACUUM_SIZE = 0.34
-        self.VIRTUAL_OBST = 128
+        self.COLOR_VIRTUAL_OBST = 128
         self.MIN_MAP = 20
         self.MAX_MAP = 480
         self.STEP = 0.15 # 15 cm 
@@ -126,13 +126,12 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = [self.xPix, self.yPix]
             self.savePath(self.currentCell)
             self.nextCell = self.currentCell
-            self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
+            self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.map)
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
             self.isReturnPoint(cells)
             self.checkReturnPoints() 
-            #print '        GOING TO RETURN POINT:' , self.goingReturnPoint
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
                     print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
@@ -156,7 +155,7 @@ class MyAlgorithm4(threading.Thread):
                     self.returnPath = []
                     self.currentCell = self.returnPoint
                     self.savePath(self.currentCell)
-                    self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
+                    self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.map)
                     print '    NEW CURRENT CELL', self.currentCell
                     self.stopVacuum()
         
@@ -174,7 +173,7 @@ class MyAlgorithm4(threading.Thread):
                 print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
                 self.savePath(self.currentCell)
-                self.paintCell(self.currentCell, self.VIRTUAL_OBST, self.map)
+                self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.map)
                 print '    NEW CURRENT CELL', self.currentCell
                 self.stopVacuum()
         
@@ -191,21 +190,26 @@ class MyAlgorithm4(threading.Thread):
         west = neighbors[2]
         south = neighbors[3]
         
+        print '\n        nCell:', nCell 
+        print '\n        sCell:', sCell
+        print '\n        eCell:', eCell
+        print '\n        wCell:', wCell, '\n'
+        
         if self.goSouth == False:
-            if nCell[0] == 0 and nCell[1] == 0: #north
+            if (nCell[0] == 0 and nCell[1] == 0) or (nCell[0] == 0 and nCell[1] == 2) or (nCell[0] == 2 and nCell[1] == 0): #north
                 self.nextCell = north[0]
             else:
-                if sCell[0] == 0 and sCell[1] == 0: #south
+                if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
                     self.nextCell = south[0]
                     self.goSouth = True 
-                elif eCell[0] == 0 and eCell[1] == 0: #east
+                elif (eCell[0] == 0 and eCell[1] == 0) or (eCell[0] == 0 and eCell[1] == 2) or (eCell[0] == 2 and eCell[1] == 0): #east
                     self.nextCell = east[0]
                     self.goSouth = True 
-                elif wCell[0] == 0 and wCell[1] == 0: #west
+                elif (wCell[0] == 0 and wCell[1] == 0) or (wCell[0] == 0 and wCell[1] == 2) or (wCell[0] == 2 and wCell[1] == 0): #west
                     self.nextCell = west[0]
                     self.goSouth = True                                          
         else:
-            if sCell[0] == 0 and sCell[1] == 0: #south
+            if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
                 self.nextCell = south[0]      
             else:
                 self.goSouth = False
@@ -256,7 +260,7 @@ class MyAlgorithm4(threading.Thread):
     def paintMap(self):    
         if len(self.path) > 0:
             for cell in self.path:
-                self.paintCell(cell, self.VIRTUAL_OBST, self.map1)
+                self.paintCell(cell, self.COLOR_VIRTUAL_OBST, self.map1)
                         
         if len(self.returnPoints) > 0:
             for cell in self.returnPoints:
@@ -365,7 +369,7 @@ class MyAlgorithm4(threading.Thread):
                     if self.map[i][j] == 0:#black
                         # There is an obstacle
                         obstacle = 1
-                    elif self.map[i][j] == self.VIRTUAL_OBST:#grey
+                    elif self.map[i][j] == self.COLOR_VIRTUAL_OBST:#grey
                         # There is a virtual obstacle
                         virtualObst = 1                                                
             if obstacle == 1:
@@ -479,16 +483,22 @@ class MyAlgorithm4(threading.Thread):
 
     def isCriticalPoint(self, cells):
         #cells = [nCell[0,1], eCell[0,1], wCell[0,1], sCell[0,1]]
+        # 0: no obstacle
+        # 1: obstacle
+        # 2: virtual obstacle
+        
         nCell= cells[0]
         eCell= cells[1]
         wCell= cells[2]
         sCell= cells[3]
         critical = False
-        if (nCell[0] > 0) or (nCell[1] > 0):
-            if (eCell[0] > 0) or (eCell[1] > 0):
-                if (wCell[0] > 0) or (wCell[1] > 0):
-                    if (sCell[0] > 0) or (sCell[1] > 0):
-                        critical = True                        
+
+        if nCell[0] > 0 and nCell[1] > 0:
+            if eCell[0] > 0 and eCell[1] > 0:
+                if wCell[0] > 0 and wCell[1] > 0:
+                    if sCell[0] > 0 and sCell[1] > 0:
+                        critical = True      
+               
         return critical
  
  
@@ -550,17 +560,17 @@ class MyAlgorithm4(threading.Thread):
         v2 = 0.1
         if desv >= th2:
             self.motors.sendV(0)
-            self.motors.sendW(w2)
+            self.motors.sendW(w)
         elif desv < th2 and desv >= th1:
             self.motors.sendV(v1)
-            self.motors.sendW(w1)
+            self.motors.sendW(w)
         else:
             self.motors.sendV(v2)
             self.motors.sendW(0)
                         
                              
     def checkArriveCell(self, cell):
-        distMax = 0.08 #5 cm
+        distMax = 0.08 #8 cm
         distMin = 0
         x = False
         y = False
