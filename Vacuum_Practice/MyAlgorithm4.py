@@ -191,19 +191,6 @@ class MyAlgorithm4(threading.Thread):
         west = neighbors[2]
         south = neighbors[3]
         
-        print '\n...Planing zigzag...\n'
-        print '  CURRENT CELL:', self.currentCell
-        print '  NEIGHBORS:'
-        print '    north:', north
-        print '    east:', east
-        print '    west:', west
-        print '    south:', south
-        print '  CELLS:'
-        print '    nCell:', nCell
-        print '    eCell:', eCell
-        print '    wCell:', wCell
-        print '    sCell:', sCell
-        
         if self.goSouth == False:
             if nCell[0] == 0 and nCell[1] == 0: #north
                 self.nextCell = north[0]
@@ -548,15 +535,14 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        w1 = 0.1
-        w2 = 0.1
+        w = 0.1
         if desv > 0: #LEFT
-            self.controlDesv(desv, w1, w2)
+            self.controlDesv(desv, w)
         else: #RIGHT
-            self.controlDesv(desv, -w1, -w2)
+            self.controlDesv(desv, -w)
        
        
-    def controlDesv(self, desv, w1, w2): 
+    def controlDesv(self, desv, w): 
         desv = abs(desv) 
         th1 = 3
         th2 = 10
@@ -623,9 +609,7 @@ class MyAlgorithm4(threading.Thread):
                 self.returnPath.pop(length-1)
                 print '\nNEW RETURN PATH:\n', self.returnPath, '\n'
                 self.stopVacuum()
-             
-        #self.stop()  
-             
+
         
     def searchReturnPath(self, cell):
         for i in range(len(self.path)-1, -1, -1):
