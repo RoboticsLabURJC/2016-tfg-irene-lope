@@ -10,7 +10,7 @@ import easyiceconfig as EasyIce
 #from MyAlgorithm import MyAlgorithm
 #from MyAlgorithm2 import MyAlgorithm2
 from MyAlgorithm3 import MyAlgorithm3
-
+from MyAlgorithm4 import MyAlgorithm4
 
 
 if __name__ == "__main__":
@@ -19,10 +19,8 @@ if __name__ == "__main__":
     pose3d = Pose3DClient(ic, "Vacuum.Pose3D", True)
     laser = LaserClient(ic, "Vacuum.Laser", True)
     bumper = BumperClient(ic, "Vacuum.Bumper", True)
-    #algorithm=MyAlgorithm(pose3d, motors,laser,bumper)
-    #algorithm=MyAlgorithm2(pose3d, motors,laser,bumper)
-    algorithm=MyAlgorithm3(pose3d, motors,laser,bumper)
-    
+    algorithm=MyAlgorithm4(pose3d, motors,laser,bumper)
+
     app = QApplication(sys.argv)
     myGUI = MainWindow()
     myGUI.setMotors(motors)
