@@ -131,10 +131,11 @@ class MyAlgorithm4(threading.Thread):
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
             self.isReturnPoint(cells)
-            self.checkReturnPoints() 
+            #self.checkReturnPoints() 
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
                     print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
+                    self.checkReturnPoints()
                     if len(self.returnPoints) > 0:
                         self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
                         print '   RETURN POINT:', self.returnPoint
@@ -700,5 +701,6 @@ class MyAlgorithm4(threading.Thread):
                
         self.sweep()
         self.paintMap()
+        self.showMaps(2)
         self.showMaps(1)
 
