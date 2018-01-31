@@ -333,8 +333,8 @@ class MyAlgorithm4(threading.Thread):
         c = None
         if cell[0] != None and cell[1] != None:
             cell = [int(cell[0]), int(cell[1])]
-            for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
-                for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
+            for i in range((cell[1] - self.VACUUM_PX_HALF), (cell[1] + self.VACUUM_PX_HALF)):
+                for j in range((cell[0] - self.VACUUM_PX_HALF), (cell[0] + self.VACUUM_PX_HALF)):
                     if self.mapE[i][j] == 0:#black
                         # There is an obstacle
                         obstacle = 1
@@ -354,24 +354,16 @@ class MyAlgorithm4(threading.Thread):
         # neighbors = [north, east, west, south]
         
         north = neighbors[0]
-        northCell1 = self.checkCell(north[1]) 
-        northCell2 = self.checkCell(north[2])
-        northCell = [northCell1, northCell2] 
+        northCell = self.checkCell(north) 
         
         east = neighbors[1]
-        eastCell1 = self.checkCell(east[1]) 
-        eastCell2 = self.checkCell(east[2]) 
-        eastCell =[eastCell1, eastCell2]
-        
+        eastCell = self.checkCell(east) 
+
         west = neighbors[2]
-        westCell1 = self.checkCell(west[1]) 
-        westCell2 = self.checkCell(west[2]) 
-        westCell =[westCell1, westCell2]
-        
+        westCell = self.checkCell(west) 
+
         south = neighbors[3]
-        southCell1 = self.checkCell(south[1]) 
-        southCell2 = self.checkCell(south[2]) 
-        southCell =[southCell1, southCell2]
+        southCell = self.checkCell(south) 
         
         cells = [northCell, eastCell, westCell, southCell] 
         return cells
@@ -383,13 +375,13 @@ class MyAlgorithm4(threading.Thread):
         eCell = cells[1]
         wCell = cells[2]
         sCell = cells[3]
-        if nCell[0] == 0 and nCell[1] == 0:
+        if nCell == 0 :
             self.saveReturnPoint(self.currentCell, self.returnPoints)
-        if eCell[0] == 0 and eCell[1] == 0:
+        if eCell == 0:
             self.saveReturnPoint(self.currentCell, self.returnPoints)
-        if wCell[0] == 0 and wCell[1] == 0:
+        if wCell == 0:
             self.saveReturnPoint(self.currentCell, self.returnPoints)
-        if sCell[0] == 0 and sCell[1] == 0:
+        if sCell == 0:
             self.saveReturnPoint(self.currentCell, self.returnPoints) 
              
              
