@@ -30,7 +30,7 @@ class MyAlgorithm4(threading.Thread):
         
         self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map_orig = cv2.resize(self.map_orig, (500, 500))
-        kernel = np.ones((10,10), np.uint8)
+        kernel = np.ones((9,9), np.uint8)
         self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
         self.mapEVis = self.mapE.copy()
         self.mapECopy = self.mapE.copy()
@@ -680,5 +680,4 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(2)
-        self.showMaps(1)
 
