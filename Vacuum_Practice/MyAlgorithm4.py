@@ -280,21 +280,21 @@ class MyAlgorithm4(threading.Thread):
         print '\n        wCell:', wCell, '\n'
         
         if self.goSouth == False:
-            if (nCell[0] == 0 and nCell[1] == 0) or (nCell[0] == 0 and nCell[1] == 2) or (nCell[0] == 2 and nCell[1] == 0): #north
-                self.nextCell = north[0]
+            if nCell == 0: #north
+                self.nextCell = north
             else:
-                if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
-                    self.nextCell = south[0]
+                if sCell == 0: #south
+                    self.nextCell = south
                     self.goSouth = True 
-                elif (eCell[0] == 0 and eCell[1] == 0) or (eCell[0] == 0 and eCell[1] == 2) or (eCell[0] == 2 and eCell[1] == 0): #east
-                    self.nextCell = east[0]
+                elif eCell == 0: #east
+                    self.nextCell = east
                     self.goSouth = True 
-                elif (wCell[0] == 0 and wCell[1] == 0) or (wCell[0] == 0 and wCell[1] == 2) or (wCell[0] == 2 and wCell[1] == 0): #west
-                    self.nextCell = west[0]
+                elif wCell == 0: #west
+                    self.nextCell = west
                     self.goSouth = True                                          
         else:
-            if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
-                self.nextCell = south[0]      
+            if sCell == 0: #south
+                self.nextCell = south      
             else:
                 self.goSouth = False
           
