@@ -28,11 +28,11 @@ class MyAlgorithm4(threading.Thread):
         self.lock = threading.Lock()
         threading.Thread.__init__(self, args=self.stop_event)
         
-        self.map = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
-        self.map = cv2.resize(self.map, (500, 500))
-        self.map1 = self.map.copy()
+        self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.map_orig = cv2.resize(self.map_orig, (500, 500))
         kernel = np.ones((10,10), np.uint8)
-        self.mapE = cv2.erode(self.map, kernel, iterations=1)
+        self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
+        self.mapEVis = self.mapE.copy()
         self.mapECopy = self.mapE.copy()
         
         self.SCALE = 50.00 #50 px = 1 m
@@ -126,12 +126,11 @@ class MyAlgorithm4(threading.Thread):
             self.currentCell = [self.xPix, self.yPix]
             self.savePath(self.currentCell)
             self.nextCell = self.currentCell
-            self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.map)
+            self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
         else:
             neighbors = self.calculateNeigh(self.currentCell)
             cells = self.checkNeigh(neighbors)
             self.isReturnPoint(cells)
-            #self.checkReturnPoints() 
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
                     print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
@@ -156,13 +155,13 @@ class MyAlgorithm4(threading.Thread):
                     self.returnPath = []
                     self.currentCell = self.returnPoint
                     self.savePath(self.currentCell)
-                    self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.map)
+                    self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                     print '    NEW CURRENT CELL', self.currentCell
                     self.stopVacuum()
         
                 
     def driving(self, cells, neighbors):
-        #cells = [[nCell1, nCell2], [eCell1, eCell2], [wCell1, wCell], [sCell1, sCell2]] -> Can be: 0,1,2
+        #cells = [nCell, eCell, wCell, sCell1] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
@@ -174,7 +173,7 @@ class MyAlgorithm4(threading.Thread):
                 print '    VACUUM ARRIVED'
                 self.currentCell = self.nextCell
                 self.savePath(self.currentCell)
-                self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.map)
+                self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                 print '    NEW CURRENT CELL', self.currentCell
                 self.stopVacuum()
         
@@ -261,35 +260,35 @@ class MyAlgorithm4(threading.Thread):
     def paintMap(self):    
         if len(self.path) > 0:
             for cell in self.path:
-                self.paintCell(cell, self.COLOR_VIRTUAL_OBST, self.map1)
+                self.paintCell(cell, self.COLOR_VIRTUAL_OBST, self.mapECopy)
                         
         if len(self.returnPoints) > 0:
             for cell in self.returnPoints:
-                self.paintCell(cell, 85, self.map1)  
+                self.paintCell(cell, 85, self.mapECopy)  
         
         if self.nextCell != []:
-            self.paintCell(self.nextCell, 180, self.map1)  
+            self.paintCell(self.nextCell, 180, self.mapECopy)  
  
         if self.currentCell != []:
-            self.paintCell(self.currentCell, 150, self.map1)   
+            self.paintCell(self.currentCell, 150, self.mapECopy)   
               
         if self.returnPoint != []:
-            self.paintCell(self.returnPoint, 30, self.map1)
+            self.paintCell(self.returnPoint, 30, self.mapECopy)
             
         if self.nextCell != []:
-            self.paintPoint(self.nextCell, 10, self.map1)
+            self.paintPoint(self.nextCell, 10, self.mapECopy)
         
         if self.returnPoint != []:
-            self.paintPoint(self.returnPoint, 100, self.map1)
+            self.paintPoint(self.returnPoint, 100, self.mapECopy)
         
         if len(self.returnPath) > 0:
             for cell in self.returnPath:
-                self.paintPoint(cell, 70, self.map1)
+                self.paintPoint(cell, 70, self.mapECopy)
         
         if self.x != None and self.y != None:
             x,y = self.coord2pix(self.x,self.y)
             pose = [x, y]
-            self.paintPoint(pose, 220, self.map1)
+            self.paintPoint(pose, 220, self.mapECopy)
 
     
     def paintPoint(self, point, color, img):
@@ -307,14 +306,14 @@ class MyAlgorithm4(threading.Thread):
     
     def showMaps(self, n=3): 
         if n == 0:                                                         
-            cv2.imshow("MAP ", self.map) 
+            cv2.imshow("MAP ", self.map_orig) 
         elif n == 1:
-            cv2.imshow("MAP1 ", self.map1)
+            cv2.imshow("MAP1 ", self.mapE)
         elif n == 2:
             cv2.imshow('MapECopy', self.mapECopy)  
         else:  
-            cv2.imshow("MAP ", self.map) 
-            cv2.imshow("MAP1 ", self.map1)  
+            cv2.imshow("MAP ", self.map_orig) 
+            cv2.imshow("MAP1 ", self.mapE)  
             cv2.imshow('MapECopy', self.mapECopy)
             
                       
@@ -367,10 +366,10 @@ class MyAlgorithm4(threading.Thread):
             cell = [int(cell[0]), int(cell[1])]
             for i in range((cell[1] - self.VACUUM_PX_HALF/2), (cell[1] + self.VACUUM_PX_HALF/2)):
                 for j in range((cell[0] - self.VACUUM_PX_HALF/2), (cell[0] + self.VACUUM_PX_HALF/2)):
-                    if self.map[i][j] == 0:#black
+                    if self.mapE[i][j] == 0:#black
                         # There is an obstacle
                         obstacle = 1
-                    elif self.map[i][j] == self.COLOR_VIRTUAL_OBST:#grey
+                    elif self.mapE[i][j] == self.COLOR_VIRTUAL_OBST:#grey
                         # There is a virtual obstacle
                         virtualObst = 1                                                
             if obstacle == 1:
