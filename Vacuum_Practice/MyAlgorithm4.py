@@ -36,13 +36,13 @@ class MyAlgorithm4(threading.Thread):
         self.mapECopy = self.mapE.copy()
         
         self.SCALE = 50.00 #50 px = 1 m
-        self.VACUUM_PX_SIZE = 20  
-        self.VACUUM_PX_HALF = 10 
+        self.VACUUM_PX_SIZE = 16 
+        self.VACUUM_PX_HALF = 8 
         self.VACUUM_SIZE = 0.34
         self.COLOR_VIRTUAL_OBST = 128
-        self.MIN_MAP = 20
-        self.MAX_MAP = 480
-        self.STEP = 0.15 # 15 cm 
+        self.MIN_MAP = 16
+        self.MAX_MAP = 484
+        self.STEP = 0.10 # 10 cm 
 
         self.x = None
         self.y = None
@@ -159,65 +159,7 @@ class MyAlgorithm4(threading.Thread):
                     print '    NEW CURRENT CELL', self.currentCell
                     self.stopVacuum()
         
-                
-    def driving(self, cells, neighbors):
-        #cells = [nCell, eCell, wCell, sCell1] -> Can be: 0,1,2
-        #neighbors = [north, east, west, south] -> Positions in the map
-        if self.nextCell == self.currentCell:
-            self.zigzag(cells, neighbors)                  
-        else:
-            arrive = self.checkArriveCell(self.nextCell)
-            if arrive == False:
-                self.goToCell(self.nextCell)  
-            else:
-                print '    VACUUM ARRIVED'
-                self.currentCell = self.nextCell
-                self.savePath(self.currentCell)
-                self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
-                print '    NEW CURRENT CELL', self.currentCell
-                self.stopVacuum()
-        
-            
-    def zigzag(self, cells, neighbors):
-        #cells = [nCell[1,2], eCell[1,2], wCell[1,2], sCell[1,2]] -> Can be: 0,1,2
-        #neighbors = [north[0,1,2], east[0,1,2], west[0,1,2], south[0,1,2]] -> Positions in the map
-        nCell = cells[0]
-        eCell = cells[1]
-        wCell = cells[2]
-        sCell = cells[3]
-        north = neighbors[0]
-        east = neighbors[1]
-        west = neighbors[2]
-        south = neighbors[3]
-        
-        print '\n        nCell:', nCell 
-        print '\n        sCell:', sCell
-        print '\n        eCell:', eCell
-        print '\n        wCell:', wCell, '\n'
-        
-        if self.goSouth == False:
-            if (nCell[0] == 0 and nCell[1] == 0) or (nCell[0] == 0 and nCell[1] == 2) or (nCell[0] == 2 and nCell[1] == 0): #north
-                self.nextCell = north[0]
-            else:
-                if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
-                    self.nextCell = south[0]
-                    self.goSouth = True 
-                elif (eCell[0] == 0 and eCell[1] == 0) or (eCell[0] == 0 and eCell[1] == 2) or (eCell[0] == 2 and eCell[1] == 0): #east
-                    self.nextCell = east[0]
-                    self.goSouth = True 
-                elif (wCell[0] == 0 and wCell[1] == 0) or (wCell[0] == 0 and wCell[1] == 2) or (wCell[0] == 2 and wCell[1] == 0): #west
-                    self.nextCell = west[0]
-                    self.goSouth = True                                          
-        else:
-            if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
-                self.nextCell = south[0]      
-            else:
-                self.goSouth = False
-                    
-                    
-                    
-    ######   MAP FUNCTIONS   ######
-    
+
     def RTy(self, angle, tx, ty, tz):
         RT = np.matrix([[math.cos(angle), 0, math.sin(angle), tx], [0, 1, 0, ty], [-math.sin(angle), 0, math.cos(angle), tz], [0,0,0,1]])
         return RT
@@ -316,42 +258,69 @@ class MyAlgorithm4(threading.Thread):
             cv2.imshow("MAP1 ", self.mapE)  
             cv2.imshow('MapECopy', self.mapECopy)
             
+            
+            
+    ######   MOVEMENT PLANNING FUNCTIONS   ######
+            
+    def zigzag(self, cells, neighbors):
+        #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
+        #neighbors = [north, east, west, south] -> Positions in the map
+        nCell = cells[0]
+        eCell = cells[1]
+        wCell = cells[2]
+        sCell = cells[3]
+        north = neighbors[0]
+        east = neighbors[1]
+        west = neighbors[2]
+        south = neighbors[3]
+        
+        print '\n        nCell:', nCell 
+        print '\n        sCell:', sCell
+        print '\n        eCell:', eCell
+        print '\n        wCell:', wCell, '\n'
+        
+        if self.goSouth == False:
+            if (nCell[0] == 0 and nCell[1] == 0) or (nCell[0] == 0 and nCell[1] == 2) or (nCell[0] == 2 and nCell[1] == 0): #north
+                self.nextCell = north[0]
+            else:
+                if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
+                    self.nextCell = south[0]
+                    self.goSouth = True 
+                elif (eCell[0] == 0 and eCell[1] == 0) or (eCell[0] == 0 and eCell[1] == 2) or (eCell[0] == 2 and eCell[1] == 0): #east
+                    self.nextCell = east[0]
+                    self.goSouth = True 
+                elif (wCell[0] == 0 and wCell[1] == 0) or (wCell[0] == 0 and wCell[1] == 2) or (wCell[0] == 2 and wCell[1] == 0): #west
+                    self.nextCell = west[0]
+                    self.goSouth = True                                          
+        else:
+            if (sCell[0] == 0 and sCell[1] == 0) or (sCell[0] == 0 and sCell[1] == 2) or (sCell[0] == 2 and sCell[1] == 0): #south
+                self.nextCell = south[0]      
+            else:
+                self.goSouth = False
+          
                       
     def calculateNeigh(self, cell):
         # cell = [x,y]
         # Check that the cells are inside the map
-        dif = 15 #15px
         if cell[1] >= self.MIN_MAP:
-            n0 = [cell[0], cell[1] - self.VACUUM_PX_HALF] #center
-            n1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] - dif] #left       
-            n2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] - dif] #right
-            northCell = [n0, n1, n2]
+            northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE] 
         else:
-            northCell = [[None, None], [None, None], [None, None]]
+            northCell = [None, None]
             
         if cell[1] <= self.MAX_MAP:
-            s0 = [cell[0], cell[1] + self.VACUUM_PX_HALF] #center
-            s1 = [cell[0] - self.VACUUM_PX_HALF/2, cell[1] + dif] #left
-            s2 = [cell[0] + self.VACUUM_PX_HALF/2, cell[1] + dif] #right
-            southCell = [s0, s1, s2]
+            southCell = [cell[0], cell[1] + self.VACUUM_SIZE] 
         else:
-            southCell = [[None, None], [None, None], [None, None]]
+            southCell = [None, None]
             
         if cell[0] >= self.MIN_MAP:
-            w0 = [cell[0] - self.VACUUM_PX_HALF, cell[1]] #center
-            w1 = [cell[0] - dif, cell[1] - self.VACUUM_PX_HALF/2] #up
-            w2 = [cell[0] - dif, cell[1] + self.VACUUM_PX_HALF/2] #down
-            westCell = [w0, w1, w2]
+            westCell = [cell[0] - self.VACUUM_SIZE, cell[1]] 
         else:
-            westCell = [[None, None], [None, None], [None, None]]
+            westCell = [None, None]
             
         if cell[0] <= self.MAX_MAP:
-            e0 = [cell[0] + self.VACUUM_PX_HALF, cell[1]] #center
-            e1 = [cell[0] + dif, cell[1] - self.VACUUM_PX_HALF/2] #up
-            e2 = [cell[0] + dif, cell[1] + self.VACUUM_PX_HALF/2] #down
-            eastCell = [e0, e1, e2]
+            eastCell = [cell[0] + self.VACUUM_SIZE, cell[1]] 
         else:
-            eastCell = [[None, None], [None, None], [None, None]]
+            eastCell = [None, None]
         
         neighbors = [northCell, eastCell, westCell, southCell]   
         return neighbors
@@ -507,7 +476,25 @@ class MyAlgorithm4(threading.Thread):
 
         
     
-    ######   DRIVING FUNCTIONS   ######     
+    ######   DRIVING FUNCTIONS   ###### 
+    
+    def driving(self, cells, neighbors):
+        #cells = [nCell, eCell, wCell, sCell1] -> Can be: 0,1,2
+        #neighbors = [north, east, west, south] -> Positions in the map
+        if self.nextCell == self.currentCell:
+            self.zigzag(cells, neighbors)                  
+        else:
+            arrive = self.checkArriveCell(self.nextCell)
+            if arrive == False:
+                self.goToCell(self.nextCell)  
+            else:
+                print '    VACUUM ARRIVED'
+                self.currentCell = self.nextCell
+                self.savePath(self.currentCell)
+                self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
+                print '    NEW CURRENT CELL', self.currentCell
+                self.stopVacuum()
+            
            
     def goToCell(self, cell):
         self.x = self.pose3d.getX()
