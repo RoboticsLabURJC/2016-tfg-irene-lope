@@ -308,17 +308,17 @@ class MyAlgorithm4(threading.Thread):
             northCell = [None, None]
             
         if cell[1] <= self.MAX_MAP:
-            southCell = [cell[0], cell[1] + self.VACUUM_SIZE] 
+            southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE] 
         else:
             southCell = [None, None]
             
         if cell[0] >= self.MIN_MAP:
-            westCell = [cell[0] - self.VACUUM_SIZE, cell[1]] 
+            westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]] 
         else:
             westCell = [None, None]
             
         if cell[0] <= self.MAX_MAP:
-            eastCell = [cell[0] + self.VACUUM_SIZE, cell[1]] 
+            eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]] 
         else:
             eastCell = [None, None]
         
@@ -453,7 +453,7 @@ class MyAlgorithm4(threading.Thread):
         wCell= cells[2]
         sCell= cells[3]
         critical = False
-
+        print '\n CRITC :', cells, '\n'
         if nCell > 0:
             if eCell > 0:
                 if wCell > 0:
@@ -471,7 +471,7 @@ class MyAlgorithm4(threading.Thread):
     ######   DRIVING FUNCTIONS   ###### 
     
     def driving(self, cells, neighbors):
-        #cells = [nCell, eCell, wCell, sCell1] -> Can be: 0,1,2
+        #cells = [nCell, eCell, wCell, sCell] -> Can be: 0,1,2
         #neighbors = [north, east, west, south] -> Positions in the map
         if self.nextCell == self.currentCell:
             self.zigzag(cells, neighbors)                  
