@@ -494,9 +494,9 @@ class MyAlgorithm4(threading.Thread):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
-        poseVacuum = [round(self.x,2), round(self.y,2)]
+        poseVacuum = [round(self.x, 2), round(self.y, 2)]
         xc, yc = self.pix2coord(cell[0], cell[1])
-        nextCell = [round(xc,2),round(yc,2)]
+        nextCell = [round(xc, 2),round(yc, 2)]
         desviation = self.calculateDesv(poseVacuum, nextCell)
         self.controlDrive(desviation)
          
@@ -506,6 +506,7 @@ class MyAlgorithm4(threading.Thread):
         # cell = [x2, y2] coord gazebo
         x, y = self.abs2rel(cell, poseVacuum, self.yaw)
         desv = math.degrees(math.atan2(y,x))
+        desv = round(desv, 1)
         print '\nMY POSE:   NEXT CELL:'
         print '  x:', poseVacuum[0], '    xc:', cell[0]
         print '  y:', poseVacuum[1], '    yc:', cell[1]
@@ -643,8 +644,6 @@ class MyAlgorithm4(threading.Thread):
     def visibility(self, A, B):
         visibility = True
         nextPoint = []
-        self.paintPoint(A, 70, self.mapECopy)
-        self.paintPoint(B, 200, self.mapECopy)
         A = self.pix2coord(A[0], A[1])
         B = self.pix2coord(B[0], B[1])
         numSteps = self.numSteps(A,B)
