@@ -28,7 +28,8 @@ class MyAlgorithm4(threading.Thread):
         self.lock = threading.Lock()
         threading.Thread.__init__(self, args=self.stop_event)
         
-        self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        #self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
+        self.map_orig = cv2.imread("resources/images/visibilidad.png", cv2.IMREAD_GRAYSCALE)
         self.map_orig = cv2.resize(self.map_orig, (500, 500))
         kernel = np.ones((9,9), np.uint8)
         self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
@@ -142,6 +143,7 @@ class MyAlgorithm4(threading.Thread):
                         self.stopVacuum()
                     else:
                         print 'END SWEEP'
+                        self.stop()
                 else:
                     self.driving(cells, neighbors)
             else:
