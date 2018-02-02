@@ -492,9 +492,9 @@ class MyAlgorithm4(threading.Thread):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
-        poseVacuum = [round(self.x,1), round(self.y,1)]
+        poseVacuum = [round(self.x,2), round(self.y,2)]
         xc, yc = self.pix2coord(cell[0], cell[1])
-        nextCell = [round(xc,1),round(yc,1)]
+        nextCell = [round(xc,2),round(yc,2)]
         desviation = self.calculateDesv(poseVacuum, nextCell)
         self.controlDrive(desviation)
          
@@ -549,7 +549,7 @@ class MyAlgorithm4(threading.Thread):
                         
                              
     def checkArriveCell(self, cell):
-        distMax = 0.08 #8 cm
+        distMax = 0.07 #7 cm
         distMin = 0
         x = False
         y = False
