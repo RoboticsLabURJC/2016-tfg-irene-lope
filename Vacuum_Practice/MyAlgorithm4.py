@@ -653,7 +653,6 @@ class MyAlgorithm4(threading.Thread):
             P = self.pointOfLine(nextPoint, B)
             pPix = self.coord2pix(P[0],P[1])
             obst = self.isObstacle(pPix)
-            self.paintPoint(pPix, 120, self.mapECopy) 
             if obst == True:
                 visibility = False
                 print 'LINE ENDS BREAK'
