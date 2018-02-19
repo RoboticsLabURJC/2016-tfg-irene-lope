@@ -533,14 +533,15 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        w = 0.15
+        wFast = 0.15
+        wSlow = 0.1
         if desv > 0: #LEFT
-            self.controlDesv(desv, w)
+            self.controlDesv(desv, wFast, wSlow)
         else: #RIGHT
-            self.controlDesv(desv, -w)
+            self.controlDesv(desv, -wFast, -wSlow)
        
        
-    def controlDesv(self, desv, w): 
+    def controlDesv(self, desv, wFast, wSlow): 
         desv = abs(desv) 
         th1 = 5
         th2 = 12
@@ -548,17 +549,72 @@ class MyAlgorithm4(threading.Thread):
         #v2 = 0.1
         if desv >= th2:
             self.motors.sendV(0)
-            self.motors.sendW(w)
+            self.motors.sendW(wFast)
         elif desv < th2 and desv >= th1:
             self.motors.sendV(v)
-            self.motors.sendW(w)
+            self.motors.sendW(wSlow)
         else:
             #self.motors.sendV(v2)
             v = self.setV()
             self.motors.sendV(v)
             self.motors.sendW(0)
                         
-                             
+    
+    def setV(self):
+        vMax = 0.3
+        vFast = 0.25
+        vMed = 0.2
+        vSlow = 0.15
+
+        if self.goTo == 'north' or self.goTo == 'south':
+            cells = self.calculateNext4C(self.currentCell, self.goTo)
+            c = self.checkNext4C(cells)
+            c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
+            c2 = c[1]
+            c3 = c[2]
+            c4 = c[3]
+            if (c1 + c2 + c3 + c4) == 0: #All cells are free
+                v = vMax
+            elif (c1 + c2 + c3) == 0:
+                v = vFast
+            elif (c1 + c2) == 0:
+                v = vMed
+            elif c1 == 0:
+                v = vSlow
+        else:
+            v = vSlow
+        return v
+        
+        
+    def calculateNext4C(self, cell, direction):
+        # cell: [xPix, yPix] 
+        # direction: north, east, west or south
+        if direction == 'north':
+            cell1 = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
+            cell2 = [cell[0], cell[1] - 2 * self.VACUUM_PX_SIZE]
+            cell3 = [cell[0], cell[1] - 3 * self.VACUUM_PX_SIZE]
+            cell4 = [cell[0], cell[1] - 4 * self.VACUUM_PX_SIZE]
+        elif direction == 'south':
+            cell1 = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
+            cell2 = [cell[0], cell[1] + 2 * self.VACUUM_PX_SIZE]
+            cell3 = [cell[0], cell[1] + 3 * self.VACUUM_PX_SIZE]
+            cell4 = [cell[0], cell[1] + 4 * self.VACUUM_PX_SIZE]
+
+        cells = [cell1, cell2, cell3, cell4]      
+        return cells
+            
+    
+    def checkNext4C(self, cells):
+        # cells = [cell1, cell2, cell3, cell4]
+        c1 = self.checkCell(cells[0])
+        c2 = self.checkCell(cells[1])
+        c3 = self.checkCell(cells[2])
+        c4 = self.checkCell(cells[3])
+        
+        c = [c1, c2, c3, c4]
+        return c
+        
+                                 
     def checkArriveCell(self, cell):
         distMax = 0.07 #7 cm
         distMin = 0
@@ -679,61 +735,6 @@ class MyAlgorithm4(threading.Thread):
         else:
             obst = False
         return obst
-        
-    
-    def calculateNext4C(self, cell, direction):
-        # cell: [xPix, yPix] 
-        # direction: north, east, west or south
-        if direction == 'north':
-            cell1 = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
-            cell2 = [cell[0], cell[1] - 2 * self.VACUUM_PX_SIZE]
-            cell3 = [cell[0], cell[1] - 3 * self.VACUUM_PX_SIZE]
-            cell4 = [cell[0], cell[1] - 4 * self.VACUUM_PX_SIZE]
-        elif direction == 'south':
-            cell1 = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
-            cell2 = [cell[0], cell[1] + 2 * self.VACUUM_PX_SIZE]
-            cell3 = [cell[0], cell[1] + 3 * self.VACUUM_PX_SIZE]
-            cell4 = [cell[0], cell[1] + 4 * self.VACUUM_PX_SIZE]
-
-        cells = [cell1, cell2, cell3, cell4]      
-        return cells
-            
-    
-    def checkNext4C(self, cells):
-        # cells = [cell1, cell2, cell3, cell4]
-        c1 = self.checkCell(cells[0])
-        c2 = self.checkCell(cells[1])
-        c3 = self.checkCell(cells[2])
-        c4 = self.checkCell(cells[3])
-        
-        c = [c1, c2, c3, c4]
-        return c
-        
-        
-    def setV(self):
-        vMax = 0.3
-        vFast = 0.25
-        vMed = 0.2
-        vSlow = 0.15
-
-        if self.goTo == 'north' or self.goTo == 'south':
-            cells = self.calculateNext4C(self.currentCell, self.goTo)
-            c = self.checkNext4C(cells)
-            c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
-            c2 = c[1]
-            c3 = c[2]
-            c4 = c[3]
-            if (c1 + c2 + c3 + c4) == 0: #All cells are free
-                v = vMax
-            elif (c1 + c2 + c3) == 0:
-                v = vFast
-            elif (c1 + c2) == 0:
-                v = vMed
-            elif c1 == 0:
-                v = vSlow
-        else:
-            v = vSlow
-        return v
 
         
     def execute(self):
