@@ -534,7 +534,7 @@ class MyAlgorithm4(threading.Thread):
     
     def controlDrive(self, desv):
         wFast = 0.15
-        wSlow = 0.1
+        wSlow = 0.08
         if desv > 0: #LEFT
             self.controlDesv(desv, wFast, wSlow)
         else: #RIGHT
@@ -545,8 +545,7 @@ class MyAlgorithm4(threading.Thread):
         desv = abs(desv) 
         th1 = 5
         th2 = 12
-        v = 0.1
-        #v2 = 0.1
+        v = 0.15
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(wFast)
@@ -554,7 +553,6 @@ class MyAlgorithm4(threading.Thread):
             self.motors.sendV(v)
             self.motors.sendW(wSlow)
         else:
-            #self.motors.sendV(v2)
             v = self.setV()
             self.motors.sendV(v)
             self.motors.sendW(0)
@@ -564,25 +562,24 @@ class MyAlgorithm4(threading.Thread):
         vMax = 0.3
         vFast = 0.25
         vMed = 0.2
-        vSlow = 0.15
-
-        if self.goTo == 'north' or self.goTo == 'south':
-            cells = self.calculateNext4C(self.currentCell, self.goTo)
-            c = self.checkNext4C(cells)
-            c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
-            c2 = c[1]
-            c3 = c[2]
-            c4 = c[3]
-            if (c1 + c2 + c3 + c4) == 0: #All cells are free
-                v = vMax
-            elif (c1 + c2 + c3) == 0:
-                v = vFast
-            elif (c1 + c2) == 0:
-                v = vMed
-            elif c1 == 0:
-                v = vSlow
-        else:
-            v = vSlow
+        vSlow = 0.15        
+        v = vSlow
+        if self.goingReturnPoint == False:
+            if self.goTo == 'north' or self.goTo == 'south':
+                cells = self.calculateNext4C(self.currentCell, self.goTo)
+                c = self.checkNext4C(cells)
+                c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
+                c2 = c[1]
+                c3 = c[2]
+                c4 = c[3]
+                if (c1 + c2 + c3 + c4) == 0: #All cells are free
+                    v = vMax
+                elif (c1 + c2 + c3) == 0:
+                    v = vFast
+                elif (c1 + c2) == 0:
+                    v = vMed
+                elif c1 == 0:
+                    v = vSlow            
         return v
         
         
