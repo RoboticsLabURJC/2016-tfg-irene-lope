@@ -542,16 +542,18 @@ class MyAlgorithm4(threading.Thread):
         desv = abs(desv) 
         th1 = 3
         th2 = 10
-        v1 = 0.07
-        v2 = 0.1
+        v = 0.07
+        #v2 = 0.1
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(w)
         elif desv < th2 and desv >= th1:
-            self.motors.sendV(v1)
+            self.motors.sendV(v)
             self.motors.sendW(w)
         else:
-            self.motors.sendV(v2)
+            #self.motors.sendV(v2)
+            v = self.setV()
+            self.motors.sendV(v)
             self.motors.sendW(0)
                         
                              
@@ -705,10 +707,32 @@ class MyAlgorithm4(threading.Thread):
         c = [c1, c2, c3, c4]
         return c
         
+        
+    def setV (self):
+        vMax = 0.4
+        vFast = 0.3
+        vMed = 0.2
+        vSlow = 0.1
+       
+        cells = self.calculateNext4C(self.currentCell, self.goTo)
+        c = self.checkNext4C(cells)
+        c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
+        c2 = c[1]
+        c3 = c[2]
+        c4 = c[3]
+        
+        if (c1 + c2 + c3 + c4) == 0: #All cells are free
+            v = vMax
+        elif (c1 + c2 + c3) == 0:
+            v = vFast
+        elif (c1 + c2) == 0:
+            v = vMed
+        elif c1 == 0:
+            v = vSlow
 
+        return v
 
         
-             
     def execute(self):
 
         # TODO 
