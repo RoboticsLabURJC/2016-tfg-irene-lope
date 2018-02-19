@@ -533,8 +533,8 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        wFast = 0.15
-        wSlow = 0.05
+        wFast = 0.18
+        wSlow = 0.12
         if desv > 0: #LEFT
             self.controlDesv(desv, wFast, wSlow)
         else: #RIGHT
@@ -543,8 +543,8 @@ class MyAlgorithm4(threading.Thread):
        
     def controlDesv(self, desv, wFast, wSlow): 
         desv = abs(desv) 
-        th1 = 5
-        th2 = 12
+        th1 = 7
+        th2 = 20
         v = 0.15
         if desv >= th2:
             self.motors.sendV(0)
@@ -562,7 +562,7 @@ class MyAlgorithm4(threading.Thread):
         vMax = 0.3
         vFast = 0.25
         vMed = 0.2
-        vSlow = 0.15        
+        vSlow = 0.18       
         v = vSlow
         if self.goingReturnPoint == False:
             if self.goTo == 'north' or self.goTo == 'south':
