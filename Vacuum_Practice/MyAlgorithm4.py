@@ -51,6 +51,7 @@ class MyAlgorithm4(threading.Thread):
         self.xPix = None
         self.yPix = None
         self.minDist = None
+        self.goTo =  None
         
         self.goSouth = False
         self.goingReturnPoint = False
@@ -284,9 +285,11 @@ class MyAlgorithm4(threading.Thread):
         if self.goSouth == False:
             if nCell == 0: #north
                 self.nextCell = north
+                self.goTo = 'north'
             else:
                 if sCell == 0: #south
                     self.nextCell = south
+                    self.goTo = 'south'
                     self.goSouth = True 
                 elif eCell == 0: #east
                     self.nextCell = east
@@ -296,7 +299,8 @@ class MyAlgorithm4(threading.Thread):
                     self.goSouth = True                                          
         else:
             if sCell == 0: #south
-                self.nextCell = south      
+                self.nextCell = south
+                self.goTo = 'south'      
             else:
                 self.goSouth = False
           
@@ -672,7 +676,39 @@ class MyAlgorithm4(threading.Thread):
             obst = False
         return obst
         
-              
+    
+    def calculateNext4C(self, cell, direction):
+        # cell: [xPix, yPix] 
+        # direction: north or south
+        if direction == 'north':
+            cell1 = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
+            cell2 = [cell[0], cell[1] - 2 * self.VACUUM_PX_SIZE]
+            cell3 = [cell[0], cell[1] - 3 * self.VACUUM_PX_SIZE]
+            cell4 = [cell[0], cell[1] - 4 * self.VACUUM_PX_SIZE]
+        elif direction == 'south':
+            cell1 = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
+            cell2 = [cell[0], cell[1] + 2 * self.VACUUM_PX_SIZE]
+            cell3 = [cell[0], cell[1] + 3 * self.VACUUM_PX_SIZE]
+            cell4 = [cell[0], cell[1] + 4 * self.VACUUM_PX_SIZE]
+        
+        cells = [cell1, cell2, cell3, cell4]      
+        return cells
+            
+    
+    def checkNext4(self, cells):
+        # cells = [cell1, cell2, cell3, cell4]
+        c1 = self.checkCell(cells[0])
+        c2 = self.checkCell(cells[1])
+        c3 = self.checkCell(cells[2])
+        c4 = self.checkCell(cells[3])
+        
+        c = [c1, c2, c3, c4]
+        return c
+        
+
+
+        
+             
     def execute(self):
 
         # TODO 
