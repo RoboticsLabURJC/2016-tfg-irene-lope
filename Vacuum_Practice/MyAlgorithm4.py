@@ -293,9 +293,11 @@ class MyAlgorithm4(threading.Thread):
                     self.goSouth = True 
                 elif eCell == 0: #east
                     self.nextCell = east
+                    self.goTo = 'east'
                     self.goSouth = True 
                 elif wCell == 0: #west
                     self.nextCell = west
+                    self.goTo = 'west'
                     self.goSouth = True                                          
         else:
             if sCell == 0: #south
@@ -531,7 +533,7 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        w = 0.1
+        w = 0.15
         if desv > 0: #LEFT
             self.controlDesv(desv, w)
         else: #RIGHT
@@ -540,9 +542,9 @@ class MyAlgorithm4(threading.Thread):
        
     def controlDesv(self, desv, w): 
         desv = abs(desv) 
-        th1 = 3
-        th2 = 10
-        v = 0.07
+        th1 = 5
+        th2 = 12
+        v = 0.1
         #v2 = 0.1
         if desv >= th2:
             self.motors.sendV(0)
@@ -681,7 +683,7 @@ class MyAlgorithm4(threading.Thread):
     
     def calculateNext4C(self, cell, direction):
         # cell: [xPix, yPix] 
-        # direction: north or south
+        # direction: north, east, west or south
         if direction == 'north':
             cell1 = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
             cell2 = [cell[0], cell[1] - 2 * self.VACUUM_PX_SIZE]
@@ -692,12 +694,12 @@ class MyAlgorithm4(threading.Thread):
             cell2 = [cell[0], cell[1] + 2 * self.VACUUM_PX_SIZE]
             cell3 = [cell[0], cell[1] + 3 * self.VACUUM_PX_SIZE]
             cell4 = [cell[0], cell[1] + 4 * self.VACUUM_PX_SIZE]
-        
+
         cells = [cell1, cell2, cell3, cell4]      
         return cells
             
     
-    def checkNext4(self, cells):
+    def checkNext4C(self, cells):
         # cells = [cell1, cell2, cell3, cell4]
         c1 = self.checkCell(cells[0])
         c2 = self.checkCell(cells[1])
@@ -708,28 +710,29 @@ class MyAlgorithm4(threading.Thread):
         return c
         
         
-    def setV (self):
-        vMax = 0.4
-        vFast = 0.3
+    def setV(self):
+        vMax = 0.3
+        vFast = 0.25
         vMed = 0.2
-        vSlow = 0.1
-       
-        cells = self.calculateNext4C(self.currentCell, self.goTo)
-        c = self.checkNext4C(cells)
-        c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
-        c2 = c[1]
-        c3 = c[2]
-        c4 = c[3]
-        
-        if (c1 + c2 + c3 + c4) == 0: #All cells are free
-            v = vMax
-        elif (c1 + c2 + c3) == 0:
-            v = vFast
-        elif (c1 + c2) == 0:
-            v = vMed
-        elif c1 == 0:
-            v = vSlow
+        vSlow = 0.15
 
+        if self.goTo == 'north' or self.goTo == 'south':
+            cells = self.calculateNext4C(self.currentCell, self.goTo)
+            c = self.checkNext4C(cells)
+            c1 = c[0] # 0: free/ 1:obstacle/ 2: virual obstacle
+            c2 = c[1]
+            c3 = c[2]
+            c4 = c[3]
+            if (c1 + c2 + c3 + c4) == 0: #All cells are free
+                v = vMax
+            elif (c1 + c2 + c3) == 0:
+                v = vFast
+            elif (c1 + c2) == 0:
+                v = vMed
+            elif c1 == 0:
+                v = vSlow
+        else:
+            v = vSlow
         return v
 
         
