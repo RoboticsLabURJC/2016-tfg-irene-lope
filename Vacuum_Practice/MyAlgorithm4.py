@@ -160,7 +160,7 @@ class MyAlgorithm4(threading.Thread):
                     self.savePath(self.currentCell)
                     self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                     print '    NEW CURRENT CELL', self.currentCell
-                    self.stopVacuum()
+                    #self.stopVacuum()
         
 
     def RTy(self, angle, tx, ty, tz):
@@ -493,7 +493,7 @@ class MyAlgorithm4(threading.Thread):
                 self.savePath(self.currentCell)
                 self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                 print '    NEW CURRENT CELL', self.currentCell
-                self.stopVacuum()
+                #self.stopVacuum()
             
            
     def goToCell(self, cell):
@@ -534,7 +534,7 @@ class MyAlgorithm4(threading.Thread):
     
     def controlDrive(self, desv):
         wFast = 0.15
-        wSlow = 0.08
+        wSlow = 0.05
         if desv > 0: #LEFT
             self.controlDesv(desv, wFast, wSlow)
         else: #RIGHT
