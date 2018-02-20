@@ -501,9 +501,22 @@ class MyAlgorithm4(threading.Thread):
         self.y = self.pose3d.getY()
         self.yaw = self.pose3d.getYaw()
         poseVacuum = [round(self.x, 2), round(self.y, 2)]
+        nextNCell = self.calculateNeigh(cell)[0]
+        nextSCell = self.calculateNeigh(cell)[3]
         xc, yc = self.pix2coord(cell[0], cell[1])
-        nextCell = [round(xc, 2),round(yc, 2)]
-        desviation = self.calculateDesv(poseVacuum, nextCell)
+        cell = [round(xc, 2),round(yc, 2)]
+        cNCell = self.checkCell(nextNCell)
+        cSCell = self.checkCell(nextSCell)
+        if cNCell == 0 and self.goTo == 'north': 
+            xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
+            nextNCell = [round(xc, 2),round(yc, 2)]
+            desviation = self.calculateDesv(poseVacuum, nextNCell)
+        elif cSCell == 0 and self.goTo == 'south':
+            xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
+            nextSCell = [round(xc, 2),round(yc, 2)]
+            desviation = self.calculateDesv(poseVacuum, nextSCell)
+        else:
+            desviation = self.calculateDesv(poseVacuum, cell)
         self.controlDrive(desviation)
          
             
@@ -533,8 +546,8 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        wFast = 0.18
-        wSlow = 0.12
+        wFast = 0.15
+        wSlow = 0.09
         if desv > 0: #LEFT
             self.controlDesv(desv, wFast, wSlow)
         else: #RIGHT
@@ -544,8 +557,8 @@ class MyAlgorithm4(threading.Thread):
     def controlDesv(self, desv, wFast, wSlow): 
         desv = abs(desv) 
         th1 = 7
-        th2 = 20
-        v = 0.15
+        th2 = 15
+        v = 0.12
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(wFast)
@@ -562,7 +575,7 @@ class MyAlgorithm4(threading.Thread):
         vMax = 0.3
         vFast = 0.25
         vMed = 0.2
-        vSlow = 0.18       
+        vSlow = 0.17      
         v = vSlow
         if self.goingReturnPoint == False:
             if self.goTo == 'north' or self.goTo == 'south':
