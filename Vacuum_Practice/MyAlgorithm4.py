@@ -503,10 +503,11 @@ class MyAlgorithm4(threading.Thread):
         poseVacuum = [round(self.x, 2), round(self.y, 2)]
         nextNCell = self.calculateNeigh(cell)[0]
         nextSCell = self.calculateNeigh(cell)[3]
-        xc, yc = self.pix2coord(cell[0], cell[1])
-        cell = [round(xc, 2),round(yc, 2)]
         cNCell = self.checkCell(nextNCell)
         cSCell = self.checkCell(nextSCell)
+        xc, yc = self.pix2coord(cell[0], cell[1])
+        cell = [round(xc, 2),round(yc, 2)]
+        #If the next cell is empty, calculate the desviation with the next cell
         if cNCell == 0 and self.goTo == 'north': 
             xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
             nextNCell = [round(xc, 2),round(yc, 2)]
@@ -572,11 +573,19 @@ class MyAlgorithm4(threading.Thread):
                         
     
     def setV(self):
+        #Velocity
         vMax = 0.3
         vFast = 0.25
         vMed = 0.2
-        vSlow = 0.17      
+        vSlow = 0.17
+        
         v = vSlow
+         
+        #Distance [m]
+        dMax = 2.5
+        dMed = 1.2
+        dMin = 0.5
+            
         if self.goingReturnPoint == False:
             if self.goTo == 'north' or self.goTo == 'south':
                 cells = self.calculateNext4C(self.currentCell, self.goTo)
@@ -592,7 +601,22 @@ class MyAlgorithm4(threading.Thread):
                 elif (c1 + c2) == 0:
                     v = vMed
                 elif c1 == 0:
-                    v = vSlow            
+                    v = vSlow 
+        else:
+            pose = [self.x, self.y]
+            xRet, yRet = self.pix2coord(self.returnPoint[0], self.returnPoint[1])
+            returnPoint = [xRet, yRet]
+            d = self.euclideanDist(pose, returnPoint) 
+            print '\n    DISTANCIA AL PUNTO DE RETORNO:\n       ', d , '\n'
+            if d <= dMin:
+                v = vSlow 
+            elif d > dMin and d <= dMed: 
+                v = vMed
+            elif d > dMed and d <= dMax: 
+                v = vFast
+            else:
+                v = vMax 
+                
         return v
         
         
