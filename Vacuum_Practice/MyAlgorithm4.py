@@ -495,7 +495,7 @@ class MyAlgorithm4(threading.Thread):
                 print '    NEW CURRENT CELL', self.currentCell
                 #self.stopVacuum()
             
-           
+    '''       
     def goToCell(self, cell):
         self.x = self.pose3d.getX()
         self.y = self.pose3d.getY()
@@ -519,8 +519,33 @@ class MyAlgorithm4(threading.Thread):
         else:
             desviation = self.calculateDesv(poseVacuum, cell)
         self.controlDrive(desviation)
-         
-            
+    '''     
+    
+    def goToCell(self, cell):
+        self.x = self.pose3d.getX()
+        self.y = self.pose3d.getY()
+        self.yaw = self.pose3d.getYaw()
+        poseVacuum = [round(self.x, 2), round(self.y, 2)]
+        nextNCell = self.calculateNeigh(cell)[0]
+        nextECell = self.calculateNeigh(cell)[1]
+        nextWCell = self.calculateNeigh(cell)[2]
+        nextSCell = self.calculateNeigh(cell)[3]
+        xc, yc = self.pix2coord(cell[0], cell[1])
+        cell = [round(xc, 2),round(yc, 2)]
+        #Calculate the desviation with the next cell
+        if self.goTo == 'north': 
+            xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
+        elif self.goTo == 'east':
+            xc, yc = self.pix2coord(nextECell[0], nextECell[1])
+        elif self.goTo == 'west':
+            xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
+        elif self.goTo == 'south':
+            xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
+        nextCell = [round(xc, 2),round(yc, 2)]
+        desviation = self.calculateDesv(poseVacuum, nextCell)
+        self.controlDrive(desviation)
+        
+                
     def calculateDesv(self, poseVacuum, cell):
         # poseVacuum = [x1, y1] coord gazebo
         # cell = [x2, y2] coord gazebo
