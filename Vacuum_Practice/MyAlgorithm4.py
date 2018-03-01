@@ -574,9 +574,9 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.3
-        vFast = 0.25
-        vMed = 0.2
+        vMax = 0.4
+        vFast = 0.32
+        vMed = 0.24
         vSlow = 0.17
         
         v = vSlow
