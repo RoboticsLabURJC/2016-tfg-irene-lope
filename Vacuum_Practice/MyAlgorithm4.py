@@ -502,24 +502,24 @@ class MyAlgorithm4(threading.Thread):
         self.yaw = self.pose3d.getYaw()
         poseVacuum = [round(self.x, 2), round(self.y, 2)]
         nextNCell = self.calculateNeigh(cell)[0]
+        nextECell = self.calculateNeigh(cell)[1]
+        nextWCell = self.calculateNeigh(cell)[2]
         nextSCell = self.calculateNeigh(cell)[3]
-        cNCell = self.checkCell(nextNCell)
-        cSCell = self.checkCell(nextSCell)
         xc, yc = self.pix2coord(cell[0], cell[1])
+        if self.goingReturnPoint == False:
+            #Calculate the desviation with the next cell
+            if self.goTo == 'north': 
+                xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
+            elif self.goTo == 'east':
+                xc, yc = self.pix2coord(nextECell[0], nextECell[1])
+            elif self.goTo == 'west':
+                xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
+            elif self.goTo == 'south':
+                xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
         cell = [round(xc, 2),round(yc, 2)]
-        #If the next cell is empty, calculate the desviation with the next cell
-        if cNCell == 0 and self.goTo == 'north': 
-            xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
-            nextNCell = [round(xc, 2),round(yc, 2)]
-            desviation = self.calculateDesv(poseVacuum, nextNCell)
-        elif cSCell == 0 and self.goTo == 'south':
-            xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
-            nextSCell = [round(xc, 2),round(yc, 2)]
-            desviation = self.calculateDesv(poseVacuum, nextSCell)
-        else:
-            desviation = self.calculateDesv(poseVacuum, cell)
+        desviation = self.calculateDesv(poseVacuum, cell)
         self.controlDrive(desviation)
-         
+                 
             
     def calculateDesv(self, poseVacuum, cell):
         # poseVacuum = [x1, y1] coord gazebo
@@ -559,7 +559,7 @@ class MyAlgorithm4(threading.Thread):
         desv = abs(desv) 
         th1 = 7
         th2 = 15
-        v = 0.12
+        v = 0.1
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(wFast)
