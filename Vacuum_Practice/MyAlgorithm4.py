@@ -577,7 +577,7 @@ class MyAlgorithm4(threading.Thread):
         vMax = 0.4
         vFast = 0.32
         vMed = 0.24
-        vSlow = 0.17
+        vSlow = 0.15
         
         v = vSlow
          
@@ -623,17 +623,18 @@ class MyAlgorithm4(threading.Thread):
     def calculateNext4C(self, cell, direction):
         # cell: [xPix, yPix] 
         # direction: north, east, west or south
+        # cell: [xPix, yPix] 
+        # direction: north, east, west or south
         if direction == 'north':
-            cell1 = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
-            cell2 = [cell[0], cell[1] - 2 * self.VACUUM_PX_SIZE]
-            cell3 = [cell[0], cell[1] - 3 * self.VACUUM_PX_SIZE]
-            cell4 = [cell[0], cell[1] - 4 * self.VACUUM_PX_SIZE]
+            cell1 = self.calculateNeigh(cell)[0]
+            cell2 = self.calculateNeigh(cell1)[0]
+            cell3 = self.calculateNeigh(cell2)[0]
+            cell4 = self.calculateNeigh(cell3)[0]
         elif direction == 'south':
-            cell1 = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
-            cell2 = [cell[0], cell[1] + 2 * self.VACUUM_PX_SIZE]
-            cell3 = [cell[0], cell[1] + 3 * self.VACUUM_PX_SIZE]
-            cell4 = [cell[0], cell[1] + 4 * self.VACUUM_PX_SIZE]
-
+            cell1 = self.calculateNeigh(cell)[3]
+            cell2 = self.calculateNeigh(cell1)[3]
+            cell3 = self.calculateNeigh(cell2)[3]
+            cell4 = self.calculateNeigh(cell3)[3]           
         cells = [cell1, cell2, cell3, cell4]      
         return cells
             
@@ -648,27 +649,25 @@ class MyAlgorithm4(threading.Thread):
         c = [c1, c2, c3, c4]
         return c
         
-                                 
+                            
     def checkArriveCell(self, cell):
-        distMax = 0.07 #7 cm
+        distMax = 0.08
         distMin = 0
         x = False
         y = False
         xc, yc = self.pix2coord(cell[0], cell[1])
         xdif = abs(xc - self.x)
         ydif = abs(yc - self.y)
-        if xdif >= distMin and xdif < distMax:
+        if xdif >= distMin and xdif <= distMax:
             x = True
-        if ydif >= distMin and ydif < distMax:
+        if ydif >= distMin and ydif <= distMax:
             y = True
         if x == True and y == True:
             arrive = True
         else:
             arrive = False
-        print '            xdif', xdif
-        print '            ydif', ydif
         return arrive
-    
+        
     
     def stopVacuum(self):
         self.motors.sendV(0)
