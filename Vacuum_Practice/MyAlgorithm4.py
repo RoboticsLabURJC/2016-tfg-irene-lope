@@ -494,32 +494,7 @@ class MyAlgorithm4(threading.Thread):
                 self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                 print '    NEW CURRENT CELL', self.currentCell
                 #self.stopVacuum()
-            
-    '''       
-    def goToCell(self, cell):
-        self.x = self.pose3d.getX()
-        self.y = self.pose3d.getY()
-        self.yaw = self.pose3d.getYaw()
-        poseVacuum = [round(self.x, 2), round(self.y, 2)]
-        nextNCell = self.calculateNeigh(cell)[0]
-        nextSCell = self.calculateNeigh(cell)[3]
-        cNCell = self.checkCell(nextNCell)
-        cSCell = self.checkCell(nextSCell)
-        xc, yc = self.pix2coord(cell[0], cell[1])
-        cell = [round(xc, 2),round(yc, 2)]
-        #If the next cell is empty, calculate the desviation with the next cell
-        if cNCell == 0 and self.goTo == 'north': 
-            xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
-            nextNCell = [round(xc, 2),round(yc, 2)]
-            desviation = self.calculateDesv(poseVacuum, nextNCell)
-        elif cSCell == 0 and self.goTo == 'south':
-            xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
-            nextSCell = [round(xc, 2),round(yc, 2)]
-            desviation = self.calculateDesv(poseVacuum, nextSCell)
-        else:
-            desviation = self.calculateDesv(poseVacuum, cell)
-        self.controlDrive(desviation)
-    '''     
+   
     
     def goToCell(self, cell):
         self.x = self.pose3d.getX()
@@ -531,18 +506,18 @@ class MyAlgorithm4(threading.Thread):
         nextWCell = self.calculateNeigh(cell)[2]
         nextSCell = self.calculateNeigh(cell)[3]
         xc, yc = self.pix2coord(cell[0], cell[1])
+        if self.goingReturnPoint == False:
+            #Calculate the desviation with the next cell
+            if self.goTo == 'north': 
+                xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
+            elif self.goTo == 'east':
+                xc, yc = self.pix2coord(nextECell[0], nextECell[1])
+            elif self.goTo == 'west':
+                xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
+            elif self.goTo == 'south':
+                xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
         cell = [round(xc, 2),round(yc, 2)]
-        #Calculate the desviation with the next cell
-        if self.goTo == 'north': 
-            xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
-        elif self.goTo == 'east':
-            xc, yc = self.pix2coord(nextECell[0], nextECell[1])
-        elif self.goTo == 'west':
-            xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
-        elif self.goTo == 'south':
-            xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
-        nextCell = [round(xc, 2),round(yc, 2)]
-        desviation = self.calculateDesv(poseVacuum, nextCell)
+        desviation = self.calculateDesv(poseVacuum, cell)
         self.controlDrive(desviation)
         
                 
@@ -572,8 +547,8 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        wFast = 0.15
-        wSlow = 0.09
+        wFast = 0.2
+        wSlow = 0.1
         if desv > 0: #LEFT
             self.controlDesv(desv, wFast, wSlow)
         else: #RIGHT
@@ -649,16 +624,15 @@ class MyAlgorithm4(threading.Thread):
         # cell: [xPix, yPix] 
         # direction: north, east, west or south
         if direction == 'north':
-            cell1 = [cell[0], cell[1] - self.VACUUM_PX_SIZE]
-            cell2 = [cell[0], cell[1] - 2 * self.VACUUM_PX_SIZE]
-            cell3 = [cell[0], cell[1] - 3 * self.VACUUM_PX_SIZE]
-            cell4 = [cell[0], cell[1] - 4 * self.VACUUM_PX_SIZE]
+            cell1 = self.calculateNeigh(cell)[0]
+            cell2 = self.calculateNeigh(cell1)[0]
+            cell3 = self.calculateNeigh(cell2)[0]
+            cell4 = self.calculateNeigh(cell3)[0]
         elif direction == 'south':
-            cell1 = [cell[0], cell[1] + self.VACUUM_PX_SIZE]
-            cell2 = [cell[0], cell[1] + 2 * self.VACUUM_PX_SIZE]
-            cell3 = [cell[0], cell[1] + 3 * self.VACUUM_PX_SIZE]
-            cell4 = [cell[0], cell[1] + 4 * self.VACUUM_PX_SIZE]
-
+            cell1 = self.calculateNeigh(cell)[3]
+            cell2 = self.calculateNeigh(cell1)[3]
+            cell3 = self.calculateNeigh(cell2)[3]
+            cell4 = self.calculateNeigh(cell3)[3]           
         cells = [cell1, cell2, cell3, cell4]      
         return cells
             
