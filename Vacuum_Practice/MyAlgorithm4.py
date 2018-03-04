@@ -136,12 +136,12 @@ class MyAlgorithm4(threading.Thread):
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
                     print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
+                    self.stopVacuum()
                     self.checkReturnPoints()
                     if len(self.returnPoints) > 0:
                         self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
                         print '   RETURN POINT:', self.returnPoint
                         self.goingReturnPoint = True
-                        self.stopVacuum()
                     else:
                         print 'END SWEEP'
                         self.stop()
@@ -651,7 +651,7 @@ class MyAlgorithm4(threading.Thread):
         
                             
     def checkArriveCell(self, cell):
-        distMax = 0.08
+        distMax = 0.08 #m
         distMin = 0
         x = False
         y = False
