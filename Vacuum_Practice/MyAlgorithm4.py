@@ -556,7 +556,7 @@ class MyAlgorithm4(threading.Thread):
        
     def controlDesv(self, desv, wFast, wSlow): 
         desv = abs(desv) 
-        th1 = 7
+        th1 = 6
         th2 = 15
         v = 0.1
         if desv >= th2:
@@ -576,7 +576,7 @@ class MyAlgorithm4(threading.Thread):
         vMax = 0.45
         vFast = 0.32
         vMed = 0.24
-        vSlow = 0.13
+        vSlow = 0.12
         
         v = vSlow
          
@@ -593,13 +593,13 @@ class MyAlgorithm4(threading.Thread):
                 c2 = c[1]
                 c3 = c[2]
                 c4 = c[3]
-                if (c1 + c2 + c3 + c4) == 0: #All cells are free
+                if c4 != None and (c1 + c2 + c3 + c4) == 0: #All cells are free
                     v = vMax
-                elif (c1 + c2 + c3) == 0:
+                elif c3 != None and (c1 + c2 + c3) == 0:
                     v = vFast
-                elif (c1 + c2) == 0:
+                elif c2 != None and (c1 + c2) == 0:
                     v = vMed
-                elif c1 == 0:
+                elif c1 != None and c1 == 0:
                     v = vSlow 
         else:
             pose = [self.x, self.y]
@@ -653,7 +653,7 @@ class MyAlgorithm4(threading.Thread):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
         distMax = 0.09 #m
-        if self.goTo == 'east' or self.goTo == 'west' or north == 1 or south == 1:
+        if self.goTo == 'east' or self.goTo == 'west' or north == 1 or south == 1 or self.goToReturnPoint == True:
             distMax = 0.06
             
         print '\n \n DIST MAX:  ', distMax , '\n \n'
@@ -670,6 +670,8 @@ class MyAlgorithm4(threading.Thread):
             y = True
         if x == True and y == True:
             arrive = True
+            if distMax == 0.06:
+                self.stopVacuum()
         else:
             arrive = False
         return arrive
