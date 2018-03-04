@@ -41,8 +41,8 @@ class MyAlgorithm4(threading.Thread):
         self.VACUUM_PX_HALF = 8 
         self.VACUUM_SIZE = 0.34
         self.COLOR_VIRTUAL_OBST = 128
-        self.MIN_MAP = 16
-        self.MAX_MAP = 484
+        self.MIN_MAP = 24
+        self.MAX_MAP = 476
         self.STEP = 0.10 # 10 cm 
 
         self.x = None
@@ -631,8 +631,8 @@ class MyAlgorithm4(threading.Thread):
             cell4 = self.calculateNeigh(cell3)[0]
         elif direction == 'south':
             cell1 = self.calculateNeigh(cell)[3]
-            cell2 = self.calculateNeigh(cell1)[3]
-            cell3 = self.calculateNeigh(cell2)[3]
+            cell2 = self.calculateNeigh(cell1)[3]  
+            cell3 = self.calculateNeigh(cell2)[3] 
             cell4 = self.calculateNeigh(cell3)[3]           
         cells = [cell1, cell2, cell3, cell4]      
         return cells
