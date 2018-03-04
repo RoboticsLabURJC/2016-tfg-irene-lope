@@ -96,7 +96,7 @@ class mapaWidget(QWidget):
         brush = QtGui.QBrush(QtCore.Qt.SolidPattern)
         brush.setColor(QtGui.QColor(Qt.blue))
         painter.setBrush(brush)
-        painter.drawEllipse(centerX, centerY, 50/3, 50/3)
+        painter.drawEllipse(centerX, centerY, 17, 17)
 
 
     def drawTrail(self, painter):
