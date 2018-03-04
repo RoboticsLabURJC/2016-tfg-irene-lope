@@ -461,7 +461,6 @@ class MyAlgorithm4(threading.Thread):
         wCell= cells[2]
         sCell= cells[3]
         critical = False
-        print '\n CRITC :', cells, '\n'
         if nCell > 0:
             if eCell > 0:
                 if wCell > 0:
@@ -574,10 +573,10 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.4
+        vMax = 0.45
         vFast = 0.32
         vMed = 0.24
-        vSlow = 0.15
+        vSlow = 0.13
         
         v = vSlow
          
@@ -651,7 +650,14 @@ class MyAlgorithm4(threading.Thread):
         
                             
     def checkArriveCell(self, cell):
-        distMax = 0.08 #m
+        north = self.checkCell(self.calculateNeigh(cell)[0])
+        south = self.checkCell(self.calculateNeigh(cell)[3])
+        distMax = 0.09 #m
+        if self.goTo == 'east' or self.goTo == 'west' or north == 1 or south == 1:
+            distMax = 0.06
+            
+        print '\n \n DIST MAX:  ', distMax , '\n \n'
+            
         distMin = 0
         x = False
         y = False
