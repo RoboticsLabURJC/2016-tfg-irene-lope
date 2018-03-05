@@ -160,7 +160,6 @@ class MyAlgorithm4(threading.Thread):
                     self.savePath(self.currentCell)
                     self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                     print '    NEW CURRENT CELL', self.currentCell
-                    #self.stopVacuum()
         
 
     def RTy(self, angle, tx, ty, tz):
@@ -310,26 +309,31 @@ class MyAlgorithm4(threading.Thread):
     def calculateNeigh(self, cell):
         # cell = [x,y]
         # Check that the cells are inside the map
-        if cell[1] >= self.MIN_MAP:
-            northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE] 
-        else:
+        if cell[0] != None and cell[1] != None:
+            if cell[1] >= self.MIN_MAP:
+                northCell = [cell[0], cell[1] - self.VACUUM_PX_SIZE] 
+            else:
+                northCell = [None, None]
+                
+            if cell[1] <= self.MAX_MAP:
+                southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE] 
+            else:
+                southCell = [None, None]
+               
+            if cell[0] >= self.MIN_MAP:
+                westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]] 
+            else:
+                westCell = [None, None]
+                
+            if cell[0] <= self.MAX_MAP:
+                eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]] 
+            else:
+                eastCell = [None, None]
+        else:  
             northCell = [None, None]
-            
-        if cell[1] <= self.MAX_MAP:
-            southCell = [cell[0], cell[1] + self.VACUUM_PX_SIZE] 
-        else:
             southCell = [None, None]
-            
-        if cell[0] >= self.MIN_MAP:
-            westCell = [cell[0] - self.VACUUM_PX_SIZE, cell[1]] 
-        else:
             westCell = [None, None]
-            
-        if cell[0] <= self.MAX_MAP:
-            eastCell = [cell[0] + self.VACUUM_PX_SIZE, cell[1]] 
-        else:
             eastCell = [None, None]
-        
         neighbors = [northCell, eastCell, westCell, southCell]   
         return neighbors
     
@@ -492,7 +496,6 @@ class MyAlgorithm4(threading.Thread):
                 self.savePath(self.currentCell)
                 self.paintCell(self.currentCell, self.COLOR_VIRTUAL_OBST, self.mapE)
                 print '    NEW CURRENT CELL', self.currentCell
-                #self.stopVacuum()
             
            
     def goToCell(self, cell):
@@ -507,13 +510,13 @@ class MyAlgorithm4(threading.Thread):
         xc, yc = self.pix2coord(cell[0], cell[1])
         if self.goingReturnPoint == False:
             #Calculate the desviation with the next cell
-            if self.goTo == 'north': 
+            if self.goTo == 'north' and nextNCell[0] != None and nextNCell[1] != None: 
                 xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
-            elif self.goTo == 'east':
+            elif self.goTo == 'east' and nextECell[0] != None and nextECell[1] != None:
                 xc, yc = self.pix2coord(nextECell[0], nextECell[1])
-            elif self.goTo == 'west':
+            elif self.goTo == 'west' and nextWCell[0] != None and nextWCell[1] != None:
                 xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
-            elif self.goTo == 'south':
+            elif self.goTo == 'south' and nextSCell[0] != None and nextSCell[1] != None:
                 xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
         cell = [round(xc, 2),round(yc, 2)]
         desviation = self.calculateDesv(poseVacuum, cell)
@@ -573,17 +576,17 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.45
-        vFast = 0.32
-        vMed = 0.24
-        vSlow = 0.12
+        vMax = 0.34
+        vFast = 0.23
+        vMed = 0.15
+        vSlow = 0.1
         
         v = vSlow
          
         #Distance [m]
-        dMax = 2.5
-        dMed = 1.2
-        dMin = 0.5
+        dMax = 2.7
+        dMed = 1.8
+        dMin = 1
             
         if self.goingReturnPoint == False:
             if self.goTo == 'north' or self.goTo == 'south':
@@ -633,7 +636,7 @@ class MyAlgorithm4(threading.Thread):
             cell1 = self.calculateNeigh(cell)[3]
             cell2 = self.calculateNeigh(cell1)[3]  
             cell3 = self.calculateNeigh(cell2)[3] 
-            cell4 = self.calculateNeigh(cell3)[3]           
+            cell4 = self.calculateNeigh(cell3)[3]         
         cells = [cell1, cell2, cell3, cell4]      
         return cells
             
@@ -643,8 +646,7 @@ class MyAlgorithm4(threading.Thread):
         c1 = self.checkCell(cells[0])
         c2 = self.checkCell(cells[1])
         c3 = self.checkCell(cells[2])
-        c4 = self.checkCell(cells[3])
-        
+        c4 = self.checkCell(cells[3])       
         c = [c1, c2, c3, c4]
         return c
         
@@ -652,25 +654,26 @@ class MyAlgorithm4(threading.Thread):
     def checkArriveCell(self, cell):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
-        distMax = 0.09 #m
-        if self.goTo == 'east' or self.goTo == 'west' or north == 1 or south == 1 or self.goToReturnPoint == True:
-            distMax = 0.06
+        dMin = 0.06
+        dMax = 0.25
+        dist = dMax
+        if self.goTo == 'east' or self.goTo == 'west' or north == 1 or north == None or south == 1 or south == None or self.goingReturnPoint == True:
+            dist = dMin
             
-        print '\n \n DIST MAX:  ', distMax , '\n \n'
-            
-        distMin = 0
+        print '\n \n                        DIST: ', dist, '\n \n'
+        
         x = False
         y = False
         xc, yc = self.pix2coord(cell[0], cell[1])
         xdif = abs(xc - self.x)
         ydif = abs(yc - self.y)
-        if xdif >= distMin and xdif <= distMax:
+        if xdif <= dist:
             x = True
-        if ydif >= distMin and ydif <= distMax:
+        if ydif <= dist:
             y = True
         if x == True and y == True:
             arrive = True
-            if distMax == 0.06:
+            if dist == dMin:
                 self.stopVacuum()
         else:
             arrive = False
@@ -693,7 +696,6 @@ class MyAlgorithm4(threading.Thread):
         print '\n         RETURN PATH:\n', self.returnPath, '\n'
         
         length = len(self.returnPath)
-        print 'length', length
         if length > 0:
             print self.returnPath[length-1]
             self.nextCell = self.returnPath[length-1]
@@ -705,7 +707,6 @@ class MyAlgorithm4(threading.Thread):
                 self.currentCell = self.nextCell
                 self.returnPath.pop(length-1)
                 print '\nNEW RETURN PATH:\n', self.returnPath, '\n'
-                self.stopVacuum()
 
         
     def searchReturnPath(self, cell):
