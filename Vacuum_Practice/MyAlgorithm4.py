@@ -549,7 +549,7 @@ class MyAlgorithm4(threading.Thread):
  
     
     def controlDrive(self, desv):
-        wFast = 0.15
+        wFast = 0.18
         wSlow = 0.09
         if desv > 0: #LEFT
             self.controlDesv(desv, wFast, wSlow)
@@ -585,8 +585,8 @@ class MyAlgorithm4(threading.Thread):
          
         #Distance [m]
         dMax = 2.7
-        dMed = 1.8
-        dMin = 1
+        dMed = 1.5
+        dMin = 0.6
             
         if self.goingReturnPoint == False:
             if self.goTo == 'north' or self.goTo == 'south':
@@ -655,13 +655,13 @@ class MyAlgorithm4(threading.Thread):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
         dMin = 0.06
-        dMax = 0.25
+        dMax = 0.28
         dist = dMax
-        if self.goTo == 'east' or self.goTo == 'west' or north != 0 or south != 0 or self.goingReturnPoint == True:
+        if self.goTo == 'east' or self.goTo == 'west' or (north != 0 and self.goTo == 'north') or (south != 0 and self.goTo == 'south') or self.goingReturnPoint == True:
             dist = dMin
             
         print '\n \n                        DIST: ', dist
-        print '                        GOING TO RET POINT: ', self.goingReturnPoint, '\n \n'
+        
         x = False
         y = False
         xc, yc = self.pix2coord(cell[0], cell[1])
