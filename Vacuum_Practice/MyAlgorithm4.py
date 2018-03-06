@@ -657,11 +657,11 @@ class MyAlgorithm4(threading.Thread):
         dMin = 0.06
         dMax = 0.25
         dist = dMax
-        if self.goTo == 'east' or self.goTo == 'west' or north == 1 or north == None or south == 1 or south == None or self.goingReturnPoint == True:
+        if self.goTo == 'east' or self.goTo == 'west' or north != 0 or south != 0 or self.goingReturnPoint == True:
             dist = dMin
             
-        print '\n \n                        DIST: ', dist, '\n \n'
-        
+        print '\n \n                        DIST: ', dist
+        print '                        GOING TO RET POINT: ', self.goingReturnPoint, '\n \n'
         x = False
         y = False
         xc, yc = self.pix2coord(cell[0], cell[1])
