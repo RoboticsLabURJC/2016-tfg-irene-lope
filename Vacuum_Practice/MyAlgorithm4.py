@@ -150,7 +150,7 @@ class MyAlgorithm4(threading.Thread):
             else:
                 arrive = self.checkArriveCell(self.returnPoint)
                 if arrive == False:
-                    print '...Going to a return cell...'
+                    print '\n\n...Going to the return cell...\n'
                     self.goToReturnPoint() 
                 else:
                     self.goingReturnPoint = False
@@ -618,7 +618,7 @@ class MyAlgorithm4(threading.Thread):
                 v = vFast
             else:
                 v = vMax 
-                
+        print '\n                       v:', v, '\n'        
         return v
         
         
@@ -761,7 +761,6 @@ class MyAlgorithm4(threading.Thread):
             obst = self.isObstacle(pPix)
             if obst == True:
                 visibility = False
-                print 'LINE ENDS BREAK'
                 break
             else:
                 nextPoint = P
