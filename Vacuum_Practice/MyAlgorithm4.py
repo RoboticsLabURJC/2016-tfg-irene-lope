@@ -31,7 +31,7 @@ class MyAlgorithm4(threading.Thread):
         self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         #self.map_orig = cv2.imread("resources/images/visibilidad.png", cv2.IMREAD_GRAYSCALE)
         self.map_orig = cv2.resize(self.map_orig, (500, 500))
-        kernel = np.ones((9,9), np.uint8)
+        kernel = np.ones((10, 10), np.uint8)
         self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
         self.mapEVis = self.mapE.copy()
         self.mapECopy = self.mapE.copy()
@@ -63,6 +63,7 @@ class MyAlgorithm4(threading.Thread):
         self.path = []
         self.returnPoint = []
         self.returnPath = []
+        self.visPoints = []
         
  
     def parse_laser_data(self,laser_data):
@@ -136,7 +137,9 @@ class MyAlgorithm4(threading.Thread):
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
                     print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
+                    print '\n...Checking the return points...\n'
                     self.stopVacuum()
+                    self.goSouth = False
                     self.checkReturnPoints()
                     if len(self.returnPoints) > 0:
                         self.returnPoint = self.checkMinDist(self.returnPoints, self.currentCell)
@@ -388,16 +391,16 @@ class MyAlgorithm4(threading.Thread):
         wCell = cells[2]
         sCell = cells[3]
         if nCell == 0 :
-            self.saveReturnPoint(self.currentCell, self.returnPoints)
+            self.savePoint(self.currentCell, self.returnPoints)
         if eCell == 0:
-            self.saveReturnPoint(self.currentCell, self.returnPoints)
+            self.savePoint(self.currentCell, self.returnPoints)
         if wCell == 0:
-            self.saveReturnPoint(self.currentCell, self.returnPoints)
+            self.savePoint(self.currentCell, self.returnPoints)
         if sCell == 0:
-            self.saveReturnPoint(self.currentCell, self.returnPoints) 
+            self.savePoint(self.currentCell, self.returnPoints) 
              
              
-    def saveReturnPoint(self, p, l):
+    def savePoint(self, p, l):
         # p: the point 
         # l: the list where save the point
         saved = False
@@ -561,7 +564,7 @@ class MyAlgorithm4(threading.Thread):
         desv = abs(desv) 
         th1 = 6
         th2 = 15
-        v = 0.1
+        v = 0.11
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(wFast)
@@ -576,17 +579,17 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.34
-        vFast = 0.23
-        vMed = 0.15
-        vSlow = 0.1
+        vMax = 0.35
+        vFast = 0.25
+        vMed = 0.14
+        vSlow = 0.11
         
         v = vSlow
          
         #Distance [m]
-        dMax = 2.7
-        dMed = 1.5
-        dMin = 0.6
+        dMax = 2.3
+        dMed = 1.1
+        dMin = 0.4
             
         if self.goingReturnPoint == False:
             if self.goTo == 'north' or self.goTo == 'south':
@@ -606,7 +609,8 @@ class MyAlgorithm4(threading.Thread):
                     v = vSlow 
         else:
             pose = [self.x, self.y]
-            xRet, yRet = self.pix2coord(self.returnPoint[0], self.returnPoint[1])
+            #xRet, yRet = self.pix2coord(self.returnPoint[0], self.returnPoint[1])
+            xRet, yRet = self.pix2coord(self.nextCell[0], self.nextCell[1])
             returnPoint = [xRet, yRet]
             d = self.euclideanDist(pose, returnPoint) 
             print '\n    DISTANCIA AL PUNTO DE RETORNO:\n       ', d , '\n'
@@ -654,8 +658,8 @@ class MyAlgorithm4(threading.Thread):
     def checkArriveCell(self, cell):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
-        dMin = 0.06
-        dMax = 0.28
+        dMin = 0.065
+        dMax = 0.3
         dist = dMax
         if self.goTo == 'east' or self.goTo == 'west' or (north != 0 and self.goTo == 'north') or (south != 0 and self.goTo == 'south') or self.goingReturnPoint == True:
             dist = dMin
@@ -686,7 +690,7 @@ class MyAlgorithm4(threading.Thread):
         
    
     def goToReturnPoint(self):
-        self.saveReturnPoint(self.returnPoint, self.returnPath)
+        self.savePoint(self.returnPoint, self.returnPath)
         visPoseRet = self.visibility(self.currentCell, self.returnPoint) 
         print 'VISIBILIDAD RETURN Y POSE', visPoseRet  
         if visPoseRet == False:
@@ -715,14 +719,43 @@ class MyAlgorithm4(threading.Thread):
             if cell != newCell:
                 vis = self.visibility(cell, newCell)
                 if vis == True:
-                    self.saveReturnPoint(newCell, self.returnPath)
+                    self.savePoint(newCell, self.returnPath)
                     break
         if vis == True:
             vis1 = self.visibility(self.currentCell, newCell)
             if vis1 == False:
                 self.searchReturnPath(newCell)           
-                
-                 
+    '''            
+    
+    def searchVisPoints(self):
+        for i in range(len(self.path)-1, -1, -1):
+            newCell = self.path[i]
+            if cell != newCell:
+                vis = self.visibility(cell, newCell)
+                if vis == True:
+                    self.savePoint(newCell, self.visPoints)
+                    
+    def searchReturnPath(self, cell):
+        visPoints = []
+        for i in range(len(self.path)-1, -1, -1):
+            newCell = self.path[i]
+            if cell != newCell:
+                vis = self.visibility(cell, newCell)
+                if vis == True:
+                    self.savePoint(newCell, visPoints)       
+        
+        for j in range(len(visPoints)):
+            newCell = self.path[i]
+            if cell != newCell:
+                vis = self.visibility(cell, newCell)
+                if vis == True:
+                    self.savePoint(newCell, self.visPoints)
+        if vis == True:
+            vis1 = self.visibility(self.currentCell, newCell)
+            if vis1 == False:
+                self.searchReturnPath(newCell)
+             
+    '''            
     def pointOfLine(self, A, B):
         # A and B : coord gazebo
         # P = A + s(B - A)
