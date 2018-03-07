@@ -690,18 +690,9 @@ class MyAlgorithm4(threading.Thread):
         
    
     def goToReturnPoint(self):
-        self.savePoint(self.returnPoint, self.returnPath)
-        visPoseRet = self.visibility(self.currentCell, self.returnPoint) 
-        #print 'VISIBILIDAD RETURN Y POSE', visPoseRet  
-        if visPoseRet == False:
-            self.searchReturnPath(self.returnPoint)
-        
-        print 'return point:', self.returnPoint                    
-        print '\n         RETURN PATH:\n', self.returnPath, '\n'
-        
         length = len(self.returnPath)
         if length > 0:
-            print self.returnPath[length-1]
+            #print self.returnPath[length-1]
             self.nextCell = self.returnPath[length-1]
             arrive = self.checkArriveCell(self.nextCell)
             if arrive == False:
@@ -711,8 +702,16 @@ class MyAlgorithm4(threading.Thread):
                 self.currentCell = self.nextCell
                 self.returnPath.pop(length-1)
                 print '\nNEW RETURN PATH:\n', self.returnPath, '\n'
-
-        
+        else:
+            self.savePoint(self.returnPoint, self.returnPath)
+            visPoseRet = self.visibility(self.currentCell, self.returnPoint)   
+            if visPoseRet == False:
+                self.searchReturnPath(self.returnPoint)
+            
+            print 'return point:', self.returnPoint                    
+            print '\n         RETURN PATH:\n', self.returnPath, '\n'
+            
+            
     def searchReturnPath(self, cell):
         for i in range(len(self.path)-1, -1, -1):
             newCell = self.path[i]
