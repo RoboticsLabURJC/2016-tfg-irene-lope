@@ -579,7 +579,7 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.35
+        vMax = 0.3
         vFast = 0.25
         vMed = 0.14
         vSlow = 0.11
@@ -692,7 +692,7 @@ class MyAlgorithm4(threading.Thread):
     def goToReturnPoint(self):
         self.savePoint(self.returnPoint, self.returnPath)
         visPoseRet = self.visibility(self.currentCell, self.returnPoint) 
-        print 'VISIBILIDAD RETURN Y POSE', visPoseRet  
+        #print 'VISIBILIDAD RETURN Y POSE', visPoseRet  
         if visPoseRet == False:
             self.searchReturnPath(self.returnPoint)
         
