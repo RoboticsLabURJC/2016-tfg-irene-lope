@@ -198,10 +198,10 @@ class porcentajeWidget(QWidget):
 
         final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
 
-        i_init = int(-50/4+final_poses.flat[0] + self.map.shape[1]/2)
-        i_finish = int(50/4+final_poses.flat[0] + self.map.shape[1]/2)
-        j_init = int(-50/4+final_poses[1] + self.map.shape[0]/2)
-        j_finish = int(50/4+final_poses[1] + self.map.shape[0]/2)
+        i_init = int(-17+final_poses.flat[0])
+        i_finish = int(17+final_poses.flat[0])
+        j_init = int(-17+final_poses[1])
+        j_finish = int(17+final_poses[1])
         for k in range(i_init, i_finish+1):
             for l in range(j_init, j_finish+1):
                 if (self.map[k][l] == 255):
