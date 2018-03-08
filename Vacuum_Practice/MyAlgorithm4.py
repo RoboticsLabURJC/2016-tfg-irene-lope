@@ -29,11 +29,11 @@ class MyAlgorithm4(threading.Thread):
         threading.Thread.__init__(self, args=self.stop_event)
         
         self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
-        #self.map_orig = cv2.imread("resources/images/visibilidad.png", cv2.IMREAD_GRAYSCALE)
         self.map_orig = cv2.resize(self.map_orig, (500, 500))
-        kernel = np.ones((10, 10), np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
+        kernelV = np.ones((12, 12), np.uint8)
         self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
-        self.mapEVis = self.mapE.copy()
+        self.mapEVis = cv2.erode(self.map_orig, kernelV, iterations=1)
         self.mapECopy = self.mapE.copy()
         
         self.SCALE = 50.00 #50 px = 1 m
@@ -124,7 +124,7 @@ class MyAlgorithm4(threading.Thread):
             # Is the first position
             self.x = self.pose3d.getX()
             self.y = self.pose3d.getY()
-            print self.x ,self.y 
+            print '\n\nPOSE INICIAL:', 'x:', self.x, 'y:', self.y ,'\n'
             self.xPix, self.yPix = self.coord2pix(self.x, self.y)
             self.currentCell = [self.xPix, self.yPix]
             self.savePath(self.currentCell)
@@ -564,7 +564,7 @@ class MyAlgorithm4(threading.Thread):
         desv = abs(desv) 
         th1 = 6
         th2 = 15
-        v = 0.11
+        v = 0.1
         if desv >= th2:
             self.motors.sendV(0)
             self.motors.sendW(wFast)
@@ -582,7 +582,7 @@ class MyAlgorithm4(threading.Thread):
         vMax = 0.3
         vFast = 0.25
         vMed = 0.14
-        vSlow = 0.11
+        vSlow = 0.1
         
         v = vSlow
          
@@ -658,7 +658,7 @@ class MyAlgorithm4(threading.Thread):
     def checkArriveCell(self, cell):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
-        dMin = 0.065
+        dMin = 0.067
         dMax = 0.3
         dist = dMax
         if self.goTo == 'east' or self.goTo == 'west' or (north != 0 and self.goTo == 'north') or (south != 0 and self.goTo == 'south') or self.goingReturnPoint == True:
@@ -724,37 +724,8 @@ class MyAlgorithm4(threading.Thread):
             vis1 = self.visibility(self.currentCell, newCell)
             if vis1 == False:
                 self.searchReturnPath(newCell)           
-    '''            
     
-    def searchVisPoints(self):
-        for i in range(len(self.path)-1, -1, -1):
-            newCell = self.path[i]
-            if cell != newCell:
-                vis = self.visibility(cell, newCell)
-                if vis == True:
-                    self.savePoint(newCell, self.visPoints)
-                    
-    def searchReturnPath(self, cell):
-        visPoints = []
-        for i in range(len(self.path)-1, -1, -1):
-            newCell = self.path[i]
-            if cell != newCell:
-                vis = self.visibility(cell, newCell)
-                if vis == True:
-                    self.savePoint(newCell, visPoints)       
-        
-        for j in range(len(visPoints)):
-            newCell = self.path[i]
-            if cell != newCell:
-                vis = self.visibility(cell, newCell)
-                if vis == True:
-                    self.savePoint(newCell, self.visPoints)
-        if vis == True:
-            vis1 = self.visibility(self.currentCell, newCell)
-            if vis1 == False:
-                self.searchReturnPath(newCell)
-             
-    '''            
+    
     def pointOfLine(self, A, B):
         # A and B : coord gazebo
         # P = A + s(B - A)
@@ -802,7 +773,7 @@ class MyAlgorithm4(threading.Thread):
     def isObstacle(self, P):
         # P [xp, yp] pix map
         P = [int(P[0]), int(P[1])]
-        if self.mapE[P[1]][P[0]] == 0:
+        if self.mapEVis[P[1]][P[0]] == 0:
             # Obstacle
             obst = True
         else:
