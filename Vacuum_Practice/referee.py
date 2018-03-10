@@ -173,9 +173,8 @@ class porcentajeWidget(QWidget):
         return RT
 
     def RTVacuum(self):
-        RTy = self.RTy(pi, 1, -1, 0)
+        RTy = self.RTz(-pi/2, 4.2, -4.25, 0)
         return RTy
-
 
     def calculatePixelsWhite(self):
         # Calculating the 100% of the pixels that can be traversed
@@ -195,20 +194,21 @@ class porcentajeWidget(QWidget):
         x = self.pose3d.getX()
         y = self.pose3d.getY()
         scale = 50
-
+        
         final_poses = self.RTVacuum() * np.matrix([[x], [y], [1], [1]]) * scale
 
-        i_init = int(-17+final_poses.flat[0])
-        i_finish = int(17+final_poses.flat[0])
-        j_init = int(-17+final_poses[1])
-        j_finish = int(17+final_poses[1])
+        i_init = int(-9+final_poses.flat[0])
+        i_finish = int(9+final_poses.flat[0])
+        j_init = int(-9+final_poses[1])
+        j_finish = int(9+final_poses[1])
         for k in range(i_init, i_finish+1):
             for l in range(j_init, j_finish+1):
                 if (self.map[k][l] == 255):
                     self.numPixelsRecorridos = self.numPixelsRecorridos + 1
                     self.map[k][l] = 128
-
+    
         self.porcentajeCasa = self.calculatePercentaje()
+        cv2.imshow("REF ", self.map) 
 
 
     def updateG(self):
