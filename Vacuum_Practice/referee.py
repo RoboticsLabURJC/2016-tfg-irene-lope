@@ -186,7 +186,7 @@ class porcentajeWidget(QWidget):
         return numPixels
 
     def calculatePercentaje(self):
-        percentaje = self.numPixelsRecorridos * 100 / self.numPixels
+        percentaje = (self.numPixelsRecorridos * 100) / self.numPixels
         return percentaje
 
 
@@ -208,7 +208,10 @@ class porcentajeWidget(QWidget):
                     self.map[k][l] = 128
     
         self.porcentajeCasa = self.calculatePercentaje()
-        cv2.imshow("REF ", self.map) 
+        #cv2.imshow("REF ", self.map) 
+        #print '\n NUM PX BLANCOS TOTALES:', self.numPixels
+        #print ' NUM PX RECORRIDOS:', self.numPixelsRecorridos
+        #print ' PORCENTAJE RECORRIDO:', self.porcentajeCasa
 
 
     def updateG(self):
