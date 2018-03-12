@@ -31,10 +31,10 @@ class MyAlgorithm4(threading.Thread):
         self.map_orig = cv2.imread("resources/images/mapgrannyannie.png", cv2.IMREAD_GRAYSCALE)
         self.map_orig = cv2.resize(self.map_orig, (500, 500))
         kernel = np.ones((10, 10), np.uint8)
-        kernelV = np.ones((13, 13), np.uint8)
         self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
-        self.mapEVis = cv2.erode(self.map_orig, kernelV, iterations=1)
+        self.mapEVis = cv2.erode(self.map_orig, kernel, iterations=3)
         self.mapECopy = self.mapE.copy()
+        self.mapEVisCopy = self.mapEVis.copy()
         
         self.SCALE = 50.00 #50 px = 1 m
         self.VACUUM_PX_SIZE = 16 
@@ -204,7 +204,8 @@ class MyAlgorithm4(threading.Thread):
                 img[i][j] = color             
         
                         
-    def paintMap(self):    
+    def paintMap(self): 
+           
         if len(self.path) > 0:
             for cell in self.path:
                 self.paintCell(cell, self.COLOR_VIRTUAL_OBST, self.mapECopy)
@@ -236,7 +237,7 @@ class MyAlgorithm4(threading.Thread):
             x,y = self.coord2pix(self.x,self.y)
             pose = [x, y]
             self.paintPoint(pose, 220, self.mapECopy)
-
+        
     
     def paintPoint(self, point, color, img):
         point = [int(point[0]),int(point[1])]
@@ -251,17 +252,22 @@ class MyAlgorithm4(threading.Thread):
         img[point[1]+1][point[0]-1] = color
         
     
-    def showMaps(self, n=3): 
+    def showMaps(self, n=5): 
         if n == 0:                                                         
-            cv2.imshow("MAP ", self.map_orig) 
+            cv2.imshow("Map_orig ", self.map_orig) 
         elif n == 1:
-            cv2.imshow("MAP1 ", self.mapE)
+            cv2.imshow("MapE ", self.mapE)
         elif n == 2:
-            cv2.imshow('MapECopy', self.mapECopy)  
+            cv2.imshow('MapECopy', self.mapECopy) 
+        elif n == 3:
+            cv2.imshow('MapEVis', self.mapEVis) 
+        elif n == 4:
+            cv2.imshow('MapEVisCopy', self.mapEVisCopy) 
         else:  
             cv2.imshow("MAP ", self.map_orig) 
             cv2.imshow("MAP1 ", self.mapE)  
             cv2.imshow('MapECopy', self.mapECopy)
+            cv2.imshow('MapEVis', self.mapEVis) 
             
             
             
@@ -579,8 +585,8 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.3
-        vFast = 0.25
+        vMax = 0.26
+        vFast = 0.20
         vMed = 0.14
         vSlow = 0.1
         
@@ -713,6 +719,7 @@ class MyAlgorithm4(threading.Thread):
             
             
     def searchReturnPath(self, cell):
+        print '\n           ...Searching a return path...\n'
         for i in range(len(self.path)-1, -1, -1):
             newCell = self.path[i]
             if cell != newCell:
@@ -755,12 +762,15 @@ class MyAlgorithm4(threading.Thread):
         nextPoint = []
         A = self.pix2coord(A[0], A[1])
         B = self.pix2coord(B[0], B[1])
+        self.paintPoint(A, 128, self.mapEVisCopy)
+        self.paintPoint(B, 128, self.mapEVisCopy)
         numSteps = self.numSteps(A,B)
         if nextPoint == []:
             nextPoint = A
         for i in range(0, numSteps):
             P = self.pointOfLine(nextPoint, B)
             pPix = self.coord2pix(P[0],P[1])
+            self.paintPoint(pPix, 128, self.mapEVisCopy)
             obst = self.isObstacle(pPix)
             if obst == True:
                 visibility = False
@@ -788,3 +798,5 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(2)
+        self.showMaps(4)
+        
