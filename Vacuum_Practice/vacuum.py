@@ -9,7 +9,7 @@ from parallelIce.bumperClient import BumperClient
 import easyiceconfig as EasyIce
 #from MyAlgorithm import MyAlgorithm
 #from MyAlgorithm2 import MyAlgorithm2
-from MyAlgorithm3 import MyAlgorithm3
+#from MyAlgorithm3 import MyAlgorithm3
 from MyAlgorithm4 import MyAlgorithm4
 
 
