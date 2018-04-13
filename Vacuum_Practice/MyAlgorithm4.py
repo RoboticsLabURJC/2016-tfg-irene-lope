@@ -517,6 +517,7 @@ class MyAlgorithm4(threading.Thread):
         nextWCell = self.calculateNeigh(cell)[2]
         nextSCell = self.calculateNeigh(cell)[3]
         xc, yc = self.pix2coord(cell[0], cell[1])
+        '''
         if self.goingReturnPoint == False:
             #Calculate the desviation with the next cell
             if self.goTo == 'north' and nextNCell[0] != None and nextNCell[1] != None: 
@@ -527,6 +528,7 @@ class MyAlgorithm4(threading.Thread):
                 xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
             elif self.goTo == 'south' and nextSCell[0] != None and nextSCell[1] != None:
                 xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
+        '''
         cell = [round(xc, 2),round(yc, 2)]
         desviation = self.calculateDesv(poseVacuum, cell)
         self.controlDrive(desviation)
@@ -585,9 +587,9 @@ class MyAlgorithm4(threading.Thread):
     
     def setV(self):
         #Velocity
-        vMax = 0.26
-        vFast = 0.20
-        vMed = 0.14
+        vMax = 0.23
+        vFast = 0.17
+        vMed = 0.12
         vSlow = 0.1
         
         v = vSlow
@@ -798,5 +800,5 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(2)
-        self.showMaps(4)
+        #self.showMaps(4)
         
