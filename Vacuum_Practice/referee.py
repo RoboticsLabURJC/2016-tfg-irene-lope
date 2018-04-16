@@ -231,7 +231,7 @@ class tiempoDigitalWidget(QWidget):
         self.pose3d = pose3d
         self.porcentaje = porcentaje
         self.show = False
-        self.MAX_PERCENT = 30
+        self.MAX_PERCENT = 35
         self.MAX_NOTA = 10
 
         self.hLayout = QHBoxLayout()
