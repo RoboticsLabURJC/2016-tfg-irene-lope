@@ -3,7 +3,7 @@
 	<world name='Vacuum'>
     	<include>
     	     <uri>model://roomba</uri>
-    	     <pose>5.04 3.80 0 0 0 -1.57 </pose>
+    	     <pose>5.04 5.44 0 0 0 -1.57 </pose>
     	  	 <!--<pose>5.04 3.80 0 0 0 -1.57 </pose> Room-->
     	  	 <!--<pose>5.04 0.00 0 0 0 -1.57 </pose> Bedroom-->
     	  	 <!--<pose>5.04 5.44 0 0 0 -1.57 </pose> Living room-->
