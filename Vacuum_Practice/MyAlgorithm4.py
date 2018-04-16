@@ -32,7 +32,7 @@ class MyAlgorithm4(threading.Thread):
         self.map_orig = cv2.resize(self.map_orig, (500, 500))
         kernel = np.ones((10, 10), np.uint8)
         self.mapE = cv2.erode(self.map_orig, kernel, iterations=1)
-        self.mapEVis = cv2.erode(self.map_orig, kernel, iterations=3)
+        self.mapEVis = cv2.erode(self.map_orig, kernel, iterations=2)
         self.mapECopy = self.mapE.copy()
         self.mapEVisCopy = self.mapEVis.copy()
         
@@ -517,18 +517,6 @@ class MyAlgorithm4(threading.Thread):
         nextWCell = self.calculateNeigh(cell)[2]
         nextSCell = self.calculateNeigh(cell)[3]
         xc, yc = self.pix2coord(cell[0], cell[1])
-        '''
-        if self.goingReturnPoint == False:
-            #Calculate the desviation with the next cell
-            if self.goTo == 'north' and nextNCell[0] != None and nextNCell[1] != None: 
-                xc, yc = self.pix2coord(nextNCell[0], nextNCell[1])
-            elif self.goTo == 'east' and nextECell[0] != None and nextECell[1] != None:
-                xc, yc = self.pix2coord(nextECell[0], nextECell[1])
-            elif self.goTo == 'west' and nextWCell[0] != None and nextWCell[1] != None:
-                xc, yc = self.pix2coord(nextWCell[0], nextWCell[1])
-            elif self.goTo == 'south' and nextSCell[0] != None and nextSCell[1] != None:
-                xc, yc = self.pix2coord(nextSCell[0], nextSCell[1])
-        '''
         cell = [round(xc, 2),round(yc, 2)]
         desviation = self.calculateDesv(poseVacuum, cell)
         self.controlDrive(desviation)
@@ -595,8 +583,8 @@ class MyAlgorithm4(threading.Thread):
         v = vSlow
          
         #Distance [m]
-        dMax = 2.3
-        dMed = 1.1
+        dMax = 1.3
+        dMed = 0.8
         dMin = 0.4
             
         if self.goingReturnPoint == False:
@@ -667,7 +655,7 @@ class MyAlgorithm4(threading.Thread):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
         dMin = 0.067
-        dMax = 0.3
+        dMax = 0.25
         dist = dMax
         if self.goTo == 'east' or self.goTo == 'west' or (north != 0 and self.goTo == 'north') or (south != 0 and self.goTo == 'south') or self.goingReturnPoint == True:
             dist = dMin
@@ -800,5 +788,5 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(2)
-        #self.showMaps(4)
+        self.showMaps(4)
         
