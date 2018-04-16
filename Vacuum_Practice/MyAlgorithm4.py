@@ -583,7 +583,7 @@ class MyAlgorithm4(threading.Thread):
         v = vSlow
          
         #Distance [m]
-        dMax = 1.3
+        dMax = 1.5
         dMed = 0.8
         dMin = 0.4
             
@@ -655,7 +655,7 @@ class MyAlgorithm4(threading.Thread):
         north = self.checkCell(self.calculateNeigh(cell)[0])
         south = self.checkCell(self.calculateNeigh(cell)[3])
         dMin = 0.067
-        dMax = 0.25
+        dMax = 0.32
         dist = dMax
         if self.goTo == 'east' or self.goTo == 'west' or (north != 0 and self.goTo == 'north') or (south != 0 and self.goTo == 'south') or self.goingReturnPoint == True:
             dist = dMin
@@ -789,4 +789,3 @@ class MyAlgorithm4(threading.Thread):
         self.paintMap()
         self.showMaps(2)
         self.showMaps(4)
-        
