@@ -37,8 +37,8 @@ class MyAlgorithm4(threading.Thread):
         self.mapEVisCopy = self.mapEVis.copy()
         
         self.SCALE = 50.00 #50 px = 1 m
-        self.VACUUM_PX_SIZE = 16 
-        self.VACUUM_PX_HALF = 8 
+        self.VACUUM_PX_SIZE = 16
+        self.VACUUM_PX_HALF = self.VACUUM_PX_SIZE /2
         self.VACUUM_SIZE = 0.34
         self.COLOR_VIRTUAL_OBST = 128
         self.MIN_MAP = 24
@@ -559,7 +559,7 @@ class MyAlgorithm4(threading.Thread):
     def controlDesv(self, desv, wFast, wSlow): 
         desv = abs(desv) 
         th1 = 4
-        th2 = 13
+        th2 = 10
         v = 0.1
         if desv >= th2:
             self.motors.sendV(0)
