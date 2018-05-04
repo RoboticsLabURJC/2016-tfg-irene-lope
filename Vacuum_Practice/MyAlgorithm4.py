@@ -559,7 +559,7 @@ class MyAlgorithm4(threading.Thread):
     def controlDesv(self, desv, wFast, wSlow): 
         desv = abs(desv) 
         th1 = 4
-        th2 = 10
+        th2 = 13
         v = 0.1
         if desv >= th2:
             self.motors.sendV(0)
