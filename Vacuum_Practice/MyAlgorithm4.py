@@ -44,6 +44,7 @@ class MyAlgorithm4(threading.Thread):
         self.MIN_MAP = 24
         self.MAX_MAP = 476
         self.STEP = 0.10 # 10 cm 
+        self.NUM_RETURN = 0
 
         self.x = None
         self.y = None
@@ -64,6 +65,8 @@ class MyAlgorithm4(threading.Thread):
         self.returnPoint = []
         self.returnPath = []
         self.visPoints = []
+        
+        self.initTime = time.time()
         
  
     def parse_laser_data(self,laser_data):
@@ -136,6 +139,7 @@ class MyAlgorithm4(threading.Thread):
             self.isReturnPoint(cells)
             if self.goingReturnPoint == False:
                 if self.isCriticalPoint(cells):
+                    self.NUM_RETURN = self.NUM_RETURN + 1
                     print ('\n   ¡¡¡ CRITICAL POINT !!! \n')
                     print '\n...Checking the return points...\n'
                     self.stopVacuum()
@@ -148,6 +152,11 @@ class MyAlgorithm4(threading.Thread):
                     else:
                         print 'END SWEEP'
                         self.stop()
+                        timeNow = time.time()
+                        timeExSeg = timeNow - self.initTime 
+                        timeExMin = timeExSeg/60
+                        print '\n\n           NUM RETURN:', self.NUM_RETURN,'\n'
+                        print '          TIME SEG:', timeExSeg, '     TIME MIN:', timeExMin, '\n\n\n'
                 else:
                     self.driving(cells, neighbors)
             else:
@@ -788,4 +797,5 @@ class MyAlgorithm4(threading.Thread):
         self.sweep()
         self.paintMap()
         self.showMaps(2)
-        self.showMaps(4)
+        #self.showMaps(4)
+
