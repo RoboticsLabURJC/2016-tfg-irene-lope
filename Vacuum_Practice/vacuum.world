@@ -3,18 +3,18 @@
 	<world name='Vacuum'>
     	<include>
     	     <uri>model://roomba</uri>
-    	     <pose>-2.35 5.44 0 0 0 -1.57</pose>
+    	     <pose>5.04 3.80 0 0 0 -1.57 </pose>
     	  	 <!--<pose>5.04 3.80 0 0 0 -1.57 </pose> Room-->
     	  	 <!--<pose>5.04 0.00 0 0 0 -1.57 </pose> Bedroom-->
     	  	 <!--<pose>-2.35 5.44 0 0 0 -1.57 </pose> Living room-->
-    	  	 <!--<pose>-3.57 1.45 0 0 0 -1.57 </pose> Dining room-->
+    	  	 <!--<pose>-3.50 1.45 0 0 0 -1.57 </pose> Dining room-->
     	</include>
     	<include>
     	     <uri>model://house_int2</uri>
     	  	 <pose>0 0 0 0 0 0</pose>
     	</include>
 		<include>
-    	     <uri>model://ground_plane</uri>
+    	     <uri>model://ground_plane_transparent</uri>
     	</include>
     	
     	<light name='sun' type='directional'>
@@ -46,3 +46,8 @@
   </world>
 </sdf>
 
+
+<!--Room 48min 0seg 15return-->
+<!--Bedroom 47min 07seg 15return-->
+<!--Livingroom 51min 10seg 16return-->
+<!--Diningroom 42min 13seg 14return-->
