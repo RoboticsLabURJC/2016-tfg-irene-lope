@@ -483,10 +483,10 @@ class MyAlgorithm4(threading.Thread):
         wCell= cells[2]
         sCell= cells[3]
         critical = False
-        if nCell > 0:
-            if eCell > 0:
-                if wCell > 0:
-                    if sCell > 0:
+        if nCell > 0 or nCell == None:
+            if eCell > 0 or eCell == None:
+                if wCell > 0 or wCell == None:
+                    if sCell > 0 or sCell == None:
                         critical = True      
                
         return critical
