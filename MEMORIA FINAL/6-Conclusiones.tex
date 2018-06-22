@@ -1,0 +1,44 @@
+\chapter{Conclusiones}\label{cap.conclusiones}
+En este capítulo se recapitulan las conclusiones que se han obtenido realizando este proyecto. También se expondrán posibles mejoras que aplicar a las distintas prácticas desarrolladas.
+
+\section{Conclusiones}
+
+Con la realización de este proyecto se ha cumplido el objetivo global de crear dos nuevas prácticas destinadas a la docencia de robótica en el entorno de JdeRobot Academy. El objetivo de dichas prácticas es conseguir que el estudiante que las realice adquiera conocimientos relacionados con la programación de diferentes robots.\\
+
+Por cada práctica se ha desarrollado una infraestructura y un nodo académico que simplifican la resolución del algoritmo permitiendo a los alumnos se abstraigan de problemas secundarios que conlleva la práctica, tales como la programación de la interfaz gráfica o la comunicación con el simulador Gazebo, con los sensores y actuadores del robot. Además de la interfaz gráfica y el código auxiliar, se ha desarrollado una solución de referencia por práctica.\\
+
+En primer lugar, se ha creado la práctica ``Coche autónomo negocia un cruce''. Para esta práctica se ha creado un nuevo mundo en el simulador Gazebo que consiste principalmente en un cruce de carreteras donde se encuentra la señal de STOP que hay que detectar. Además, también aparecen dos coches que se mueven automáticamente a lo largo de una de las carreteras. También se ha programado una interfaz gráfica que permite ver las imágenes captadas por las cámaras instaladas en el coche, consiguiendo que resulte más sencillo el tratamiento digital de las imágenes. La solución de referencia elaborada consta de tres partes principales. La primera consiste en el reconocimiento visual de la señal de STOP usando un filtro de color para detectar el color rojo y depués realizando una comparación con una plantilla de referencia para detectar la forma octogonal. En esta primera parte también se realiza el frenado del coche que  paulatinamente reduce la velocidad de manera proporcional al tamaño que tenga la señal de STOP detectada. La segunda parte aborda la detección de otros coches mediante la detección de movimiento en las imágenes captadas. Por último, en la tercera parte, el coche realiza un giro a la izquierda o a la derecha (se elige de manera aleatoria) y, mediante el reconocimiento de la carretera se sitúa en el centro del carril derecho.\\
+
+En segundo lugar, se ha creado la práctica ``Aspiradora autónoma con autolocalización''. Para esta práctica se ha modificado el mundo \texttt{GrannyAnnie.world}, que consiste en un apartamento básico con distintas habitaciones y muebles. También se ha desarrollado una interfaz gráfica que muestra el mapa de la casa y marca las zonas por las que la aspiradora ha pasado, así como la orientación del robot. La solución llevada a cabo consta de dos partes principales: la planificación de la ruta y el pilotaje de la aspiradora. La planificación de la ruta está basada en un algoritmo de barrido de superficies en zigzag. Esta planificación utiliza el mapa de la casa para ir calculando las casillas a las que tiene que ir llegando la aspiradora. De esta manera, cada vez que la aspiradora llega a una nueva celda, se calcula la siguiente según si las casillas que rodean a la aspiradora (con vecindad a 4) son obstáculos, están libres o ya se ha pasado anteriormente por ese punto. Además, esta planificación calcula el punto al que retornar si la aspiradora no puede avanzar más en el zigzag actual. Para el pilotaje del robot se calcula la desviación que hay entre la aspiradora y la celda a la que tiene que dirigirse y según dicha desviación, aumentará o disminuirá su velocidad lineal y de giro. Para esta práctica también se ha creado un evaluador automático que, dependiendo del porcentaje recorrido de la casa, otorgará una nota final para el alumno.\\
+
+A nivel presonal, hemos aprendido a manejar el simulador Gazebo, creando nuevos mundos y modelos, y a utilizar la plataforma JdeRobot para programar el comportamiento de diferentes robots autónomos. Uno de los elementos fundamentales de aprendizaje de esta plataforma es cómo se comunican los robots con los sensores y actuadores que poseen. Además, hemos aprendido a usar distintas bibliotecas de Python para desarrollar las prácticas. Al realizar este trabajo, también hemos comprendido cómo un problema de gran envergadura se puede resolver dividiéndolo en objetivos más pequeños y a solucionar problemas típicos de ingeniería realizando dsitintas pruebas y experimentos para afinar el algoritmo (aplicando conocimientos adquiridos durante el grado o bien buscando y entendiendo nueva información).
+
+
+\section{Trabajos futuros}
+Como posibles mejoras a las prácticas y trabajos futuros relacionados con éstas, se proponen las siguientes opciones. Posibles trabajos y mejoras relacionadas con la práctica ``Coche autónomo negocia un cruce'':
+
+	\begin{itemize}
+	\item Cuando se lleva a cabo el reconocimiento de la señal de STOP se podría detectar, a parte del color rojo y la forma octogonal, la palabra 'STOP'. De este modo, el reconocimiento de la señal sería todavía más fiable.
+	
+	\item Utilizar otras técnicas de percepción de movimiento más avanzadas para la detección de los coches como el uso de vectores de movimiento o el flujo óptico.
+	
+	\item Para disminuir el tiempo que el coche está parado en el cruce, se podría detectar el tamaño y el sentido de movimiento de los coches. De esta manera, si por ejemplo, se detectan coches pequeños significaría que éstos están lejos y que al coche le daría tiempo a realizar el giro en el cruce. También si se detecta un coche por la cámara izquierda que se dirige hacia la izquierda, aunque sea grande, indica que el coche ya ha pasado el cruce y nuestro coche podría ir detrás sin chocarse.
+	
+	\item Se podría aumentar la dificultad de la práctica acelerando la velocidad e incrementando el número de los coches que circulan automáticamente por la carretera.
+	\end{itemize}
+	
+Posibles trabajos y mejoras relacionadas con la práctica ``Aspiradora autónoma con autolocalización'':
+
+	\begin{itemize}
+	\item Durante la etapa de planificación de la ruta se podrían utilizar distintos tipos de algoritmos para el barrido de superficies. En vez de un recorrido en zigzag, se podría utilizar un recorrido en espiral. Al principio, la aspiradora iría al lado de la pared y realizaría la espiral hacia el interior de cada habitación. Seguiría guardando los puntos de retorno de la misma manera que en el zigzag y el punto crítico para comenzar una nueva espiral sería cuando la aspiradora tuviese todas las casillas que la rodean barridas o con obstáculos.
+	
+	\item No proporcionar el mapa de la casa para realizar el algoritmo de barrido. De esta manera, la aspiradora iría creando el mapa según su posición y los datos obtenidos por el sensor láser que tiene instalado.
+	
+	\item Optimizar el algoritmo de retorno para que encuantre la ruta más corta posible.
+	
+	\item Se podría probar el algoritmo creado en una aspiradora real. Así, se podría observar de manera exacta como funcionaría la solución realizada. Se probaría en distintas habitaciones con diferentes obstáculos para lograr que el algoritmo fuera lo más robusto posible. 
+	\end{itemize}
+
+
+
+%https://programarfacil.com/blog/vision-artificial/deteccion-de-movimiento-con-opencv-python/
